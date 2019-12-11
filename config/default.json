@@ -1,0 +1,5 @@
+    {
+        "spotify_api": {
+            "maximum_request_retries": 3
+        }
+    }
