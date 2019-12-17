@@ -22,7 +22,7 @@ custom:
     stages:
       - ${self:provider.stage}
     start:
-      port: 8003
+      port: 8000
       dbPath: .dynamodb/db
 
 # app and org for use with dashboard.serverless.com
@@ -82,10 +82,7 @@ functions:
   spotbot:
     handler: server/server.handler
     events:
-      - http: 
-          path: /{ANY}
-          method: any
-          cors: true
+      - http: 'ANY {proxy+}'
 resources:
   Resources:
     SpotbotDynamoDbTable:
