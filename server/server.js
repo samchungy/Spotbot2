@@ -11,9 +11,7 @@ app
     .use(logger({level: 'info'}))
     .use(errorHandler)
     .use(bodyParser())
-    .use(router.routes()).use(router.allowedMethods())
-    .listen(3001)
-
-console.log("Server listening on 3001");
+    .use(router.routes())
+    .use(router.allowedMethods())
 
 module.exports.handler = serverless(app);
