@@ -1,11 +1,13 @@
 const logger = require('pino')();
-const { createAuthorizeURL, requestTokens } = require('../spotify-api/auth');
 const config = require('config');
 const callback_path = config.get('spotify_api.callback');
+const { createAuthorizeURL, requestTokens } = require('../spotify-api/auth');
+const { getState, storeState } = require('./spotifyAuthDAL');
 
 async function getAuthorizationURL(trigger_id, host){
     try {
         //TODO Store trigger_id as Spotify Auth state.
+        await storeState(trigger_id);
         let auth_url = await createAuthorizeURL(trigger_id, `http://${host}/${callback_path}`);
         return auth_url;
     } catch (error) {
@@ -16,7 +18,9 @@ async function getAuthorizationURL(trigger_id, host){
 
 async function getTokens(code, state){
     try {
-        verifyState(state);
+        if (!verifyState(state)){
+            return {success: false, failReason: "Invalid State"}
+        }
         let { access_token, refresh_token } = await requestTokens(code);
         // TODO Insert tokens into DB
         return {success: true, failReason: null}
@@ -28,7 +32,14 @@ async function getTokens(code, state){
 }
 
 async function verifyState(state){
-    //TODO: Check state is valid, else redirect.
+    //Check state is valid, else redirect.
+    try {
+        let current_state = await getState(trigger_id).Item.value;
+        return current_state === state;
+    } catch (error) {
+        throw error;
+    }
+    //TODO: 
 }
 
 module.exports = {
