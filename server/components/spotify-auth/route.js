@@ -7,13 +7,19 @@ module.exports = ( prefix, Router ) => {
     });
     router
     .get('/', async (ctx, next) => {
-      let auth_url = await getAuthorizationURL("ABC", ctx.request.header.host);
+      //TODO ADD STATE (SLACK TRIGGER ID)
+      let auth_url = await getAuthorizationURL("ABC", ctx.host);
       ctx.body = auth_url;
     })
-    .get('*', async (ctx, next) => {
-      logger.info(ctx);
-      logger.info(ctx.query);
-      ctx.body = "Test"
+    .get('/callback', async (ctx, next) => {
+      let { success, failReason } = await getTokens(ctx.query.code, ctx.query.state);
+      if (success){
+        ctx.body = "Auth Success"
+        // ctx.redirect('') TODO ADD Slack URL
+      } else {
+        ctx.status = 401
+        ctx.body = failReason;
+      }
     })
     return router;
   };
