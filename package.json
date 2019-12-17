@@ -28,7 +28,7 @@
     "spotify-web-api-node": "git+https://github.com/samchungy/spotify-web-api-node.git#spotbot"
   },
   "devDependencies": {
-    "aws-sdk": "^2.585.0",
+    "aws-sdk": "^2.591.0",
     "serverless-dynamodb-local": "^0.2.38",
     "serverless-offline": "^5.12.1"
   }
