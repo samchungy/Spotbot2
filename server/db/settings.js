@@ -1,25 +1,34 @@
 const logger = require('pino')();
 const dynamoDb = require('./db');
 
-const settingInfo = item => {
+const tableSet = item => {
     return {
         TableName: process.env.SETTINGS_TABLE,
-        Item: item
+        ...item
     }
 }
 
+const settingInfo = item => {
+    return tableSet(
+        {
+            Item: item
+        });
+}
+
 const settingModel = (name, value) => {
-    return {
-        name: name,
-        value: value
-    };
+    let setting = {
+        name: name
+    }
+    if (value){
+        setting.value = value
+    }
+    return setting;
 };
 
 const getSettingInfo = key => {
-    return {
-        TableName: process.env.SETTINGS_TABLE,
+    return tableSet({
         Key: key
-    }
+    });
 }
 
 const putSetting = setting => {
