@@ -7,3 +7,4 @@ module.exports = ( prefix, Router ) => {
     });
     return router;
 };
+
