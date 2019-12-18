@@ -3,7 +3,7 @@
             "client_id": "e44db70cd63248fbb7325c875eb4e57b",
             "client_secret": "4e0dd128e2cb41d29780c540be51040c",
             "maximum_request_attempts": 1,
-            "redirect_url": "http://localhost:3001",
+            "redirect_url": "http://localhost:3000/auth/callback",
             "scopes": [
                 "user-read-recently-played",
                 "user-read-playback-state",
@@ -18,7 +18,12 @@
         },
         "dynamodb": {
             "settings": {
-                "state": "state"
+                "state": "state",
+                "access": "access_token",
+                "refresh": "refresh_token"
             }
+        },
+        "events": {
+            "update_tokens" : "update_tokens"
         }
     }

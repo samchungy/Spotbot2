@@ -1,13 +1,13 @@
 const config = require('config');
 const logger = require('pino')()
-const spotifyWebApi = require('./initialise');
+const { spotifyWebApi } = require('./initialise');
 const requester = require('./requester');
 const SCOPES = config.get('spotify_api.scopes');
 
-async function createAuthorizeURL(trigger_id, redirect_url){
+async function createAuthorizeURL(trigger_id){
     try {
-        spotifyWebApi.setRedirectURI(redirect_url);
-        return await requester("Create Authorize URL", () => spotifyWebApi.createAuthorizeURL(SCOPES, trigger_id));
+        let spotifyApi = await spotifyWebApi();
+        return await requester("Create Authorize URL", () => spotifyApi.createAuthorizeURL(SCOPES, trigger_id));
     } catch (error) {
         throw error;
     }
@@ -15,13 +15,21 @@ async function createAuthorizeURL(trigger_id, redirect_url){
 
 async function requestTokens(code){
     try {
-        return await requester("Create Authorize URL", () => spotifyWebApi.authorizationCodeGrant(code).body);
+        let spotifyApi = await spotifyWebApi();
+        return (await requester("Authorization Code Grant", () => spotifyApi.authorizationCodeGrant(code))).body;
     } catch (error) {
+        console.log(error);
         throw error;
     }
 }
 
+async function testTokens(){
+    let spotifyApi = await spotifyWebApi();
+    logger.info(spotifyApi.getAccessToken(), spotifyApi.getRefreshToken())
+}
+
 module.exports = {
     createAuthorizeURL,
-    requestTokens
+    requestTokens,
+    testTokens
 }
