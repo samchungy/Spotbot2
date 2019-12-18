@@ -8,7 +8,7 @@ async function apiCall(name, api){
             return await api();
         } catch (error) {
             logger.error(error);
-            if (error.name.contains(`WebapiError`) && error.statusCode){
+            if (error.name.includes(`WebapiError`) && error.statusCode){
                 //Retry 500 errors
                 if (error.statusCode >= 500 && error.statusCode < 600){
                     attempts--;
