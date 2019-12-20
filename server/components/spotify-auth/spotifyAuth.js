@@ -18,10 +18,9 @@ async function getAuthorizationURL(trigger_id){
 
 async function validateAuthCode(code, state){
     try {
-        if (!verifyState(state)){
+        if (!await verifyState(state)){
             return {success: false, failReason: "Invalid State"}
         }
-
         //Get Tokens from Spotify
         let { access_token, refresh_token } = await requestTokens(code);
         //Store our tokens in our DB

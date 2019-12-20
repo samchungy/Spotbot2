@@ -1,5 +1,4 @@
 const serverless = require('serverless-http');
-const config = require('config');
 const Koa = require('koa');
 const Router = require('koa-router');
 const bodyParser = require('koa-bodyparser');
@@ -15,4 +14,7 @@ app
     .use(router.routes())
     .use(router.allowedMethods())
 
+if(process.env.NODE_ENV == "test"){
+    module.exports.mockapp = app.listen(3000);
+}
 module.exports.handler = serverless(app);

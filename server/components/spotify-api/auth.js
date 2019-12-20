@@ -18,7 +18,7 @@ async function requestTokens(code){
         let spotifyApi = await spotifyWebApi();
         return (await requester("Authorization Code Grant", () => spotifyApi.authorizationCodeGrant(code))).body;
     } catch (error) {
-        console.log(error);
+        logger.error(error);
         throw error;
     }
 }

@@ -4,7 +4,7 @@
   "description": "Spotify Bot for Slack",
   "main": "server/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/samchungy/Spotbot2#readme",
   "dependencies": {
+    "@slack/web-api": "^5.6.0",
     "config": "^3.2.4",
     "koa": "^2.11.0",
     "koa-bodyparser": "^4.2.1",
@@ -24,12 +25,15 @@
     "koa-pino-logger": "^2.1.3",
     "koa-router": "^7.4.0",
     "pino-pretty": "^3.4.0",
+    "serverless": "^1.60.0",
     "serverless-http": "^2.3.0",
     "spotify-web-api-node": "git+https://github.com/samchungy/spotify-web-api-node.git#spotbot"
   },
   "devDependencies": {
     "aws-sdk": "^2.591.0",
+    "jest": "^24.9.0",
     "serverless-dynamodb-local": "^0.2.38",
-    "serverless-offline": "^5.12.1"
+    "serverless-offline": "^5.12.1",
+    "supertest": "^4.0.2"
   }
 }
