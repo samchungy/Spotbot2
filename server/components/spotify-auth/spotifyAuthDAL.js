@@ -1,19 +1,18 @@
 const config = require('config');
 const logger = require('pino')();
+const { nullOrValue } = require('../../util/objects');
 
 const { getSetting, putSetting, settingModel } = require('../../db/settings');
-const STATE = config.get('dynamodb.settings.state');
-const ACCESS = config.get('dynamodb.settings.access');
-const REFRESH = config.get('dynamodb.settings.refresh');
+const AUTH = config.get('dynamodb.auth');
 
 async function storeState(state){
-    let setting = settingModel(STATE, state);
+    let setting = settingModel(AUTH.state, state);
     return await putSetting(setting);
 }
 
 async function getState(){
     try {
-        let setting = settingModel(STATE, null);
+        let setting = settingModel(AUTH.state, null);
         let result = await getSetting(setting);
         return result.Item.value;
     } catch (error) {
@@ -24,10 +23,17 @@ async function getState(){
 
 async function getTokens(){
     try {
-        let access = settingModel(ACCESS, null);
-        let refresh = settingModel(REFRESH, null)
-        let result = await Promise.all([await getSetting(access), await getSetting(refresh)]);
-        return {access_token: result[0].Item.value, refresh_token: result[1].Item.value }
+        let access, refresh;
+        let authentication = settingModel(AUTH.object, null);
+        let result = await getSetting(authentication);
+        if(result){
+            access = result.Item[AUTH.access];
+            refresh = result.Item[AUTH.refresh];
+        }
+        return { 
+            access_token: access,
+            refresh_token: refresh 
+        }
     } catch (error) {
         logger.error("Get Setting failed");
         throw error;
@@ -36,9 +42,12 @@ async function getTokens(){
 
 
 async function storeTokens(access_token, refresh_token){
-    let access = settingModel(ACCESS, access_token);
-    let refresh = settingModel(REFRESH, refresh_token);
-    return await Promise.all([await putSetting(access), await putSetting(refresh)])
+    let authentication = settingModel(AUTH.object, {
+        [AUTH.access]: access_token,
+        [AUTH.refresh]: refresh_token,
+        [AUTH.expires]: new Date()
+    })
+    return await putSetting(authentication);
 }
 
 module.exports = {

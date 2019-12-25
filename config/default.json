@@ -17,10 +17,13 @@
             "callback":"auth/callback"
         },
         "dynamodb": {
-            "settings": {
+            "auth": {
+                "object": "auth",
                 "state": "state",
                 "access": "access_token",
-                "refresh": "refresh_token"
+                "refresh": "refresh_token",
+                "expires": "expires"
+            },
             }
         },
         "events": {
