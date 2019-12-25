@@ -1,6 +1,6 @@
 
 
-const dialog = (callback_id, title, submit_label, elements) => {
+const slackDialog = (callback_id, title, submit_label, elements) => {
     return {
         callback_id: callback_id,
         title: title,
@@ -16,6 +16,18 @@ const dialogElement = (name, value, label, hint) => {
         label: label,
         hint: hint
     }
+}
+
+const textDialogElement = (name, value, label, hint, placeholder, max_length, subtype) => {
+    return Object.assign(
+        dialogElement(name, value, label, hint),
+        {
+            type: "text",
+            placeholder: placeholder,
+            max_length: max_length,
+            subtype: subtype
+        }
+    )
 }
 
 const selectDialogElement = (name, value, label, hint, options) => {
@@ -39,8 +51,27 @@ const selectSlackDialogElement = (name, value, label, hint, data_source, selecte
     );
 }
 
+const selectDynamicSlackDialogElement = (name, value, label, hint, data_source, selected_options, length) => {
+    return Object.assign(
+        selectSlackDialogElement(name, value, label, hint, data_source, selected_options),
+        {
+            min_query_length: length
+        }
+    )
+}
+
+const option = (label, value) => {
+    return {
+        label: label,
+        value: value
+    }
+}
+
 module.exports = {
-    dialog,
+    option,
+    slackDialog,
     selectDialogElement,
-    selectSlackDialogElement
+    selectSlackDialogElement,
+    selectDynamicSlackDialogElement,
+    textDialogElement
 }
