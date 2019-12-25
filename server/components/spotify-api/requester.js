@@ -1,4 +1,5 @@
-const logger = require('pino')()
+const logger = require('pino')();
+const {sleep} = require('../../util/timeout');
 
 async function apiCall(name, api){
     let attempts = 3;
@@ -12,6 +13,8 @@ async function apiCall(name, api){
                 //Retry 500 errors
                 if (error.statusCode >= 500 && error.statusCode < 600){
                     attempts--;
+                    // Wait a few seconds before the next execution.
+                    await sleep(3000);
                 } else {
                     throw error;
                 }
