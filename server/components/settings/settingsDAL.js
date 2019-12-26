@@ -2,7 +2,7 @@ const config = require('config');
 const logger = require('pino')();
 const { nullOrValue } = require('../../util/objects');
 
-const { batchGetSettings, batchPutSettings, putRequest, settingModel } = require('../../db/settings');
+const { batchGetSettings, batchPutSettings, putRequest, settingModel, getSetting, putSetting } = require('../../db/settings');
 const SETTINGS = config.get('dynamodb.settings');
 const PROFILE = config.get('dynamodb.auth.spotify_id');
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
@@ -42,7 +42,6 @@ async function getSettings(){
 }
 
 async function updateSettings(new_settings){
-
     try {
         let settings = []
         for (let attribute in new_settings){
@@ -84,6 +83,26 @@ async function getPlaylists(){
         throw error;
     }
 }
+
+async function storeDevices(devices){
+    try {
+        let setting = settingModel(SETTINGS_HELPER.spotify_devices, devices);
+        return await putSetting(setting);
+    } catch (error) {
+        logger.error("Storing devices to Dynamodb failed");
+        throw error;
+    }
+}
+
+async function getDevices(){
+    try {
+        let setting = settingModel(SETTINGS_HELPER.spotify_devices, null);
+        return (await getSetting(setting)).Item.value;
+    } catch (error) {
+        logger.error("Getting Spotify Devices from Dynamodb failed");
+    }
+}
+
 const playlistModel = (name, id, url) => {
     return {
         name: name,
@@ -91,12 +110,23 @@ const playlistModel = (name, id, url) => {
         url: url
     }
 }
+
+const deviceModel = (name, id) => {
+    return {
+        name: name,
+        id: id
+    }
+}
+
 module.exports = {
+    deviceModel,
+    getDevices,
     getPlaylistSetting,
     getPlaylists,
     getProfile,
     getSettings,
     playlistModel,
+    storeDevices,
     storePlaylists,
     updateSettings
 }

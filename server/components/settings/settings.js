@@ -1,6 +1,7 @@
 const config = require('config');
 const logger = require('pino')();
 const { getAllUserPlaylists, storeAllUserPlaylists } = require('./playlist');
+const { getAllDevices, storeAllDevices } = require('./devices');
 const { sendDialog } = require('../slack/api');
 const { getAllPlaylists } = require('../spotify-api/playlists');
 const { getSettings, updateSettings } = require('./settingsDAL');
