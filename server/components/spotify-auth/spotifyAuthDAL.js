@@ -50,9 +50,15 @@ async function storeTokens(access_token, refresh_token){
     return await putSetting(authentication);
 }
 
+async function storeProfile(id){
+    let setting = settingModel(AUTH.spotify_id, id);
+    return await putSetting(setting);
+}
+
 module.exports = {
     getState,
     getTokens,
+    storeProfile,
     storeState,
     storeTokens
 }

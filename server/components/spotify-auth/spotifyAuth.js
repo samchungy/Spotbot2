@@ -1,7 +1,7 @@
 const logger = require('pino')();
 const config = require('config');
-const { createAuthorizeURL, requestTokens, testTokens } = require('../spotify-api/auth');
-const { getState, storeState, getTokens, storeTokens } = require('./spotifyAuthDAL');
+const { createAuthorizeURL, requestTokens, getSpotifyProfile } = require('../spotify-api/auth');
+const { getState, storeState, storeTokens, storeProfile } = require('./spotifyAuthDAL');
 // const MyEmitter = require('../../util/eventEmitter');
 
 async function getAuthorizationURL(trigger_id){
@@ -25,6 +25,10 @@ async function validateAuthCode(code, state){
         let { access_token, refresh_token } = await requestTokens(code);
         //Store our tokens in our DB
         await storeTokens(access_token, refresh_token);
+
+        //Get Spotify URI for Authenticator
+        let profile = await getSpotifyProfile();
+        await storeProfile(profile.id);
         return {success: true, failReason: null}
     } catch (error) {
         logger.error(error)
