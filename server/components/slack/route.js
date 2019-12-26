@@ -14,8 +14,12 @@ module.exports = ( prefix, Router ) => {
                 saveSettings(payload);
                 ctx.body = ""
                 break;
-            case SLACK_ACTIONS.playlist:
-                ctx.body = await getAllUserPlaylists();
+    .post('/options', async (ctx, next) =>{
+        let payload = JSON.parse(ctx.request.body.payload);
+        switch(payload.callback_id) {
+            case SLACK_ACTIONS.settings_dialog:
+                let options = await getAllUserPlaylists(payload.value);
+                ctx.body = options;
                 break;
         }
     })

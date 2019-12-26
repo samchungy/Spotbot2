@@ -1,6 +1,6 @@
 const config = require('config');
 const logger = require('pino')();
-const { selectDialogFormat, selectSlackDialogElement, slackDialog, selectDynamicSlackDialogElement } = require('../slack/format/dialog');
+const { getAllUserPlaylists, storeAllUserPlaylists } = require('./playlist');
 const { sendDialog } = require('../slack/api');
 const { getAllPlaylists } = require('../spotify-api/playlists');
 const { getSettings, updateSettings } = require('./settingsDAL');
@@ -13,8 +13,8 @@ async function openSettings(trigger_id){
         //Load OG Config
         let settings = await getSettings();
 
-        //Do a load of User's Spotify Playlists
-        await getAllUserPlaylists();
+        //Do a load of User's Spotify Playlists and Devices
+        await storeAllUserPlaylists(settings.playlist);
 
         //Sync Spotify Playlists
         //TODO - Get Spotify Playlists and upload to Dynamodb

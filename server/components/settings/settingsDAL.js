@@ -4,6 +4,13 @@ const { nullOrValue } = require('../../util/objects');
 
 const { batchGetSettings, batchPutSettings, putRequest, settingModel } = require('../../db/settings');
 const SETTINGS = config.get('dynamodb.settings');
+const PROFILE = config.get('dynamodb.auth.spotify_id');
+const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
+
+async function getProfile(){
+    let setting = settingModel(PROFILE, null);
+    return (await getSetting(setting)).Item.value;
+}
 
 async function getSettings(){
     try {
@@ -48,7 +55,48 @@ async function updateSettings(new_settings){
     }
 }
 
+async function storePlaylists(playlists){
+    try {
+        let setting = settingModel(SETTINGS_HELPER.spotify_playlists, playlists);
+        await putSetting(setting);
+    } catch (error) {
+        logger.error("Store Spotify Playlists to Dynamodb failed");
+        throw error;
+    }
+}
+
+async function getPlaylistSetting(){
+    try {
+        let setting = settingModel(SETTINGS.playlist, null);
+        return (await getSetting(setting)).Item.value;
+    } catch (error) {
+        logger.error("Getting playlist setting from Dyanomdb failed");
+        throw error;
+    }
+}
+
+async function getPlaylists(){
+    try {
+        let setting = settingModel(SETTINGS_HELPER.spotify_playlists, null);
+        return (await getSetting(setting)).Item.value;
+    } catch (error) {
+        logger.error("Getting Spotify Playlist from Dynamodb failed");
+        throw error;
+    }
+}
+const playlistModel = (name, id, url) => {
+    return {
+        name: name,
+        id: id,
+        url: url
+    }
+}
 module.exports = {
+    getPlaylistSetting,
+    getPlaylists,
+    getProfile,
     getSettings,
+    playlistModel,
+    storePlaylists,
     updateSettings
 }
