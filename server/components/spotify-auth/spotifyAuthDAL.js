@@ -23,19 +23,19 @@ async function getState(){
 
 async function getTokens(){
     try {
-        let access, refresh;
+        let access, refresh = null;
         let authentication = settingModel(AUTH.object, null);
         let result = await getSetting(authentication);
-        if(result){
-            access = result.Item[AUTH.access];
-            refresh = result.Item[AUTH.refresh];
+        if(nullOrValue(result)){
+            access = result.Item.value[AUTH.access];
+            refresh = result.Item.value[AUTH.refresh];
         }
         return { 
             access_token: access,
             refresh_token: refresh 
         }
     } catch (error) {
-        logger.error("Get Setting failed");
+        logger.error("Get Tokens failed");
         throw error;
     }
 }
