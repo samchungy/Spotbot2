@@ -16,8 +16,13 @@ function isEqual(obj1, obj2){
     return deepEqual(obj1, obj2);
 }
 
+function isPositiveInteger(n) {
+    return 0 === n % (!isNaN(parseFloat(n)) && 0 <= ~~n);
+}
+
 module.exports = {
-    nullOrValue,
     isEqual,
-    isEmpty
+    isEmpty,
+    isPositiveInteger,
+    nullOrValue,
 }
