@@ -3,7 +3,7 @@ const logger = require('pino')();
 const { getPlaylistSetting, getPlaylists, playlistModel, storePlaylists } = require('./settingsDAL');
 const { createPlaylist, getAllPlaylists } = require('../spotify-api/playlists');
 const { getProfile } = require('./settingsDAL');
-const { option } = require('../slack/format/dialog');
+const { option, optionGroup } = require('../slack/format/dialog');
 const { isEqual } = require('../../util/objects');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
@@ -29,22 +29,14 @@ async function getAllUserPlaylists(search){
 
         if (searchPlaylists.length == 0){
             return {
-                option_groups: [{
-                    label: `No search results for "${search}"`,
-                    options: other
-                }]
+                option_groups: [optionGroup(`No search results for "${search}"`, other)]
             }
         }
     
         return {
-            option_groups: [{
-                    label: "Search Results:",
-                    options: searchPlaylists
-                },
-                {
-                    label: "Other:",
-                    options: other
-                }
+            option_groups: [
+                optionGroup("Search Results:", searchPlaylists),
+                optionGroup("Other:", other)
             ]
         }
     } catch (error) {

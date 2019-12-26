@@ -25,6 +25,13 @@ const dialogError = (name, error) => {
     }
 }
 
+const optionGroup = (label, options) => {
+    return {
+        label: label,
+        options: options
+    }
+}
+
 const textDialogElement = (name, value, label, hint, placeholder, max_length, subtype) => {
     return Object.assign(
         dialogElement(name, value, label, hint),
@@ -77,6 +84,7 @@ const option = (label, value) => {
 module.exports = {
     dialogError,
     option,
+    optionGroup,
     slackDialog,
     selectDialogElement,
     selectSlackDialogElement,
