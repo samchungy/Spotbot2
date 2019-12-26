@@ -5,6 +5,8 @@
             "maximum_request_attempts": 1,
             "redirect_url": "http://localhost:3000/auth/callback",
             "scopes": [
+                "user-read-private",
+                "user-read-email",
                 "user-read-recently-played",
                 "user-read-playback-state",
                 "user-modify-playback-state",
@@ -14,7 +16,12 @@
                 "playlist-modify-private",
                 "streaming"
             ],
-            "callback":"auth/callback"
+            "callback":"auth/callback",
+            "playlists": {
+                "limit": 50,
+                "collaborative": true,
+                "public": false
+            }
         },
         "dynamodb": {
             "auth": {
@@ -22,18 +29,24 @@
                 "state": "state",
                 "access": "access_token",
                 "refresh": "refresh_token",
-                "expires": "expires"
+                "expires": "expires",
+                "spotify_id": "spotify_id"
             },
             "settings": {
                 "slack_channel": "slack_channel",
                 "playlist": "playlist",
                 "default_device": "default_device",
-                "default_device_name": "default_device_name",
                 "disable_repeats_duration": "disable_repeats_duration",
                 "back_to_playlist": "back_to_playlist",
-                "now_playing": "now_playing",
-                "skip_votes": "additional_votes",
-                "skip_votes_ah": "additional_votes_ah"
+                "skip_votes": "skip_votes",
+                "skip_votes_ah": "skip_votes_ah"
+            },
+            "settings_helper": {
+                "spotify_playlists": "spotify_playlists",
+                "spotify_devices": "spotify_devices",
+                "no_devices": "no_devices",
+                "no_devices_label": "None",
+                "create_new_playlist": "create_new_playlist."
             }
         },
         "events": {
@@ -42,13 +55,33 @@
         "settings": {
             "hints" : {
                 "slack_channel": "The channel Slackbot will restrict usage of commands to.",
-                "playlist": "The name of the playlist Spotbot will save to. If it does not exist Spotbot will create one for you.",
-                "default_device": "This helps Spotbot with commands. Turn on your Spotify device",
-                "disable_repeats_duration" : "The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only",
-                "back_to_playlist": "Enables the ability for Spotify to return to the playlist if it runs out of songs AND a new song is added",
-                "now_playing": "Sends a now playing message when a song changes",
+                "playlist": "The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.",
+                "default_device": "This helps Spotbot with commands. If you cannot see your device, turn on your Spotify device and re-open the settings panel.",
+                "disable_repeats_duration" : "The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.",
+                "back_to_playlist": "Enables Spotify to return to the playlist when a new song is added if the playlist has runs out of songs. (Does not work if repeat is enabled).",
                 "skip_votes": "The number of additional votes needed to skip a song. Integers only",
                 "skip_votes_ah": "(6pm - 6am) The number of additional votes needed to skip a song. Integers only"
+            },
+            "labels": {
+                "slack_channel": "Slack Channel Restriction",
+                "playlist": "Spotbot Playlist",
+                "default_device": "Default Spotify Device",
+                "disable_repeats_duration" : "Disable Repeats Duration (Hours)",
+                "back_to_playlist": "Jump Back to Playlist",
+                "skip_votes": "Skip Votes",
+                "skip_votes_ah": "Skip Votes (After Hours)"
+            },
+            "placeholders": {
+                "disable_repeats_duration": "5",
+                "skip_votes": "2",
+                "skip_votes_ah": "1"
+            },
+            "limits": {
+                "disable_repeats_duration": 5,
+                "skip_votes": 2
+            },
+            "errors": {
+                "integer": "Please enter a valid integer"
             }
         },
         "slack": {

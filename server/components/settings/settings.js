@@ -1,11 +1,18 @@
 const config = require('config');
 const logger = require('pino')();
+const { option, selectDialogElement, selectSlackDialogElement, selectDynamicSlackDialogElement, slackDialog, textDialogElement } = require('../slack/format/dialog');
 const { getAllUserPlaylists, storeAllUserPlaylists } = require('./playlist');
 const { getAllDevices, storeAllDevices } = require('./devices');
+const { transformValue } = require('./transform');
 const { sendDialog } = require('../slack/api');
-const { getAllPlaylists } = require('../spotify-api/playlists');
 const { getSettings, updateSettings } = require('./settingsDAL');
+const { isEqual, isEmpty } = require('../../util/objects');
+const { verifySettings } = require('./verify');
+
 const HINTS = config.get('settings.hints');
+const LABELS = config.get('settings.labels');
+const PLACE = config.get('settings.placeholders');
+const LIMITS = config.get('settings.limits');
 const SETTINGS_DIALOG = config.get('slack.actions.settings_dialog');
 const DB = config.get('dynamodb.settings');
 
@@ -16,15 +23,19 @@ async function openSettings(trigger_id){
 
         //Do a load of User's Spotify Playlists and Devices
         await storeAllUserPlaylists(settings.playlist);
+        await storeAllDevices(settings.default_device);
 
-        //Sync Spotify Playlists
-        //TODO - Get Spotify Playlists and upload to Dynamodb
-        settings.default_device = settings.default_device ? selectDialogFormat(settings.default_device_name, `${settings.default_device}:${settings.default_device_name}`): null
         let elements = [
             //Slack Channel Setting
-            selectSlackDialogElement(DB.slack_channel, settings.slack_channel, `Slack Channel Restriction`, HINTS.slack_channel, `channels`, null),
-            selectDynamicSlackDialogElement(DB.playlist, null, `Spotbot Playlist`, HINTS.playlist, `external`, null, 3)
+            selectSlackDialogElement(DB.slack_channel, settings.slack_channel, LABELS.slack_channel, HINTS.slack_channel, `channels`, null),
+            selectDynamicSlackDialogElement(DB.playlist, null, LABELS.playlist, HINTS.playlist, `external`, settings.playlist ? [option(settings.playlist.name, settings.playlist.id)] : null, 3),
+            selectDialogElement(DB.default_device, settings.default_device ? settings.default_device.id : null, LABELS.default_device, HINTS.default_device, await getAllDevices()),
+            textDialogElement(DB.disable_repeats_duration, settings.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, PLACE.disable_repeats_duration, LIMITS.disable_repeats_duration, `number`),
+            selectDialogElement(DB.back_to_playlist, settings.back_to_playlist, LABELS.back_to_playlist, HINTS.back_to_playlist, yesOrNo()),
+            textDialogElement(DB.skip_votes, settings.skip_votes, LABELS.skip_votes, HINTS.skip_votes, PLACE.skip_votes, LIMITS.skip_votes, `number`),
+            textDialogElement(DB.skip_votes_ah, settings.skip_votes_ah, LABELS.skip_votes_ah, HINTS.skip_votes_ah, PLACE.skip_votes_ah, LIMITS.skip_votes, `number`)
         ]
+        logger.info(elements);
         
         let dialog = slackDialog(SETTINGS_DIALOG, `Spotbot Settings`, `Save`, elements);
         await sendDialog(trigger_id, dialog);
@@ -40,61 +51,41 @@ async function openSettings(trigger_id){
     //Slack API Call to open
 }
 
-async function saveSettings(payload){
+async function saveSettings(submission, response_url){
     try {
-        console.log(payload.submission)
         let response_url = payload.response_url;
-        await verifySettings(payload.submission);
+        let errors = verifySettings(submission);
+        if (errors.length > 0){
+            return { errors: errors }
+        }
         let settings = await getSettings();
         for (let attribute in settings){
-            if (settings[attribute] == payload.submission[attribute]){
+            let oldValue = settings[attribute];
+            let newValue = submission[attribute]
+            newValue = await transformValue(attribute, newValue, oldValue);
+
+            if (isEqual(oldValue, newValue)){
                 //Save on unecessary Read/Writes
                 delete settings[attribute];
             } else {
-                settings[attribute] = payload.submission[attribute]
+                settings[attribute] = newValue
             }
         }
         //TODO: Respond via response_url
-        await updateSettings(settings);
+        if (!isEmpty(settings)){
+            await updateSettings(settings);
+        }
 
     } catch (error) {
         logger.error(error);   
     }
 }
 
-async function verifySettings(submission){
-    
-}
-
-async function getAllUserPlaylists(){
-    try {
-        const limit = 50;
-        let collaborativePlaylists = [];
-        let i = 0;
-        let playlists = await getAllPlaylists(i);
-        while(true){
-
-
-            //Only add if it is a collaborative playlist
-            for (let playlist of playlists.body.items){
-                if (playlist.collaborative == true){
-                    collaborativePlaylists.push(playlist);
-                }
-            }
-
-            //See if we can get more playlists as the Spotify Limit is 50 per call.
-            if(playlist.body.total < i * limit){
-                i++;
-            } else {
-                break;
-            }
-        }
-        logger.info(collaborativePlaylists);
-
-    } catch (error) {
-        logger.error("Getting all Spotify Playlists failed");
-        throw error;
-    }
+function yesOrNo(){
+    return [
+        option(`Yes`, `true`),
+        option(`No`, `false`)
+    ]
 }
 
 module.exports = { getAllUserPlaylists, openSettings, saveSettings }
