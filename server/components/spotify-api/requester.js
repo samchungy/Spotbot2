@@ -1,3 +1,4 @@
+const { refreshAccessToken } = require('./refresh');
 const logger = require('pino')();
 const {sleep} = require('../../util/timeout');
 
@@ -15,6 +16,15 @@ async function apiCall(name, api){
                     attempts--;
                     // Wait a few seconds before the next execution.
                     await sleep(3000);
+                } else if (error.statusCode == 401){
+                    //Try Reauthenticte
+                    attempts--;
+                    logger.info("Getting new access token");
+                    try {
+                        await refreshAccessToken();
+                    } catch (error) {
+                        throw error;
+                    }
                 } else {
                     throw error;
                 }
