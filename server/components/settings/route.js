@@ -1,4 +1,4 @@
-const logger = require('pino')();
+const logger = require('../../util/logger');
 const { openSettings } = require('./settings');
 const { getAuthorizationURL } = require('../spotify-auth/spotifyAuth');
 

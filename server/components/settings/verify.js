@@ -1,4 +1,5 @@
 const config = require('config');
+const logger = require('../../util/logger');
 const { isPositiveInteger } = require('../../util/objects');
 const { dialogError } = require('../slack/format/dialog');
 const DB = config.get('dynamodb.settings');

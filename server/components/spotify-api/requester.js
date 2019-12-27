@@ -1,5 +1,5 @@
 const { refreshAccessToken } = require('./refresh');
-const logger = require('pino')();
+const logger = require('../../util/logger');
 const {sleep} = require('../../util/timeout');
 
 async function apiCall(name, api){

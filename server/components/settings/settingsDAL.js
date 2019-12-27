@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('pino')();
+const logger = require('../../util/logger');
 const { nullOrValue } = require('../../util/objects');
 
 const { batchGetSettings, batchPutSettings, putRequest, settingModel, getSetting, putSetting } = require('../../db/settings');

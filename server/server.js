@@ -1,3 +1,4 @@
+require('dotenv').config();
 const serverless = require('serverless-http');
 const Koa = require('koa');
 const Router = require('koa-router');
@@ -8,7 +9,7 @@ const router = require('./index')({Router});
 const app = new Koa();
 
 app
-    .use(logger({level: 'info'}))
+    .use(logger({level: process.env.LOG_LEVEL}))
     .use(errorHandler)
     .use(bodyParser())
     .use(router.routes())

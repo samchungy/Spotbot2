@@ -1,4 +1,4 @@
-const logger = require('pino')();
+const logger = require('../../util/logger');
 const config = require('config');
 const { getSpotifyDevices } = require('../spotify-api/devices');
 const { deviceModel, storeDevices, getDevices } = require('./settingsDAL');

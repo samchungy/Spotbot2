@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('pino')()
+const logger = require('../../util/logger');
 const { spotifyWebApi } = require('./initialise');
 const requester = require('./requester');
 const COLLABORATIVE = config.get('spotify_api.playlists.collaborative');

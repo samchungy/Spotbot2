@@ -1,4 +1,4 @@
-const logger = require('pino')()
+const logger = require('../../util/logger');
 const { validateAuthCode } = require('./spotifyAuth');
 
 module.exports = ( prefix, Router ) => {

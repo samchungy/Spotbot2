@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('pino')();
+const logger = require('../../util/logger');
 const { getPlaylistSetting, getPlaylists, playlistModel, storePlaylists } = require('./settingsDAL');
 const { createPlaylist, getAllPlaylists } = require('../spotify-api/playlists');
 const { getProfile } = require('./settingsDAL');

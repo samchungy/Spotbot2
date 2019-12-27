@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('pino')();
+const logger = require('../../util/logger');
 const { option, selectDialogElement, selectSlackDialogElement, selectDynamicSlackDialogElement, slackDialog, textDialogElement } = require('../slack/format/dialog');
 const { getAllUserPlaylists, storeAllUserPlaylists } = require('./playlist');
 const { getAllDevices, storeAllDevices } = require('./devices');
@@ -35,7 +35,6 @@ async function openSettings(trigger_id){
             textDialogElement(DB.skip_votes, settings.skip_votes, LABELS.skip_votes, HINTS.skip_votes, PLACE.skip_votes, LIMITS.skip_votes, `number`),
             textDialogElement(DB.skip_votes_ah, settings.skip_votes_ah, LABELS.skip_votes_ah, HINTS.skip_votes_ah, PLACE.skip_votes_ah, LIMITS.skip_votes, `number`)
         ]
-        logger.info(elements);
         
         let dialog = slackDialog(SETTINGS_DIALOG, `Spotbot Settings`, `Save`, elements);
         await sendDialog(trigger_id, dialog);

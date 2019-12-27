@@ -1,4 +1,4 @@
-const logger = require('pino')();
+const logger = require('../../util/logger');
 const slackClient = require('./initialise');
 
 async function sendDialog(trigger_id, dialog){

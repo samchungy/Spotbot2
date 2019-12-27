@@ -1,4 +1,4 @@
-const logger = require('pino')();
+const logger = require('../../util/logger');
 const config = require('config');
 const SLACK_ACTIONS = config.get('slack.actions');
 const { getAllUserPlaylists, saveSettings } = require('../settings/settings');

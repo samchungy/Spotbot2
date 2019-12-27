@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('pino')();
+const logger = require('../../util/logger');
 const SpotifyWebApi = require('spotify-web-api-node');
 const { getTokens } = require('../spotify-auth/spotifyAuthDAL');
 const SPOTIFY_CLIENT_ID = config.get('spotify_api.client_id');
@@ -15,6 +15,7 @@ var spotifyApi = new SpotifyWebApi({
 
 async function setTokens(){
     let { access_token, refresh_token } = await getTokens();
+    console.log(access_token, refresh_token);
     spotifyApi.setAccessToken(access_token);
     spotifyApi.setRefreshToken(refresh_token); 
     return spotifyApi;
