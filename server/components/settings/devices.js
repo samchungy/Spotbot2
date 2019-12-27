@@ -1,26 +1,28 @@
 const logger = require('../../util/logger');
 const config = require('config');
 const { getSpotifyDevices } = require('../spotify-api/devices');
-const { deviceModel, storeDevices, getDevices } = require('./settingsDAL');
-const { option } = require('../slack/format/dialog');
+const { deviceModel, storeDevices, getDevices, getDefaultDevice } = require('./settingsDAL');
+const { option } = require('../slack/format/modal');
 const { isEqual } = require('../../util/objects');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 
-async function storeAllDevices(old_device){
+async function storeAllDevices(){
     try {
+        let default_device = await getDefaultDevice();
         let devices = await getSpotifyDevices();
         let stores = [];
-        if (old_device){
-            stores.push(old_device);
+        if (default_device){
+            stores.push(default_device);
         }
         for (let device of devices.body.devices){
-            let model = deviceModel(device.name, device.id);
-            if (!isEqual(model, old_device)){
+            let model = deviceModel(`${device.name} - ${device.type}`, device.id);
+            if (!isEqual(model, default_device)){
                 stores.push(model);
             }
         }
         await storeDevices(stores);
+        return stores;
     } catch (error) {
         logger.error("Storing all Spotify devices failed");
         throw error;
@@ -29,16 +31,18 @@ async function storeAllDevices(old_device){
 
 async function getAllDevices(){
     try {
+        let stored = await storeAllDevices();
         let options = [];
         //Add a none option
         options.push(option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices));
-    
-        let devices = await getDevices();
-        for (let device of devices){
+
+        for (let device of stored){
             options.push(option(device.name, device.id));
         }
     
-        return options
+        return {
+            options: options
+        }
     } catch (error) {
         logger.error("Getting all Spotify devices failed");
         throw error;

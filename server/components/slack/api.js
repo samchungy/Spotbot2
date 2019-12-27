@@ -1,19 +1,15 @@
 const logger = require('../../util/logger');
 const slackClient = require('./initialise');
 
-async function sendDialog(trigger_id, dialog){
+async function sendModal(trigger_id, view){
     try {
-        await slackClient.dialog.open({trigger_id : trigger_id, dialog: dialog})
+        await slackClient.views.open({trigger_id: trigger_id, view: view});
     } catch (error) {
-        if (error.code && error.code == `slack_webapi_platform_error`){
-            if (error.data.error == `validation_errors`){
-                logger.error(JSON.stringify(error.data.response_metadata));
-            }
-        }
+        logger.error(error.data.response_metadata);
         throw error;
     }
 }
 
 module.exports = {
-    sendDialog
+    sendModal
 }

@@ -1,19 +1,22 @@
 const config = require('config');
 const logger = require('../../util/logger');
-const { option, selectDialogElement, selectSlackDialogElement, selectDynamicSlackDialogElement, slackDialog, textDialogElement } = require('../slack/format/dialog');
-const { getAllUserPlaylists, storeAllUserPlaylists } = require('./playlist');
-const { getAllDevices, storeAllDevices } = require('./devices');
+// const { option, selectDialogElement, selectSlackDialogElement, selectDynamicSlackDialogElement, slackDialog, textDialogElement } = require('../slack/format/dialog');
+const { option, slackModal, selectChannels, selectExternal, selectStatic, textInput } = require('../slack/format/modal');
+const { getAllUserPlaylists, storeAllUserPlaylists } = require('./playlists');
+const { getAllDevices } = require('./devices');
 const { transformValue } = require('./transform');
-const { sendDialog } = require('../slack/api');
+const { sendModal } = require('../slack/api');
 const { getSettings, updateSettings } = require('./settingsDAL');
 const { isEqual, isEmpty } = require('../../util/objects');
 const { verifySettings } = require('./verify');
 
 const HINTS = config.get('settings.hints');
 const LABELS = config.get('settings.labels');
+const QUERY = config.get('settings.query_lengths');
 const PLACE = config.get('settings.placeholders');
 const LIMITS = config.get('settings.limits');
 const SETTINGS_DIALOG = config.get('slack.actions.settings_dialog');
+const SETTINGS_MODAL = config.get('slack.actions.settings_modal');
 const DB = config.get('dynamodb.settings');
 
 async function openSettings(trigger_id){
@@ -23,21 +26,24 @@ async function openSettings(trigger_id){
 
         //Do a load of User's Spotify Playlists and Devices
         await storeAllUserPlaylists(settings.playlist);
-        await storeAllDevices(settings.default_device);
 
-        let elements = [
-            //Slack Channel Setting
-            selectSlackDialogElement(DB.slack_channel, settings.slack_channel, LABELS.slack_channel, HINTS.slack_channel, `channels`, null),
-            selectDynamicSlackDialogElement(DB.playlist, null, LABELS.playlist, HINTS.playlist, `external`, settings.playlist ? [option(settings.playlist.name, settings.playlist.id)] : null, 3),
-            selectDialogElement(DB.default_device, settings.default_device ? settings.default_device.id : null, LABELS.default_device, HINTS.default_device, await getAllDevices()),
-            textDialogElement(DB.disable_repeats_duration, settings.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, PLACE.disable_repeats_duration, LIMITS.disable_repeats_duration, `number`),
-            selectDialogElement(DB.back_to_playlist, settings.back_to_playlist, LABELS.back_to_playlist, HINTS.back_to_playlist, yesOrNo()),
-            textDialogElement(DB.skip_votes, settings.skip_votes, LABELS.skip_votes, HINTS.skip_votes, PLACE.skip_votes, LIMITS.skip_votes, `number`),
-            textDialogElement(DB.skip_votes_ah, settings.skip_votes_ah, LABELS.skip_votes_ah, HINTS.skip_votes_ah, PLACE.skip_votes_ah, LIMITS.skip_votes, `number`)
+        let blocks = [
+            selectChannels(DB.slack_channel, LABELS.slack_channel, HINTS.slack_channel, settings.slack_channel),
+            selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist),
+            selectExternal(DB.default_device, LABELS.default_device, HINTS.default_device, settings.default_device ? option(settings.default_device.name, settings.default_device.id) : null, QUERY.default_device),
+            textInput(DB.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, settings.disable_repeats_duration, LIMITS.disable_repeats_duration),
+            selectStatic(DB.back_to_playlist, LABELS.back_to_playlist, HINTS.back_to_playlist, settings.back_to_playlist ? yesOrNoToOption(settings.back_to_playlist) : null, yesOrNo()),
+            textInput(DB.skip_votes, LABELS.skip_votes, HINTS.skip_votes_ah, settings.skip_votes, LIMITS.skip_votes),
+            textInput(DB.skip_votes_ah, LABELS.skip_votes_ah, HINTS.skip_votes_ah, settings.skip_votes_ah, LIMITS.skip_votes),
         ]
+        logger.info(blocks);
+
+
+        let modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks);
+        await sendModal(trigger_id, modal);
         
-        let dialog = slackDialog(SETTINGS_DIALOG, `Spotbot Settings`, `Save`, elements);
-        await sendDialog(trigger_id, dialog);
+        // let dialog = slackDialog(SETTINGS_DIALOG, `Spotbot Settings`, `Save`, elements);
+        // await sendDialog(trigger_id, dialog);
 
     } catch (error) {
         logger.error(error);
@@ -50,17 +56,20 @@ async function openSettings(trigger_id){
     //Slack API Call to open
 }
 
-async function saveSettings(submission, response_url){
+async function saveSettings(view, response_url){
     try {
-        let response_url = payload.response_url;
-        let errors = verifySettings(submission);
-        if (errors.length > 0){
-            return { errors: errors }
+        let submissions = extractSubmissions(view);
+        let errors = verifySettings(submissions);
+        if (!isEmpty(errors)){
+            return { 
+                response_action: "errors",
+                errors: errors 
+            }
         }
         let settings = await getSettings();
         for (let attribute in settings){
             let oldValue = settings[attribute];
-            let newValue = submission[attribute]
+            let newValue = submissions[attribute]
             newValue = await transformValue(attribute, newValue, oldValue);
 
             if (isEqual(oldValue, newValue)){
@@ -80,6 +89,29 @@ async function saveSettings(submission, response_url){
     }
 }
 
+function extractSubmissions(view){
+    let values = view.state.values;
+    let submissions = {};
+    for (let setting in values){
+        switch(setting){
+            case DB.slack_channel:
+                submissions[setting] = values[setting][setting].selected_channel
+                break;
+            case DB.playlist:
+            case DB.default_device:
+            case DB.back_to_playlist:
+                submissions[setting] = values[setting][setting].selected_option.value
+                break;
+            case DB.disable_repeats_duration:
+            case DB.skip_votes:
+            case DB.skip_votes_ah:
+                submissions[setting] = values[setting][setting].value
+                break;
+        }
+    }
+    return submissions;
+}
+
 function yesOrNo(){
     return [
         option(`Yes`, `true`),
@@ -87,4 +119,12 @@ function yesOrNo(){
     ]
 }
 
-module.exports = { getAllUserPlaylists, openSettings, saveSettings }
+function yesOrNoToOption(value){
+    if (value == `true`){
+        return option(`Yes`, `true`)
+    } else {
+        return option(`No`, `false`)
+    }
+}
+
+module.exports = { getAllDevices, getAllUserPlaylists, openSettings, saveSettings }

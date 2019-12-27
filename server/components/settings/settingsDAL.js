@@ -94,6 +94,11 @@ async function storeDevices(devices){
     }
 }
 
+async function getDefaultDevice(){
+    let setting = settingModel(SETTINGS.default_device, null);
+    return (await getSetting(setting)).Item.value;
+}
+
 async function getDevices(){
     try {
         let setting = settingModel(SETTINGS_HELPER.spotify_devices, null);
@@ -120,6 +125,7 @@ const deviceModel = (name, id) => {
 
 module.exports = {
     deviceModel,
+    getDefaultDevice,
     getDevices,
     getPlaylistSetting,
     getPlaylists,

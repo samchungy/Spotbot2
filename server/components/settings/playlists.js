@@ -3,7 +3,7 @@ const logger = require('../../util/logger');
 const { getPlaylistSetting, getPlaylists, playlistModel, storePlaylists } = require('./settingsDAL');
 const { createPlaylist, getAllPlaylists } = require('../spotify-api/playlists');
 const { getProfile } = require('./settingsDAL');
-const { option, optionGroup } = require('../slack/format/dialog');
+const { option, optionGroup } = require('../slack/format/modal');
 const { isEqual } = require('../../util/objects');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');

@@ -56,11 +56,11 @@
             "hints" : {
                 "slack_channel": "The channel Slackbot will restrict usage of commands to.",
                 "playlist": "The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.",
-                "default_device": "This helps Spotbot with commands. If you cannot see your device, turn on your Spotify device and re-open the settings panel.",
+                "default_device": "This helps Spotbot with playing. Turn on your Spotify device now.",
                 "disable_repeats_duration" : "The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.",
                 "back_to_playlist": "Enables Spotify to return to the playlist when a new song is added if the playlist has runs out of songs. (Does not work if repeat is enabled).",
                 "skip_votes": "The number of additional votes needed to skip a song. Integers only",
-                "skip_votes_ah": "(6pm - 6am) The number of additional votes needed to skip a song. Integers only"
+                "skip_votes_ah": "The number of additional votes needed to skip a song. Integers only"
             },
             "labels": {
                 "slack_channel": "Slack Channel Restriction",
@@ -69,7 +69,7 @@
                 "disable_repeats_duration" : "Disable Repeats Duration (Hours)",
                 "back_to_playlist": "Jump Back to Playlist",
                 "skip_votes": "Skip Votes",
-                "skip_votes_ah": "Skip Votes (After Hours)"
+                "skip_votes_ah": "Skip Votes - After Hours (6pm-6am)"
             },
             "placeholders": {
                 "disable_repeats_duration": "5",
@@ -82,11 +82,16 @@
             },
             "errors": {
                 "integer": "Please enter a valid integer"
+            },
+            "query_lengths": {
+                "default_device": 0,
+                "playlist": 3
             }
         },
         "slack": {
             "actions" : {
                 "settings_dialog": "settings_dialog",
+                "settings_modal": "settings_modal",
                 "playlist": "playlist"
             }
         }
