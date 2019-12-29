@@ -1,6 +1,6 @@
 const logger = require('../../util/logger');
-const { openSettings } = require('./settings');
-const { getAuthorizationURL } = require('../spotify-auth/spotifyAuth');
+const { openSettings, updateView } = require('./settings');
+const { validateAuthCode, getAuthorizationURL } = require('./spotifyAuth');
 
 module.exports = ( prefix, Router ) => {
     const router = new Router({
@@ -23,6 +23,17 @@ module.exports = ( prefix, Router ) => {
             ctx.body = auth_url;
         }
       }
+    })
+    .get('/auth/callback', async (ctx, next) => {
+      let { success, failReason } = await validateAuthCode(ctx.query.code, ctx.query.state);
+      if (success){
+        ctx.body = "Auth Success"
+        // ctx.redirect('') TODO ADD Slack URL
+      } else {
+        ctx.status = 401
+        ctx.body = failReason;
+      }
+      updateView(failReason);
     })
     return router;
 };

@@ -67,8 +67,8 @@ const selectStatic = (action_id, title, hint, initial, options) => {
         element: {
             action_id: action_id,
             type: "static_select",
-            initial_option: initial,
-            options: options
+            options: options,
+            ... initial ? {initial_option: initial} : {} //Cool little trick to remove field if it is not there
         }
     }
 }
@@ -79,7 +79,7 @@ const selectChannels = (action_id, title, hint, initial) => {
         element: {
             action_id: action_id,
             type: "channels_select",
-            initial_channel: initial
+            ... initial ? {initial_channel: initial} : {}
         }
     }
 }
@@ -90,25 +90,67 @@ const selectExternal = (action_id, title, hint, initial, min) => {
         element: {
             action_id: action_id,
             type: "external_select",
-            initial_option: initial,
-            min_query_length: min
+            min_query_length: min,
+            ... initial ? {initial_option: initial} : {}
         }
     }
 }
 
-const textInput = (action_id, title, hint, initial, max) => {
+const textInput = (action_id, title, hint, initial, max, place) => {
     return {
         ...input(title, hint, action_id),
         element: {
             action_id: action_id,
             type: "plain_text_input",
-            initial_value: initial,
-            max_length: max 
+            max_length: max,
+            "placeholder": {
+                "type": "plain_text",
+                "text": place
+            },
+            ... initial ? {initial_value: initial} : {}
         }
     }
 }
 
+const buttonSection = (action_id, text, button_text, style, url, value) => {
+    return {
+        block_id: action_id,
+        type: "section",
+        text: {
+            "type": "mrkdwn",
+            "text": text
+        },
+        accessory: {
+            "action_id": action_id,
+            "type": "button",
+            "text": {
+                "type": "plain_text",
+                "text": button_text,
+                "emoji": true
+            },
+            ... style ? {style: style}: {},
+            ... url ? {url: url} : {},
+            ... value ? {value: value} : {}
+        },
+    }
+}
+
+const context = (block_id, text) => {
+    return {
+        block_id: block_id,
+        type: "context",
+        elements: [
+            {
+                "type": "mrkdwn",
+                "text": text
+            }
+        ]
+    }
+}
+
 module.exports = {
+    buttonSection,
+    context,
     option,
     optionGroup,
     slackModal,

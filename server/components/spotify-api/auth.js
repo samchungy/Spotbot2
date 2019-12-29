@@ -16,7 +16,7 @@ async function getSpotifyProfile(){
 async function createAuthorizeURL(trigger_id){
     try {
         let spotifyApi = await spotifyWebApi();
-        return await requester("Create Authorize URL", () => spotifyApi.createAuthorizeURL(SCOPES, trigger_id));
+        return await requester("Create Authorize URL", () => spotifyApi.createAuthorizeURL(SCOPES, trigger_id, true));
     } catch (error) {
         throw error;
     }

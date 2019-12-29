@@ -2,7 +2,6 @@ const logger = require('../../util/logger');
 const config = require('config');
 const { createAuthorizeURL, requestTokens, getSpotifyProfile } = require('../spotify-api/auth');
 const { getState, storeState, storeTokens, storeProfile } = require('./spotifyAuthDAL');
-// const MyEmitter = require('../../util/eventEmitter');
 
 async function getAuthorizationURL(trigger_id){
     try {

@@ -5,6 +5,7 @@ const { nullOrValue } = require('../../util/objects');
 const { batchGetSettings, batchPutSettings, putRequest, settingModel, getSetting, putSetting } = require('../../db/settings');
 const SETTINGS = config.get('dynamodb.settings');
 const PROFILE = config.get('dynamodb.auth.spotify_id');
+const VIEW = config.get('dynamodb.auth.view_id');
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 
 async function getProfile(){
@@ -96,7 +97,8 @@ async function storeDevices(devices){
 
 async function getDefaultDevice(){
     let setting = settingModel(SETTINGS.default_device, null);
-    return (await getSetting(setting)).Item.value;
+    let item = await getSetting(setting);
+    return item.Item ? item.Item.value : null;
 }
 
 async function getDevices(){
@@ -105,6 +107,34 @@ async function getDevices(){
         return (await getSetting(setting)).Item.value;
     } catch (error) {
         logger.error("Getting Spotify Devices from Dynamodb failed");
+        throw error;
+    }
+}
+
+async function storeView(view){
+    try {
+        let setting = settingModel(VIEW, view);
+        return await putSetting(setting);
+    } catch (error) {
+        logger.error("Storing view id to Dynamodb failed");
+        throw error;
+    }
+}
+
+async function getView(){
+    try {
+        let setting = settingModel(VIEW, null);
+        return (await getSetting(setting)).Item;
+    } catch (error) {
+        logger.error("Getting view id from Dynamodb failed");
+        throw error;
+    }
+}
+
+const viewModel = (view_id, trigger_id) => {
+    return {
+        view_id: view_id,
+        trigger_id: trigger_id
     }
 }
 
@@ -131,8 +161,11 @@ module.exports = {
     getPlaylists,
     getProfile,
     getSettings,
+    getView,
     playlistModel,
     storeDevices,
     storePlaylists,
-    updateSettings
+    storeView,
+    updateSettings,
+    viewModel
 }

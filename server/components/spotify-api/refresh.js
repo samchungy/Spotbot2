@@ -8,6 +8,8 @@ async function refreshAccessToken(){
         spotifyApi.setAccessToken(token.body.access_token);
         await storeTokens(token.body.access_token, spotifyApi.getRefreshToken());
     } catch (error) {
+        await storeTokens(null, null);
+        //TODO Slack Post -> Run /spotbot settings to reauthenticate
         throw error;
     }
 }

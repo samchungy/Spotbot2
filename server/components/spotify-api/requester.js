@@ -1,6 +1,10 @@
 const { refreshAccessToken } = require('./refresh');
+const { AuthError } = require('../../errors/auth');
+const config = require('config');
 const logger = require('../../util/logger');
 const {sleep} = require('../../util/timeout');
+
+const AUTHERROR = config.get('spotify_api.auth.errors.auth_error');
 
 async function apiCall(name, api){
     let attempts = 3;
@@ -23,7 +27,7 @@ async function apiCall(name, api){
                     try {
                         await refreshAccessToken();
                     } catch (error) {
-                        throw error;
+                        throw new AuthError(AUTHERROR);
                     }
                 } else {
                     throw error;

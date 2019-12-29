@@ -10,6 +10,19 @@ async function sendModal(trigger_id, view){
     }
 }
 
+async function updateModal(view_id, view){
+    try {
+        await slackClient.views.update({
+            view_id: view_id,
+            view: view
+        })
+    } catch (error) {
+        logger.error(error.data.response_metadata);
+        throw error;
+    }
+}
+
 module.exports = {
-    sendModal
+    sendModal,
+    updateModal
 }

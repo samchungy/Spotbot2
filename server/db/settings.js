@@ -17,13 +17,10 @@ const settingInfo = item => {
 }
 
 const settingModel = (name, value) => {
-    let setting = {
-        name: name
+    return {
+        name: name,
+        ... value ? {value: value} : {}
     }
-    if (value){
-        setting.value = value
-    }
-    return setting;
 };
 
 const putRequest = (name, value) => {

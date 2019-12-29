@@ -5,39 +5,38 @@ const { option, slackModal, selectChannels, selectExternal, selectStatic, textIn
 const { getAllUserPlaylists, storeAllUserPlaylists } = require('./playlists');
 const { getAllDevices } = require('./devices');
 const { transformValue } = require('./transform');
-const { sendModal } = require('../slack/api');
-const { getSettings, updateSettings } = require('./settingsDAL');
+const { sendModal, updateModal } = require('../slack/api');
+const { getSettings, getView, updateSettings, storeView, viewModel } = require('./settingsDAL');
 const { isEqual, isEmpty } = require('../../util/objects');
 const { verifySettings } = require('./verify');
+const { authBlock } = require('./spotifyAuth');
 
 const HINTS = config.get('settings.hints');
 const LABELS = config.get('settings.labels');
 const QUERY = config.get('settings.query_lengths');
-const PLACE = config.get('settings.placeholders');
 const LIMITS = config.get('settings.limits');
-const SETTINGS_DIALOG = config.get('slack.actions.settings_dialog');
+const PLACE = config.get('settings.placeholders');
 const SETTINGS_MODAL = config.get('slack.actions.settings_modal');
 const DB = config.get('dynamodb.settings');
 
 async function openSettings(trigger_id){
     try {
-        //Load OG Config
-        let settings = await getSettings();
+        // //Do a load of User's Spotify Playlists and Devices
+        // await storeAllUserPlaylists(settings.playlist);
+        let blocks = []
+        let { auth, auth_error } = await authBlock(trigger_id);
+        console.log(auth_error);
 
-        //Do a load of User's Spotify Playlists and Devices
-        await storeAllUserPlaylists(settings.playlist);
-
-        let blocks = [
-            selectChannels(DB.slack_channel, LABELS.slack_channel, HINTS.slack_channel, settings.slack_channel),
-            selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist),
-            selectExternal(DB.default_device, LABELS.default_device, HINTS.default_device, settings.default_device ? option(settings.default_device.name, settings.default_device.id) : null, QUERY.default_device),
-            textInput(DB.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, settings.disable_repeats_duration, LIMITS.disable_repeats_duration),
-            selectStatic(DB.back_to_playlist, LABELS.back_to_playlist, HINTS.back_to_playlist, settings.back_to_playlist ? yesOrNoToOption(settings.back_to_playlist) : null, yesOrNo()),
-            textInput(DB.skip_votes, LABELS.skip_votes, HINTS.skip_votes_ah, settings.skip_votes, LIMITS.skip_votes),
-            textInput(DB.skip_votes_ah, LABELS.skip_votes_ah, HINTS.skip_votes_ah, settings.skip_votes_ah, LIMITS.skip_votes),
-        ]
-        logger.info(blocks);
-
+        if(auth_error){
+            blocks = [
+                ...auth
+            ]
+        } else {
+            blocks = [
+                ...auth,
+                ...await getBlocks()
+            ]
+        }
 
         let modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks);
         await sendModal(trigger_id, modal);
@@ -54,6 +53,24 @@ async function openSettings(trigger_id){
 
 
     //Slack API Call to open
+}
+
+async function getBlocks(){
+    try {
+        //Load OG Config
+        let settings = await getSettings();
+        return [
+            selectChannels(DB.slack_channel, LABELS.slack_channel, HINTS.slack_channel, settings.slack_channel),
+            selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist),
+            selectExternal(DB.default_device, LABELS.default_device, HINTS.default_device, settings.default_device ? option(settings.default_device.name, settings.default_device.id) : null, QUERY.default_device),
+            textInput(DB.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, settings.disable_repeats_duration, LIMITS.disable_repeats_duration, PLACE.disable_repeats_duration),
+            selectStatic(DB.back_to_playlist, LABELS.back_to_playlist, HINTS.back_to_playlist, settings.back_to_playlist ? yesOrNoToOption(settings.back_to_playlist) : null, yesOrNo()),
+            textInput(DB.skip_votes, LABELS.skip_votes, HINTS.skip_votes_ah, settings.skip_votes, LIMITS.skip_votes, PLACE.skip_votes),
+            textInput(DB.skip_votes_ah, LABELS.skip_votes_ah, HINTS.skip_votes_ah, settings.skip_votes_ah, LIMITS.skip_votes, PLACE.skip_votes_ah)
+        ]
+    } catch (error) {
+        throw error;
+    }
 }
 
 async function saveSettings(view, response_url){
@@ -87,6 +104,33 @@ async function saveSettings(view, response_url){
     } catch (error) {
         logger.error(error);   
     }
+}
+
+async function updateView(failReason){
+    try {
+        let view = await getView();
+        let { auth, auth_error } = await authBlock(view.trigger_id, failReason);
+        let blocks = [];
+        if(auth_error){
+            blocks = [
+                ...auth
+            ]
+        } else {
+            blocks = [
+                ...auth,
+                ...await getBlocks()
+            ]
+        }
+        let modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks);
+        await updateModal(view.view_id, modal);
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function saveView(view, trigger_id){
+    let store = viewModel(view.id, trigger_id)
+    storeView(store);
 }
 
 function extractSubmissions(view){
@@ -127,4 +171,4 @@ function yesOrNoToOption(value){
     }
 }
 
-module.exports = { getAllDevices, getAllUserPlaylists, openSettings, saveSettings }
+module.exports = { getAllDevices, getAllUserPlaylists, openSettings, saveSettings, saveView, updateView }
