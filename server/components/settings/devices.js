@@ -1,77 +1,89 @@
-const logger = require('../../util/logger');
 const config = require('config');
-const { getSpotifyDevices } = require('../spotify-api/devices');
-const { deviceModel, storeDevices, getDevices, getDefaultDevice } = require('./settingsDAL');
-const { option } = require('../slack/format/modal');
-const { isEqual } = require('../../util/objects');
+const logger = require('../../util/logger');
+const {fetchDevices} = require('../spotify-api/devices');
+const {loadDevices, loadDefaultDevice, modelDevice, storeDevices} = require('./settingsDAL');
+const {option} = require('../slack/format/modal');
+const {isEqual} = require('../../util/objects');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 
-async function storeAllDevices(){
-    try {
-        let default_device = await getDefaultDevice();
-        let devices = await getSpotifyDevices();
-        let stores = [];
-        if (default_device){
-            stores.push(default_device);
-        }
-        for (let device of devices.body.devices){
-            let model = deviceModel(`${device.name} - ${device.type}`, device.id);
-            if (!isEqual(model, default_device)){
-                stores.push(model);
-            }
-        }
-        await storeDevices(stores);
-        return stores;
-    } catch (error) {
-        logger.error("Storing all Spotify devices failed");
-        throw error;
+/**
+ * Fetch all spotifyDevices from Spotify
+ */
+async function fetchAllDevices() {
+  try {
+    const devices = [];
+    const defaultDevice = await loadDefaultDevice();
+    const spotifyDevices = await fetchDevices();
+    if (defaultDevice) {
+      devices.push(defaultDevice);
     }
+    for (const device of spotifyDevices.body.devices) {
+      const model = modelDevice(`${device.name} - ${device.type}`, device.id);
+      // Make sure we do not insert the same device twice.
+      if (!isEqual(model, defaultDevice)) {
+        devices.push(model);
+      }
+    }
+    return devices;
+  } catch (error) {
+    logger.error('Fetching all Spotify spotifyDevices failed');
+    throw error;
+  }
 }
 
-async function getAllDevices(){
-    try {
-        let stored = await storeAllDevices();
-        let options = [];
-        //Add a none option
-        options.push(option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices));
+/**
+ * Return device devices for the settings panel.
+ */
+async function getAllDevices() {
+  try {
+    const spotifyDevices = await fetchAllDevices();
+    await storeDevices(spotifyDevices);
+    const devices = [];
+    // Add a none option
+    devices.push(option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices));
 
-        for (let device of stored){
-            options.push(option(device.name, device.id));
-        }
-    
-        return {
-            options: options
-        }
-    } catch (error) {
-        logger.error("Getting all Spotify devices failed");
-        throw error;
+    for (const device of spotifyDevices) {
+      devices.push(option(device.name, device.id));
     }
+
+    return {
+      options: devices,
+    };
+  } catch (error) {
+    logger.error('Getting all Spotify spotifyDevices failed');
+    throw error;
+  }
 }
 
-async function deviceValue(value, oldValue){
-    try {
-        switch(value){
-            case oldValue.id:
-                return oldValue;
-            case SETTINGS_HELPER.no_devices:
-                return deviceModel(SETTINGS_HELPER.no_devices_label,SETTINGS_HELPER.no_devices);
-            default:
-                let devices = await getDevices();
-                for (let device of devices){
-                    if (device.id == value){
-                        return device;
-                    }
-                }
+/**
+ * Get the device value from devices fetch
+ * @param {string} newValue
+ * @param {string} oldValue
+ */
+async function getDeviceValue(newValue, oldValue) {
+  try {
+    switch (newValue) {
+      case (oldValue ? oldValue.id : null):
+        return oldValue;
+      case SETTINGS_HELPER.no_devices:
+        return modelDevice(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices);
+      default:
+        const spotifyDevices = await loadDevices();
+        for (const device of spotifyDevices) {
+          if (device.id == newValue) {
+            return device;
+          }
         }
-    } catch (error) {
-        logger.error("Getting Device Value failed");
-        throw error;
     }
+  } catch (error) {
+    logger.error('Getting Device Value failed');
+    throw error;
+  }
 }
 
 module.exports = {
-    deviceValue,
-    getAllDevices,
-    storeAllDevices
-}
+  getDeviceValue,
+  getAllDevices,
+  fetchAllDevices,
+};

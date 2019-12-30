@@ -1,45 +1,36 @@
 const config = require('config');
-const logger = require('../../util/logger');
-const { spotifyWebApi } = require('./initialise');
+const {spotifyWebApi} = require('./initialise');
 const requester = require('./requester');
 const SCOPES = config.get('spotify_api.scopes');
 
-async function getSpotifyProfile(){
-    try {
-        let spotifyApi = await spotifyWebApi();
-        return (await requester("Get Spotify Profile", () => spotifyApi.getMe())).body;
-    } catch (error) {
-        throw error;
-    }
+/**
+ * Fetches the current user's profile from Spotify
+ */
+async function fetchProfile() {
+  const spotifyApi = await spotifyWebApi();
+  return (await requester('Get Spotify Profile', () => spotifyApi.getMe())).body;
 }
 
-async function createAuthorizeURL(trigger_id){
-    try {
-        let spotifyApi = await spotifyWebApi();
-        return await requester("Create Authorize URL", () => spotifyApi.createAuthorizeURL(SCOPES, trigger_id, true));
-    } catch (error) {
-        throw error;
-    }
+/**
+ * Fetches an authorize URL from Spotify
+ * @param {string} triggerId
+ */
+async function fetchAuthorizeURL(triggerId) {
+  const spotifyApi = await spotifyWebApi();
+  return await requester('Create Authorize URL', () => spotifyApi.createAuthorizeURL(SCOPES, triggerId, true));
 }
 
-async function requestTokens(code){
-    try {
-        let spotifyApi = await spotifyWebApi();
-        return (await requester("Authorization Code Grant", () => spotifyApi.authorizationCodeGrant(code))).body;
-    } catch (error) {
-        logger.error(error);
-        throw error;
-    }
-}
-
-async function testTokens(){
-    let spotifyApi = await spotifyWebApi();
-    logger.info(spotifyApi.getAccessToken(), spotifyApi.getRefreshToken())
+/**
+ * Fetches tokens from Spotify
+ * @param {string} code
+ */
+async function fetchTokens(code) {
+  const spotifyApi = await spotifyWebApi();
+  return (await requester('Authorization Code Grant', () => spotifyApi.authorizationCodeGrant(code))).body;
 }
 
 module.exports = {
-    createAuthorizeURL,
-    getSpotifyProfile,
-    requestTokens,
-    testTokens
-}
+  fetchAuthorizeURL,
+  fetchProfile,
+  fetchTokens,
+};
