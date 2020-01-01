@@ -1,9 +1,10 @@
 const config = require('config');
 const logger = require('../../util/logger');
 const {fetchDevices} = require('../spotify-api/devices');
-const {loadDevices, loadDefaultDevice, modelDevice, storeDevices} = require('./settingsDAL');
+const {loadDevices, loadDefaultDevice, storeDevices} = require('./settingsDAL');
 const {option} = require('../slack/format/modal');
 const {isEqual} = require('../../util/objects');
+const {modelDevice} = require('./settingsModel');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 

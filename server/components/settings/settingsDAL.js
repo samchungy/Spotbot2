@@ -7,37 +7,6 @@ const PROFILE = config.get('dynamodb.auth.spotify_id');
 const VIEW = config.get('dynamodb.auth.view_id');
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 
-// Data Store Models
-
-const modelView = (viewId, triggerId) => {
-  return {
-    viewId: viewId,
-    triggerId: triggerId,
-  };
-};
-
-/**
- * Playlist Setting Model
- * @param {string} name
- * @param {string} id
- * @param {string} url
- * @return {object} Playlist Setting Model
- */
-const modelPlaylist = (name, id, url) => {
-  return {
-    name: name,
-    id: id,
-    url: url,
-  };
-};
-
-const modelDevice = (name, id) => {
-  return {
-    name: name,
-    id: id,
-  };
-};
-
 // Load Functions
 
 /**
@@ -127,7 +96,6 @@ async function loadSettings() {
         settingsList.push(settingModel(SETTINGS[key], null));
       }
     }
-
     const batchSettings = await batchGetSettings(settingsList);
     // Read values into settings, should be only 1 table
     for (const table in batchSettings.Responses) {
@@ -258,9 +226,6 @@ module.exports = {
   loadProfile,
   loadSettings,
   loadView,
-  modelDevice,
-  modelPlaylist,
-  modelView,
   storeDevices,
   storeDeviceSetting,
   storePlaylists,

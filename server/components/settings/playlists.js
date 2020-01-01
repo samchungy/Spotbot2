@@ -1,6 +1,7 @@
 const config = require('config');
 const logger = require('../../util/logger');
-const {loadPlaylistSetting, loadPlaylists, modelPlaylist, storePlaylists} = require('./settingsDAL');
+const {loadPlaylistSetting, loadPlaylists, storePlaylists} = require('./settingsDAL');
+const {modelPlaylist} = require('./settingsModel');
 const {createPlaylist, fetchPlaylists} = require('../spotify-api/playlists');
 const {loadProfile} = require('./settingsDAL');
 const {option, optionGroup} = require('../slack/format/modal');

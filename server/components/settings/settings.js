@@ -6,7 +6,8 @@ const {getAllPlaylists} = require('./playlists');
 const {getAllDevices} = require('./devices');
 const {transformValue} = require('./transform');
 const {sendModal, updateModal} = require('../slack/api');
-const {loadSettings, loadView, modelView, storeDeviceSetting, storePlaylistSetting, storeSettings, storeView} = require('./settingsDAL');
+const {loadSettings, loadView, storeDeviceSetting, storePlaylistSetting, storeSettings, storeView} = require('./settingsDAL');
+const {modelView} = require('./settingsModel');
 const {isEqual, isEmpty} = require('../../util/objects');
 const {extractBlocks, extractSubmissions, verifySettings} = require('./verify');
 const {getAuthBlock, resetAuthentication} = require('./spotifyAuth/spotifyAuth');
@@ -44,6 +45,7 @@ async function openSettings(triggerId) {
     const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks);
     await sendModal(triggerId, modal);
   } catch (error) {
+    logger.error('Open Settings Failed');
     logger.error(error);
   }
 }
@@ -52,17 +54,21 @@ async function openSettings(triggerId) {
  * Loads old config and returns setting blocks
  */
 async function getSettingsBlocks() {
-  // Load OG Config
-  const settings = await loadSettings();
-  return [
-    selectChannels(DB.slack_channel, LABELS.slack_channel, HINTS.slack_channel, settings.slack_channel),
-    selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist),
-    selectExternal(DB.default_device, LABELS.default_device, HINTS.default_device, settings.default_device ? option(settings.default_device.name, settings.default_device.id) : null, QUERY.default_device),
-    textInput(DB.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, settings.disable_repeats_duration, LIMITS.disable_repeats_duration, PLACE.disable_repeats_duration),
-    selectStatic(DB.back_to_playlist, LABELS.back_to_playlist, HINTS.back_to_playlist, settings.back_to_playlist ? setYesOrNo(settings.back_to_playlist) : null, yesOrNo()),
-    textInput(DB.skip_votes, LABELS.skip_votes, HINTS.skip_votes_ah, settings.skip_votes, LIMITS.skip_votes, PLACE.skip_votes),
-    textInput(DB.skip_votes_ah, LABELS.skip_votes_ah, HINTS.skip_votes_ah, settings.skip_votes_ah, LIMITS.skip_votes, PLACE.skip_votes_ah),
-  ];
+  try {
+    const settings = await loadSettings();
+    return [
+      selectChannels(DB.slack_channel, LABELS.slack_channel, HINTS.slack_channel, settings.slack_channel),
+      selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist),
+      selectExternal(DB.default_device, LABELS.default_device, HINTS.default_device, settings.default_device ? option(settings.default_device.name, settings.default_device.id) : null, QUERY.default_device),
+      textInput(DB.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, settings.disable_repeats_duration, LIMITS.disable_repeats_duration, PLACE.disable_repeats_duration),
+      selectStatic(DB.back_to_playlist, LABELS.back_to_playlist, HINTS.back_to_playlist, settings.back_to_playlist ? setYesOrNo(settings.back_to_playlist) : null, yesOrNo()),
+      textInput(DB.skip_votes, LABELS.skip_votes, HINTS.skip_votes_ah, settings.skip_votes, LIMITS.skip_votes, PLACE.skip_votes),
+      textInput(DB.skip_votes_ah, LABELS.skip_votes_ah, HINTS.skip_votes_ah, settings.skip_votes_ah, LIMITS.skip_votes, PLACE.skip_votes_ah),
+    ];
+  } catch (error) {
+    logger.error('Getting Settings Blocks Failed');
+    throw error;
+  }
 }
 
 /**
@@ -113,8 +119,8 @@ async function saveSettings(view, responseUrl) {
  */
 async function updateView(failReason, viewId, triggerId) {
   try {
-    // If View ID is supplied, this is a reauthentication request
-    // else it is a authentication request
+    // If View ID is supplied, this is an authentication request
+    // else it is a reauthentication request
     if (!viewId) {
       const view = await loadView();
       viewId = view.viewId;
