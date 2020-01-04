@@ -21,12 +21,21 @@ const SETTINGS_MODAL = config.get('slack.actions.settings_modal');
 const DB = config.get('dynamodb.settings');
 
 /**
- * Reset our authentication
+ * Resets the authentication
+ * @param {string} viewId
+ * @param {string} triggerId
  */
 async function changeAuthentication() {
-  await resetAuthentication();
-  storeDeviceSetting(null);
-  storePlaylistSetting(null);
+  try {
+    await resetAuthentication();
+    await Promise.all([
+      storeDeviceSetting(null),
+      storePlaylistSetting(null),
+    ]);
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
 }
 /**
  * Open the Spotbot Settings Panel via Slack Modal.
