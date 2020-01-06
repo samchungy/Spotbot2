@@ -1,5 +1,5 @@
-const {openSettings, updateView} = require('./settings');
-const {validateAuthCode} = require('./spotifyAuth/spotifyAuth');
+const {openSettings, updateView} = require('./settings-controller');
+const {validateAuthCode} = require('./spotifyauth/spotifyauth-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({

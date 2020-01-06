@@ -1,5 +1,5 @@
-const {spotifyWebApi} = require('./initialise');
-const {storeTokens} = require('../settings/spotifyAuth/spotifyAuthDAL');
+const {spotifyWebApi} = require('./spotify-api-initialise');
+const {storeTokens} = require('../settings/spotifyauth/spotifyauth-dal');
 
 /**
  * Refreshes the current Access Token

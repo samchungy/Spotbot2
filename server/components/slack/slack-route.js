@@ -4,7 +4,7 @@ const PLAYLIST = config.get('dynamodb.settings.playlist');
 const DEFAULT_DEVICE = config.get('dynamodb.settings.default_device');
 const AUTH_URL = config.get('dynamodb.settings_helper.auth_url');
 const REAUTH = config.get('dynamodb.settings_helper.reauth');
-const {changeAuthentication, getAllDevices, getAllPlaylists, saveSettings, saveView, updateView} = require('../settings/settings');
+const {changeAuthentication, getAllDevices, getAllPlaylists, saveSettings, saveView, updateView} = require('../settings/settings-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({

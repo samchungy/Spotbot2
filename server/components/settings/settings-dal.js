@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('../../util/logger');
+const logger = require('../../util/util-logger');
 const {batchGetSettings, batchPutSettings, getSetting, putSetting, putRequest, settingModel} = require('../../db/settings');
 
 const SETTINGS = config.get('dynamodb.settings');

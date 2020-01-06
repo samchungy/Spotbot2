@@ -1,11 +1,11 @@
 const config = require('config');
-const logger = require('../../util/logger');
-const {loadPlaylistSetting, loadPlaylists, storePlaylists} = require('./settingsDAL');
-const {modelPlaylist} = require('./settingsModel');
-const {createPlaylist, fetchPlaylists} = require('../spotify-api/playlists');
-const {loadProfile} = require('./settingsDAL');
-const {option, optionGroup} = require('../slack/format/modal');
-const {isEqual} = require('../../util/objects');
+const logger = require('../../util/util-logger');
+const {loadPlaylistSetting, loadPlaylists, storePlaylists} = require('./settings-dal');
+const {modelPlaylist} = require('./settings-model');
+const {createPlaylist, fetchPlaylists} = require('../spotify-api/spotify-api-playlists');
+const {loadProfile} = require('./settings-dal');
+const {option, optionGroup} = require('../slack/format/slack-format-modal');
+const {isEqual} = require('../../util/util-objects');
 
 const LIMIT = config.get('spotify_api.playlists.limit');
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');

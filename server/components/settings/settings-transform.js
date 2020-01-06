@@ -1,6 +1,6 @@
 const config = require('config');
-const {getPlaylistValue} = require('./playlists');
-const {getDeviceValue} = require('./devices');
+const {getPlaylistValue} = require('./settings-playlists');
+const {getDeviceValue} = require('./settings-device');
 const SETTINGS = config.get('dynamodb.settings');
 
 /**

@@ -1,7 +1,7 @@
-const {refreshAccessToken} = require('./refresh');
-const {AuthError} = require('../../errors/auth');
-const logger = require('../../util/logger');
-const {sleep} = require('../../util/timeout');
+const {refreshAccessToken} = require('./spotify-api-refresh');
+const {AuthError} = require('../../errors/errors-auth');
+const logger = require('../../util/util-logger');
+const {sleep} = require('../../util/util-timeout');
 
 /**
  * Our API Caller for Spotify

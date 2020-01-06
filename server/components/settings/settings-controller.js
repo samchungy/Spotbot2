@@ -1,16 +1,16 @@
 const config = require('config');
-const logger = require('../../util/logger');
+const logger = require('../../util/util-logger');
 // const { option, selectDialogElement, selectSlackDialogElement, selectDynamicSlackDialogElement, slackDialog, textDialogElement } = require('../slack/format/dialog');
-const {option, slackModal, selectChannels, selectExternal, selectStatic, textInput} = require('../slack/format/modal');
-const {getAllPlaylists} = require('./playlists');
-const {getAllDevices} = require('./devices');
-const {transformValue} = require('./transform');
-const {sendModal, updateModal} = require('../slack/api');
-const {loadSettings, loadView, storeDeviceSetting, storePlaylistSetting, storeSettings, storeView} = require('./settingsDAL');
-const {modelView} = require('./settingsModel');
-const {isEqual, isEmpty} = require('../../util/objects');
-const {extractBlocks, extractSubmissions, verifySettings} = require('./verify');
-const {getAuthBlock, resetAuthentication} = require('./spotifyAuth/spotifyAuth');
+const {option, slackModal, selectChannels, selectExternal, selectStatic, textInput} = require('../slack/format/slack-format-modal');
+const {getAllPlaylists} = require('./settings-playlists');
+const {getAllDevices} = require('./settings-device');
+const {transformValue} = require('./settings-transform');
+const {sendModal, updateModal} = require('../slack/slack-api');
+const {loadSettings, loadView, storeDeviceSetting, storePlaylistSetting, storeSettings, storeView} = require('./settings-dal');
+const {modelView} = require('./settings-model');
+const {isEqual, isEmpty} = require('../../util/util-objects');
+const {extractBlocks, extractSubmissions, verifySettings} = require('./settings-verify');
+const {getAuthBlock, resetAuthentication} = require('./spotifyauth/spotifyauth-controller');
 
 const HINTS = config.get('settings.hints');
 const LABELS = config.get('settings.labels');

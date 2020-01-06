@@ -1,6 +1,6 @@
 const config = require('config');
-const {spotifyWebApi} = require('./initialise');
-const requester = require('./requester');
+const {spotifyWebApi} = require('./spotify-api-initialise');
+const requester = require('./spotify-api-requester');
 const COLLABORATIVE = config.get('spotify_api.playlists.collaborative');
 const PUBLIC = config.get('spotify_api.playlists.public');
 

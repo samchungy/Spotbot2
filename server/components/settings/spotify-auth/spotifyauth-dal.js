@@ -1,6 +1,6 @@
 const config = require('config');
-const logger = require('../../../util/logger');
-const {nullOrValue} = require('../../../util/objects');
+const logger = require('../../../util/util-logger');
+const {nullOrValue} = require('../../../util/util-objects');
 const {getSetting, putSetting, settingModel} = require('../../../db/settings');
 
 const AUTH = config.get('dynamodb.auth');

@@ -1,6 +1,6 @@
 const config = require('config');
 const SpotifyWebApi = require('spotify-web-api-node');
-const {loadTokens} = require('../settings/spotifyAuth/spotifyAuthDAL');
+const {loadTokens} = require('../settings/spotifyauth/spotifyauth-dal');
 
 const SPOTIFY_CLIENT_ID = config.get('spotify_api.client_id');
 const SPOTIFY_CLIENT_SECRET = config.get('spotify_api.client_secret');

@@ -1,7 +1,7 @@
 
-const slackRouter = require('./components/slack/route');
-const settingsRouter = require('./components/settings/route');
-const controlRouter = require('./components/control/route');
+const slackRouter = require('./components/slack/slack-route');
+const settingsRouter = require('./components/settings/settings-route');
+const controlRouter = require('./components/control/control-route');
 const tracksRouter = require('./components/tracks/route');
 
 module.exports = ({Router}) => {

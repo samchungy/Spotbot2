@@ -1,9 +1,9 @@
 const config = require('config');
-const logger = require('../../../util/logger');
-const {AuthError, PremiumError} = require('../../../errors/auth');
-const {fetchAuthorizeURL, fetchTokens, fetchProfile} = require('../../spotify-api/auth');
-const {loadState, storeState, storeTokens, storeProfile} = require('./spotifyAuthDAL');
-const {buttonSection, context} = require('../../slack/format/modal');
+const logger = require('../../../util/util-logger');
+const {AuthError, PremiumError} = require('../../../errors/errors-auth');
+const {fetchAuthorizeURL, fetchTokens, fetchProfile} = require('../../spotify-api/spotify-api-auth');
+const {loadState, storeState, storeTokens, storeProfile} = require('./spotifyauth-dal');
+const {buttonSection, context} = require('../../slack/format/slack-format-modal');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 const HINTS = config.get('settings.hints');

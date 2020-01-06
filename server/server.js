@@ -4,7 +4,7 @@ const Koa = require('koa');
 const Router = require('koa-router');
 const bodyParser = require('koa-bodyparser');
 const logger = require('koa-pino-logger');
-const errorHandler = require('./errors/handler');
+const errorHandler = require('./errors/errors-handler');
 const router = require('./index')({Router});
 const app = new Koa();
 
