@@ -3,7 +3,7 @@
             "client_id": "e44db70cd63248fbb7325c875eb4e57b",
             "client_secret": "4e0dd128e2cb41d29780c540be51040c",
             "maximum_request_attempts": 1,
-            "redirect_url": "http://localhost:3000/auth/callback",
+            "redirect_url": "http://localhost:3000/settings/auth/callback",
             "scopes": [
                 "user-read-private",
                 "user-read-email",
@@ -30,7 +30,8 @@
                 "access": "access_token",
                 "refresh": "refresh_token",
                 "expires": "expires",
-                "spotify_id": "spotify_id"
+                "spotify_id": "spotify_id",
+                "view_id": "view_id"
             },
             "settings": {
                 "slack_channel": "slack_channel",
@@ -46,7 +47,12 @@
                 "spotify_devices": "spotify_devices",
                 "no_devices": "no_devices",
                 "no_devices_label": "None",
-                "create_new_playlist": "create_new_playlist."
+                "create_new_playlist": "create_new_playlist.",
+                "reauth": "reauth",
+                "auth_url": "auth_url",
+                "auth_verify": "auth_verify",
+                "auth_confirmation": "auth_confirmation",
+                "auth_error": "auth_error"
             }
         },
         "events": {
@@ -60,9 +66,15 @@
                 "disable_repeats_duration" : "The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.",
                 "back_to_playlist": "Enables Spotify to return to the playlist when a new song is added if the playlist has runs out of songs. (Does not work if repeat is enabled).",
                 "skip_votes": "The number of additional votes needed to skip a song. Integers only",
-                "skip_votes_ah": "The number of additional votes needed to skip a song. Integers only"
+                "skip_votes_ah": "The number of additional votes needed to skip a song. Integers only",
+                "auth_url_button": ":link: Authenticate with Spotify",
+                "reauth_url_button": ":gear: Re-authenticate with Spotify",
+                "auth_verify": "Click to verify Spotify authentication.",
+                "auth_verify_button": "Verify"
             },
             "labels": {
+                "auth_url": "Click to authenticate with Spotify.",
+                "reauth": "Click to re-authenticate with Spotify.",
                 "slack_channel": "Slack Channel Restriction",
                 "playlist": "Spotbot Playlist",
                 "default_device": "Default Spotify Device",
@@ -72,16 +84,19 @@
                 "skip_votes_ah": "Skip Votes - After Hours (6pm-6am)"
             },
             "placeholders": {
-                "disable_repeats_duration": "5",
-                "skip_votes": "2",
-                "skip_votes_ah": "1"
+                "disable_repeats_duration": "Enter a number eg. 4",
+                "skip_votes": "Enter a number eg. 2",
+                "skip_votes_ah": "Enter a number eg. 0"
             },
             "limits": {
                 "disable_repeats_duration": 5,
                 "skip_votes": 2
             },
             "errors": {
-                "integer": "Please enter a valid integer"
+                "integer": "Please enter a valid integer",
+                "premium": ":x: The Spotify account used is not a Premium account",
+                "fail": ":x: Authentication failed with the Spotify. Please try again.",
+                "not_authenticated": "Please authenticate an account with Spotify"
             },
             "query_lengths": {
                 "default_device": 0,
@@ -92,7 +107,13 @@
             "actions" : {
                 "settings_dialog": "settings_dialog",
                 "settings_modal": "settings_modal",
-                "playlist": "playlist"
+                "playlist": "playlist",
+                "block_actions": "block_actions",
+                "view_submission": "view_submission"
+            },
+            "buttons": {
+                "primary": "primary",
+                "danger": "danger"
             }
         }
     }

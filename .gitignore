@@ -6,3 +6,6 @@ jspm_packages
 .serverless
 .dynamodb
 report*
+
+# dotenv
+*.env

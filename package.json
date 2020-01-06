@@ -4,7 +4,7 @@
   "description": "Spotify Bot for Slack",
   "main": "server/server.js",
   "scripts": {
-    "test": "jest"
+    "test": "export LOG_LEVEL=error && jest"
   },
   "repository": {
     "type": "git",
@@ -33,6 +33,8 @@
   },
   "devDependencies": {
     "aws-sdk": "^2.591.0",
+    "eslint": "^6.8.0",
+    "eslint-config-google": "^0.14.0",
     "jest": "^24.9.0",
     "serverless-dynamodb-local": "^0.2.38",
     "serverless-offline": "^5.12.1",

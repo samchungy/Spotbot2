@@ -1,15 +1,15 @@
 // require supertest
 const server = require('../server/server').mockapp;
 const request = require('supertest');
-const {loadState, storeProfile, storeState, storeTokens} = require('../server/components/settings/spotifyAuth/spotifyAuthDAL');
-const {fetchAuthorizeURL, fetchProfile, fetchTokens} = require('../server/components/spotify-api/auth');
-const {loadSettings, loadView, storeView, storeDeviceSetting, storePlaylistSetting} = require('../server/components/settings/settingsDAL');
-const {sendModal, updateModal} = require('../server/components/slack/api');
-const {AuthError} = require('../server/errors/auth');
-jest.mock('../server/components/settings/spotifyAuth/spotifyAuthDAL');
-jest.mock('../server/components/spotify-api/auth');
-jest.mock('../server/components/slack/api');
-jest.mock('../server/components/settings/settingsDAL');
+const {loadState, storeProfile, storeState, storeTokens} = require('../server/components/settings/spotifyauth/spotifyauth-dal');
+const {fetchAuthorizeURL, fetchProfile, fetchTokens} = require('../server/components/spotify-api/spotify-api-auth');
+const {loadSettings, loadView, storeView, storeDeviceSetting, storePlaylistSetting} = require('../server/components/settings/settings-dal');
+const {sendModal, updateModal} = require('../server/components/slack/slack-api');
+const {AuthError} = require('../server/errors/errors-auth');
+jest.mock('../server/components/settings/spotifyauth/spotifyauth-dal');
+jest.mock('../server/components/spotify-api/spotify-api-auth');
+jest.mock('../server/components/slack/slack-api');
+jest.mock('../server/components/settings/settings-dal');
 
 
 const settingsCommand = {
