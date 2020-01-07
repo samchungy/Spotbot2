@@ -1,4 +1,5 @@
 const logger = require('../../util/util-logger');
+const axios = require('axios');
 const slackClient = require('./slack-initialise');
 
 /**
@@ -49,7 +50,35 @@ async function reply(body, responseUrl) {
   }
 }
 
+/**
+ * Post to Slack
+ * @param {Object} body
+ */
+async function post(body) {
+  try {
+    await slackClient.chat.postMessage(body);
+  } catch (error) {
+    logger.error(`Slack API: Post failed`, error);
+    throw error;
+  }
+}
+
+/**
+ * Post Ephemeral
+ * @param {Object} body
+ */
+async function postEphemeral(body) {
+  try {
+    await slackClient.chat.postEphemeral(body);
+  } catch (error) {
+    logger.error(`Slack API: Post Ephemeral failed`, error);
+    throw error;
+  }
+}
+
 module.exports = {
+  post,
+  postEphemeral,
   reply,
   sendModal,
   updateModal,

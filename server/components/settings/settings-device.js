@@ -19,7 +19,7 @@ async function fetchAllDevices() {
     if (defaultDevice) {
       devices.push(defaultDevice);
     }
-    for (const device of spotifyDevices.body.devices) {
+    for (const device of spotifyDevices.devices) {
       const model = modelDevice(`${device.name} - ${device.type}`, device.id);
       // Make sure we do not insert the same device twice.
       if (!isEqual(model, defaultDevice)) {

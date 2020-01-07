@@ -3,8 +3,8 @@ const server = require('../server/server').mockapp;
 const request = require('supertest');
 const {loadState, storeProfile, storeState, storeTokens} = require('../server/components/settings/spotifyauth/spotifyauth-dal');
 const {fetchAuthorizeURL, fetchProfile, fetchTokens} = require('../server/components/spotify-api/spotify-api-auth');
-const {loadSettings, loadView, storeView, storeDeviceSetting, storePlaylistSetting} = require('../server/components/settings/settings-dal');
-const {sendModal, updateModal} = require('../server/components/slack/slack-api');
+const {loadDevices, loadPlaylists, loadSettings, loadView, storeView, storeDeviceSetting, storePlaylistSetting, storeSettings} = require('../server/components/settings/settings-dal');
+const {postEphemeral, sendModal, updateModal} = require('../server/components/slack/slack-api');
 const {AuthError} = require('../server/errors/errors-auth');
 jest.mock('../server/components/settings/spotifyauth/spotifyauth-dal');
 jest.mock('../server/components/spotify-api/spotify-api-auth');
@@ -223,5 +223,498 @@ describe(`Slash Command: /spotbot settings - saved settings`, () => {
     expect(fetchProfile).toBeCalled();
     expect(loadSettings).toBeCalled();
     expect(sendModal).toBeCalledWith('881543472007.879979449463.7384c6cf0d2df375824f431f7434df61', {'blocks': [{'accessory': {'action_id': 'reauth', 'text': {'emoji': true, 'text': ':gear: Re-authenticate with Spotify', 'type': 'plain_text'}, 'type': 'button', 'value': 'reauth'}, 'block_id': 'reauth', 'text': {'text': 'Click to re-authenticate with Spotify.', 'type': 'mrkdwn'}, 'type': 'section'}, {'block_id': 'auth_confirmation', 'elements': [{'text': ':white_check_mark: Authenticated with Test User - Spotify Premium', 'type': 'mrkdwn'}], 'type': 'context'}, {'block_id': 'slack_channel', 'element': {'action_id': 'slack_channel', 'initial_channel': 'CRU3H4MEC', 'type': 'channels_select'}, 'hint': {'text': 'The channel Slackbot will restrict usage of commands to.', 'type': 'plain_text'}, 'label': {'text': 'Slack Channel Restriction', 'type': 'plain_text'}, 'type': 'input'}, {'block_id': 'playlist', 'element': {'action_id': 'playlist', 'initial_option': {'text': {'emoji': true, 'text': 'Test', 'type': 'plain_text'}, 'value': '099bxvxES7QkJtj4hrejhT'}, 'min_query_length': 3, 'type': 'external_select'}, 'hint': {'text': 'The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.', 'type': 'plain_text'}, 'label': {'text': 'Spotbot Playlist', 'type': 'plain_text'}, 'type': 'input'}, {'block_id': 'default_device', 'element': {'action_id': 'default_device', 'initial_option': {'text': {'emoji': true, 'text': 'AU13282 - Computer', 'type': 'plain_text'}, 'value': '87997bb4312981a00f1d8029eb874c55a211a0cc'}, 'min_query_length': 0, 'type': 'external_select'}, 'hint': {'text': 'This helps Spotbot with playing. Turn on your Spotify device now.', 'type': 'plain_text'}, 'label': {'text': 'Default Spotify Device', 'type': 'plain_text'}, 'type': 'input'}, {'block_id': 'disable_repeats_duration', 'element': {'action_id': 'disable_repeats_duration', 'initial_value': '4', 'max_length': 5, 'placeholder': {'text': 'Enter a number eg. 4', 'type': 'plain_text'}, 'type': 'plain_text_input'}, 'hint': {'text': 'The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.', 'type': 'plain_text'}, 'label': {'text': 'Disable Repeats Duration (Hours)', 'type': 'plain_text'}, 'type': 'input'}, {'block_id': 'back_to_playlist', 'element': {'action_id': 'back_to_playlist', 'initial_option': {'text': {'emoji': true, 'text': 'Yes', 'type': 'plain_text'}, 'value': 'true'}, 'options': [{'text': {'emoji': true, 'text': 'Yes', 'type': 'plain_text'}, 'value': 'true'}, {'text': {'emoji': true, 'text': 'No', 'type': 'plain_text'}, 'value': 'false'}], 'type': 'static_select'}, 'hint': {'text': 'Enables Spotify to return to the playlist when a new song is added if the playlist has runs out of songs. (Does not work if repeat is enabled).', 'type': 'plain_text'}, 'label': {'text': 'Jump Back to Playlist', 'type': 'plain_text'}, 'type': 'input'}, {'block_id': 'skip_votes', 'element': {'action_id': 'skip_votes', 'initial_value': '2', 'max_length': 2, 'placeholder': {'text': 'Enter a number eg. 2', 'type': 'plain_text'}, 'type': 'plain_text_input'}, 'hint': {'text': 'The number of additional votes needed to skip a song. Integers only', 'type': 'plain_text'}, 'label': {'text': 'Skip Votes', 'type': 'plain_text'}, 'type': 'input'}, {'block_id': 'skip_votes_ah', 'element': {'action_id': 'skip_votes_ah', 'initial_value': '0', 'max_length': 2, 'placeholder': {'text': 'Enter a number eg. 0', 'type': 'plain_text'}, 'type': 'plain_text_input'}, 'hint': {'text': 'The number of additional votes needed to skip a song. Integers only', 'type': 'plain_text'}, 'label': {'text': 'Skip Votes - After Hours (6pm-6am)', 'type': 'plain_text'}, 'type': 'input'}], 'callback_id': 'settings_modal', 'close': {'emoji': true, 'text': 'Cancel', 'type': 'plain_text'}, 'submit': {'emoji': true, 'text': 'Save', 'type': 'plain_text'}, 'title': {'emoji': true, 'text': 'Spotbot Settings', 'type': 'plain_text'}, 'type': 'modal'});
+  });
+});
+
+describe('Submit a settings modal - no changes', () => {
+  loadSettings.mockReturnValueOnce(Promise.resolve({
+    slack_channel: 'CRU3H4MEC',
+    playlist: {
+      name: 'Spotbot',
+      url: 'https://open.spotify.com/playlist/6TefVIS1ryrtEmjerqFu1N',
+      id: '6TefVIS1ryrtEmjerqFu1N',
+    },
+    default_device: {
+      name: 'DESKTOP-I7U2161 - Computer',
+      id: '49433c0b9868f755ee05b5a58908f31c8d28faaf',
+    },
+    disable_repeats_duration: '4',
+    back_to_playlist: 'true',
+    skip_votes: '2',
+    skip_votes_ah: '0',
+  }));
+  loadPlaylists.mockReturnValueOnce(Promise.resolve([
+    {
+      name: 'Spotbot',
+      url: 'https://open.spotify.com/playlist/6TefVIS1ryrtEmjerqFu1N',
+      id: '6TefVIS1ryrtEmjerqFu1N',
+    },
+    {
+      name: 'Test',
+      url: 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty',
+      id: '2nuwjAGCHQiPabqGH6SLty',
+    },
+    {
+      name: 'DOperatePlaylist',
+      url: 'https://open.spotify.com/playlist/5DkqssdyTJyQzh3T0bLPTd',
+      id: '5DkqssdyTJyQzh3T0bLPTd',
+    },
+    {
+      name: 'Spring \'19',
+      url: 'https://open.spotify.com/playlist/0AajTcIoODpnHr6m7JqE2Y',
+      id: '0AajTcIoODpnHr6m7JqE2Y',
+    },
+    {
+      name: 'Fall \'19',
+      url: 'https://open.spotify.com/playlist/4lB2bRq79GWAd3jDyulDJ8',
+      id: '4lB2bRq79GWAd3jDyulDJ8',
+    },
+    {
+      name: 'Winter \'19',
+      url: 'https://open.spotify.com/playlist/2M3YrO6fGfqz4bZHDnmnH5',
+      id: '2M3YrO6fGfqz4bZHDnmnH5',
+    },
+    {
+      name: 'Pure Joy',
+      url: 'https://open.spotify.com/playlist/2j5o5jpPRtw2opTpHqMkXQ',
+      id: '2j5o5jpPRtw2opTpHqMkXQ',
+    },
+    {
+      name: 'Me',
+      url: 'https://open.spotify.com/playlist/1J4m05bC5BKQPTwzxuzzz3',
+      id: '1J4m05bC5BKQPTwzxuzzz3',
+    },
+    {
+      name: 'SSSmas',
+      url: 'https://open.spotify.com/playlist/0ykzkVbJFRPiUaacDJHCE2',
+      id: '0ykzkVbJFRPiUaacDJHCE2',
+    },
+    {
+      name: 'SSS BBQ',
+      url: 'https://open.spotify.com/playlist/1n3tj3twqXHQhPWUiWthMm',
+      id: '1n3tj3twqXHQhPWUiWthMm',
+    },
+    {
+      name: '21',
+      url: 'https://open.spotify.com/playlist/7Fv1AvTcY0jAbwzOmGJgHg',
+      id: '7Fv1AvTcY0jAbwzOmGJgHg',
+    },
+    {
+      name: 'Soundtracks',
+      url: 'https://open.spotify.com/playlist/7atlhhcVVExUiKOMwXLNqU',
+      id: '7atlhhcVVExUiKOMwXLNqU',
+    },
+    {
+      name: 'Drunk Songs',
+      url: 'https://open.spotify.com/playlist/1XueDduvvEIfEir2GJc8cG',
+      id: '1XueDduvvEIfEir2GJc8cG',
+    },
+    {
+      name: 'Test',
+      url: 'https://open.spotify.com/playlist/099bxvxES7QkJtj4hrejhT',
+      id: '099bxvxES7QkJtj4hrejhT',
+    },
+    {
+      name: 'Musicals',
+      url: 'https://open.spotify.com/playlist/2B4H5QMz7Jz07LWNzbWtqp',
+      id: '2B4H5QMz7Jz07LWNzbWtqp',
+    },
+    {
+      name: 'Liked from Radio',
+      url: 'https://open.spotify.com/playlist/6DfnDtWIfXNBPLOLrTnRHt',
+      id: '6DfnDtWIfXNBPLOLrTnRHt',
+    },
+    {
+      name: 'My Shazam Tracks',
+      url: 'https://open.spotify.com/playlist/1b1WGErHarH1cd3mH50IHO',
+      id: '1b1WGErHarH1cd3mH50IHO',
+    },
+  ]));
+  postEphemeral.mockReturnValueOnce(Promise.resolve());
+  test('should successfully submit settings modal', async () => {
+    const response = await request(server)
+        .post('/slack/actions')
+        .send({payload: '{"type":"view_submission","team":{"id":"TRVUTD7DM","domain":"spotbottest"},"user":{"id":"URVUTD7UP","username":"samchungy","name":"samchungy","team_id":"TRVUTD7DM"},"api_app_id":"ARGK9E735","token":"6r2mZJdBz8Gb8wSl49SHMABa","trigger_id":"894271242517.879979449463.06397d8a86668198eae0f942db97f540","view":{"id":"VRXE10402","team_id":"TRVUTD7DM","type":"modal","blocks":[{"type":"section","block_id":"reauth","text":{"type":"mrkdwn","text":"Click to re-authenticate with Spotify.","verbatim":false},"accessory":{"type":"button","action_id":"reauth","text":{"type":"plain_text","text":":gear: Re-authenticate with Spotify","emoji":true},"value":"reauth"}},{"type":"context","block_id":"auth_confirmation","elements":[{"type":"mrkdwn","text":":white_check_mark: Authenticated with Sam Chung - Spotify Premium","verbatim":false}]},{"type":"input","block_id":"slack_channel","label":{"type":"plain_text","text":"Slack Channel Restriction","emoji":true},"hint":{"type":"plain_text","text":"The channel Slackbot will restrict usage of commands to.","emoji":true},"optional":false,"element":{"type":"channels_select","action_id":"slack_channel","initial_channel":"CRU3H4MEC"}},{"type":"input","block_id":"playlist","label":{"type":"plain_text","text":"Spotbot Playlist","emoji":true},"hint":{"type":"plain_text","text":"The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.","emoji":true},"optional":false,"element":{"type":"external_select","action_id":"playlist","initial_option":{"text":{"type":"plain_text","text":"Spotbot","emoji":true},"value":"6TefVIS1ryrtEmjerqFu1N"},"min_query_length":3}},{"type":"input","block_id":"default_device","label":{"type":"plain_text","text":"Default Spotify Device","emoji":true},"hint":{"type":"plain_text","text":"This helps Spotbot with playing. Turn on your Spotify device now.","emoji":true},"optional":false,"element":{"type":"external_select","action_id":"default_device","initial_option":{"text":{"type":"plain_text","text":"DESKTOP-I7U2161 - Computer","emoji":true},"value":"49433c0b9868f755ee05b5a58908f31c8d28faaf"},"min_query_length":0}},{"type":"input","block_id":"disable_repeats_duration","label":{"type":"plain_text","text":"Disable Repeats Duration (Hours)","emoji":true},"hint":{"type":"plain_text","text":"The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"disable_repeats_duration","placeholder":{"type":"plain_text","text":"Enter a number eg. 4","emoji":true},"initial_value":"4","max_length":5}},{"type":"input","block_id":"back_to_playlist","label":{"type":"plain_text","text":"Jump Back to Playlist","emoji":true},"hint":{"type":"plain_text","text":"Enables Spotify to return to the playlist when a new song is added if the playlist has runs out of songs. (Does not work if repeat is enabled).","emoji":true},"optional":false,"element":{"type":"static_select","action_id":"back_to_playlist","initial_option":{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"},"options":[{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"},{"text":{"type":"plain_text","text":"No","emoji":true},"value":"false"}]}},{"type":"input","block_id":"skip_votes","label":{"type":"plain_text","text":"Skip Votes","emoji":true},"hint":{"type":"plain_text","text":"The number of additional votes needed to skip a song. Integers only","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"skip_votes","placeholder":{"type":"plain_text","text":"Enter a number eg. 2","emoji":true},"initial_value":"2","max_length":2}},{"type":"input","block_id":"skip_votes_ah","label":{"type":"plain_text","text":"Skip Votes - After Hours (6pm-6am)","emoji":true},"hint":{"type":"plain_text","text":"The number of additional votes needed to skip a song. Integers only","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"skip_votes_ah","placeholder":{"type":"plain_text","text":"Enter a number eg. 0","emoji":true},"initial_value":"0","max_length":2}}],"private_metadata":"","callback_id":"settings_modal","state":{"values":{"slack_channel":{"slack_channel":{"type":"channels_select","selected_channel":"CRU3H4MEC"}},"playlist":{"playlist":{"type":"external_select","selected_option":{"text":{"type":"plain_text","text":"Spotbot","emoji":true},"value":"6TefVIS1ryrtEmjerqFu1N"}}},"default_device":{"default_device":{"type":"external_select","selected_option":{"text":{"type":"plain_text","text":"DESKTOP-I7U2161 - Computer","emoji":true},"value":"49433c0b9868f755ee05b5a58908f31c8d28faaf"}}},"disable_repeats_duration":{"disable_repeats_duration":{"type":"plain_text_input","value":"4"}},"back_to_playlist":{"back_to_playlist":{"type":"static_select","selected_option":{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"}}},"skip_votes":{"skip_votes":{"type":"plain_text_input","value":"2"}},"skip_votes_ah":{"skip_votes_ah":{"type":"plain_text_input","value":"0"}}}},"hash":"1578293099.5872de4d","title":{"type":"plain_text","text":"Spotbot Settings","emoji":true},"clear_on_close":false,"notify_on_close":false,"close":{"type":"plain_text","text":"Cancel","emoji":true},"submit":{"type":"plain_text","text":"Save","emoji":true},"previous_view_id":null,"root_view_id":"VRXE10402","app_id":"ARGK9E735","external_id":"","app_installed_team_id":"TRVUTD7DM","bot_id":"BRGKAFS67"}}'});
+    expect(response.status).toEqual(200);
+    expect(loadSettings).toBeCalled();
+    expect(loadPlaylists).toBeCalled();
+    expect(postEphemeral).toBeCalledWith({'blocks': null, 'channel': 'CRU3H4MEC', 'text': ':white_check_mark: Settings successfully saved.', 'user': 'URVUTD7UP'});
+  });
+});
+
+describe('Submit a settings modal - 1 change', () => {
+  loadSettings.mockReturnValueOnce(Promise.resolve({
+    slack_channel: 'CRU3H4MEC',
+    playlist: {
+      name: 'Spotbot',
+      url: 'https://open.spotify.com/playlist/6TefVIS1ryrtEmjerqFu1N',
+      id: '6TefVIS1ryrtEmjerqFu1N',
+    },
+    default_device: {
+      name: 'DESKTOP-I7U2161 - Computer',
+      id: '49433c0b9868f755ee05b5a58908f31c8d28faaf',
+    },
+    disable_repeats_duration: '4',
+    back_to_playlist: 'true',
+    skip_votes: '1',
+    skip_votes_ah: '0',
+  }));
+  loadPlaylists.mockReturnValueOnce(Promise.resolve([
+    {
+      name: 'Spotbot',
+      url: 'https://open.spotify.com/playlist/6TefVIS1ryrtEmjerqFu1N',
+      id: '6TefVIS1ryrtEmjerqFu1N',
+    },
+    {
+      name: 'Test',
+      url: 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty',
+      id: '2nuwjAGCHQiPabqGH6SLty',
+    },
+    {
+      name: 'DOperatePlaylist',
+      url: 'https://open.spotify.com/playlist/5DkqssdyTJyQzh3T0bLPTd',
+      id: '5DkqssdyTJyQzh3T0bLPTd',
+    },
+    {
+      name: 'Spring \'19',
+      url: 'https://open.spotify.com/playlist/0AajTcIoODpnHr6m7JqE2Y',
+      id: '0AajTcIoODpnHr6m7JqE2Y',
+    },
+    {
+      name: 'Fall \'19',
+      url: 'https://open.spotify.com/playlist/4lB2bRq79GWAd3jDyulDJ8',
+      id: '4lB2bRq79GWAd3jDyulDJ8',
+    },
+    {
+      name: 'Winter \'19',
+      url: 'https://open.spotify.com/playlist/2M3YrO6fGfqz4bZHDnmnH5',
+      id: '2M3YrO6fGfqz4bZHDnmnH5',
+    },
+    {
+      name: 'Pure Joy',
+      url: 'https://open.spotify.com/playlist/2j5o5jpPRtw2opTpHqMkXQ',
+      id: '2j5o5jpPRtw2opTpHqMkXQ',
+    },
+    {
+      name: 'Me',
+      url: 'https://open.spotify.com/playlist/1J4m05bC5BKQPTwzxuzzz3',
+      id: '1J4m05bC5BKQPTwzxuzzz3',
+    },
+    {
+      name: 'SSSmas',
+      url: 'https://open.spotify.com/playlist/0ykzkVbJFRPiUaacDJHCE2',
+      id: '0ykzkVbJFRPiUaacDJHCE2',
+    },
+    {
+      name: 'SSS BBQ',
+      url: 'https://open.spotify.com/playlist/1n3tj3twqXHQhPWUiWthMm',
+      id: '1n3tj3twqXHQhPWUiWthMm',
+    },
+    {
+      name: '21',
+      url: 'https://open.spotify.com/playlist/7Fv1AvTcY0jAbwzOmGJgHg',
+      id: '7Fv1AvTcY0jAbwzOmGJgHg',
+    },
+    {
+      name: 'Soundtracks',
+      url: 'https://open.spotify.com/playlist/7atlhhcVVExUiKOMwXLNqU',
+      id: '7atlhhcVVExUiKOMwXLNqU',
+    },
+    {
+      name: 'Drunk Songs',
+      url: 'https://open.spotify.com/playlist/1XueDduvvEIfEir2GJc8cG',
+      id: '1XueDduvvEIfEir2GJc8cG',
+    },
+    {
+      name: 'Test',
+      url: 'https://open.spotify.com/playlist/099bxvxES7QkJtj4hrejhT',
+      id: '099bxvxES7QkJtj4hrejhT',
+    },
+    {
+      name: 'Musicals',
+      url: 'https://open.spotify.com/playlist/2B4H5QMz7Jz07LWNzbWtqp',
+      id: '2B4H5QMz7Jz07LWNzbWtqp',
+    },
+    {
+      name: 'Liked from Radio',
+      url: 'https://open.spotify.com/playlist/6DfnDtWIfXNBPLOLrTnRHt',
+      id: '6DfnDtWIfXNBPLOLrTnRHt',
+    },
+    {
+      name: 'My Shazam Tracks',
+      url: 'https://open.spotify.com/playlist/1b1WGErHarH1cd3mH50IHO',
+      id: '1b1WGErHarH1cd3mH50IHO',
+    },
+  ]));
+  storeSettings.mockReturnValueOnce(Promise.resolve());
+  postEphemeral.mockReturnValueOnce(Promise.resolve());
+  test('should successfully submit settings modal', async () => {
+    const response = await request(server)
+        .post('/slack/actions')
+        .send({payload: '{"type":"view_submission","team":{"id":"TRVUTD7DM","domain":"spotbottest"},"user":{"id":"URVUTD7UP","username":"samchungy","name":"samchungy","team_id":"TRVUTD7DM"},"api_app_id":"ARGK9E735","token":"6r2mZJdBz8Gb8wSl49SHMABa","trigger_id":"894271242517.879979449463.06397d8a86668198eae0f942db97f540","view":{"id":"VRXE10402","team_id":"TRVUTD7DM","type":"modal","blocks":[{"type":"section","block_id":"reauth","text":{"type":"mrkdwn","text":"Click to re-authenticate with Spotify.","verbatim":false},"accessory":{"type":"button","action_id":"reauth","text":{"type":"plain_text","text":":gear: Re-authenticate with Spotify","emoji":true},"value":"reauth"}},{"type":"context","block_id":"auth_confirmation","elements":[{"type":"mrkdwn","text":":white_check_mark: Authenticated with Sam Chung - Spotify Premium","verbatim":false}]},{"type":"input","block_id":"slack_channel","label":{"type":"plain_text","text":"Slack Channel Restriction","emoji":true},"hint":{"type":"plain_text","text":"The channel Slackbot will restrict usage of commands to.","emoji":true},"optional":false,"element":{"type":"channels_select","action_id":"slack_channel","initial_channel":"CRU3H4MEC"}},{"type":"input","block_id":"playlist","label":{"type":"plain_text","text":"Spotbot Playlist","emoji":true},"hint":{"type":"plain_text","text":"The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.","emoji":true},"optional":false,"element":{"type":"external_select","action_id":"playlist","initial_option":{"text":{"type":"plain_text","text":"Spotbot","emoji":true},"value":"6TefVIS1ryrtEmjerqFu1N"},"min_query_length":3}},{"type":"input","block_id":"default_device","label":{"type":"plain_text","text":"Default Spotify Device","emoji":true},"hint":{"type":"plain_text","text":"This helps Spotbot with playing. Turn on your Spotify device now.","emoji":true},"optional":false,"element":{"type":"external_select","action_id":"default_device","initial_option":{"text":{"type":"plain_text","text":"DESKTOP-I7U2161 - Computer","emoji":true},"value":"49433c0b9868f755ee05b5a58908f31c8d28faaf"},"min_query_length":0}},{"type":"input","block_id":"disable_repeats_duration","label":{"type":"plain_text","text":"Disable Repeats Duration (Hours)","emoji":true},"hint":{"type":"plain_text","text":"The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"disable_repeats_duration","placeholder":{"type":"plain_text","text":"Enter a number eg. 4","emoji":true},"initial_value":"4","max_length":5}},{"type":"input","block_id":"back_to_playlist","label":{"type":"plain_text","text":"Jump Back to Playlist","emoji":true},"hint":{"type":"plain_text","text":"Enables Spotify to return to the playlist when a new song is added if the playlist has runs out of songs. (Does not work if repeat is enabled).","emoji":true},"optional":false,"element":{"type":"static_select","action_id":"back_to_playlist","initial_option":{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"},"options":[{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"},{"text":{"type":"plain_text","text":"No","emoji":true},"value":"false"}]}},{"type":"input","block_id":"skip_votes","label":{"type":"plain_text","text":"Skip Votes","emoji":true},"hint":{"type":"plain_text","text":"The number of additional votes needed to skip a song. Integers only","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"skip_votes","placeholder":{"type":"plain_text","text":"Enter a number eg. 2","emoji":true},"initial_value":"2","max_length":2}},{"type":"input","block_id":"skip_votes_ah","label":{"type":"plain_text","text":"Skip Votes - After Hours (6pm-6am)","emoji":true},"hint":{"type":"plain_text","text":"The number of additional votes needed to skip a song. Integers only","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"skip_votes_ah","placeholder":{"type":"plain_text","text":"Enter a number eg. 0","emoji":true},"initial_value":"0","max_length":2}}],"private_metadata":"","callback_id":"settings_modal","state":{"values":{"slack_channel":{"slack_channel":{"type":"channels_select","selected_channel":"CRU3H4MEC"}},"playlist":{"playlist":{"type":"external_select","selected_option":{"text":{"type":"plain_text","text":"Spotbot","emoji":true},"value":"6TefVIS1ryrtEmjerqFu1N"}}},"default_device":{"default_device":{"type":"external_select","selected_option":{"text":{"type":"plain_text","text":"DESKTOP-I7U2161 - Computer","emoji":true},"value":"49433c0b9868f755ee05b5a58908f31c8d28faaf"}}},"disable_repeats_duration":{"disable_repeats_duration":{"type":"plain_text_input","value":"4"}},"back_to_playlist":{"back_to_playlist":{"type":"static_select","selected_option":{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"}}},"skip_votes":{"skip_votes":{"type":"plain_text_input","value":"2"}},"skip_votes_ah":{"skip_votes_ah":{"type":"plain_text_input","value":"0"}}}},"hash":"1578293099.5872de4d","title":{"type":"plain_text","text":"Spotbot Settings","emoji":true},"clear_on_close":false,"notify_on_close":false,"close":{"type":"plain_text","text":"Cancel","emoji":true},"submit":{"type":"plain_text","text":"Save","emoji":true},"previous_view_id":null,"root_view_id":"VRXE10402","app_id":"ARGK9E735","external_id":"","app_installed_team_id":"TRVUTD7DM","bot_id":"BRGKAFS67"}}'});
+    expect(response.status).toEqual(200);
+    expect(loadSettings).toBeCalled();
+    expect(loadPlaylists).toBeCalled();
+    expect(storeSettings).toBeCalled();
+    expect(postEphemeral).toBeCalledWith({'blocks': null, 'channel': 'CRU3H4MEC', 'text': ':white_check_mark: Settings successfully saved.', 'user': 'URVUTD7UP'});
+  });
+});
+
+describe('Submit a settings modal - default device change', () => {
+  loadSettings.mockReturnValueOnce(Promise.resolve({
+    slack_channel: 'CRU3H4MEC',
+    playlist: {
+      name: 'Spotbot',
+      url: 'https://open.spotify.com/playlist/6TefVIS1ryrtEmjerqFu1N',
+      id: '6TefVIS1ryrtEmjerqFu1N',
+    },
+    default_device: {
+      name: 'AU13282 - Computer',
+      id: '87997bb4312981a00f1d8029eb874c55a211a0cc',
+    },
+    disable_repeats_duration: '4',
+    back_to_playlist: 'true',
+    skip_votes: '1',
+    skip_votes_ah: '0',
+  }));
+  loadPlaylists.mockReturnValueOnce(Promise.resolve([
+    {
+      name: 'Spotbot',
+      url: 'https://open.spotify.com/playlist/6TefVIS1ryrtEmjerqFu1N',
+      id: '6TefVIS1ryrtEmjerqFu1N',
+    },
+    {
+      name: 'Test',
+      url: 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty',
+      id: '2nuwjAGCHQiPabqGH6SLty',
+    },
+    {
+      name: 'DOperatePlaylist',
+      url: 'https://open.spotify.com/playlist/5DkqssdyTJyQzh3T0bLPTd',
+      id: '5DkqssdyTJyQzh3T0bLPTd',
+    },
+    {
+      name: 'Spring \'19',
+      url: 'https://open.spotify.com/playlist/0AajTcIoODpnHr6m7JqE2Y',
+      id: '0AajTcIoODpnHr6m7JqE2Y',
+    },
+    {
+      name: 'Fall \'19',
+      url: 'https://open.spotify.com/playlist/4lB2bRq79GWAd3jDyulDJ8',
+      id: '4lB2bRq79GWAd3jDyulDJ8',
+    },
+    {
+      name: 'Winter \'19',
+      url: 'https://open.spotify.com/playlist/2M3YrO6fGfqz4bZHDnmnH5',
+      id: '2M3YrO6fGfqz4bZHDnmnH5',
+    },
+    {
+      name: 'Pure Joy',
+      url: 'https://open.spotify.com/playlist/2j5o5jpPRtw2opTpHqMkXQ',
+      id: '2j5o5jpPRtw2opTpHqMkXQ',
+    },
+    {
+      name: 'Me',
+      url: 'https://open.spotify.com/playlist/1J4m05bC5BKQPTwzxuzzz3',
+      id: '1J4m05bC5BKQPTwzxuzzz3',
+    },
+    {
+      name: 'SSSmas',
+      url: 'https://open.spotify.com/playlist/0ykzkVbJFRPiUaacDJHCE2',
+      id: '0ykzkVbJFRPiUaacDJHCE2',
+    },
+    {
+      name: 'SSS BBQ',
+      url: 'https://open.spotify.com/playlist/1n3tj3twqXHQhPWUiWthMm',
+      id: '1n3tj3twqXHQhPWUiWthMm',
+    },
+    {
+      name: '21',
+      url: 'https://open.spotify.com/playlist/7Fv1AvTcY0jAbwzOmGJgHg',
+      id: '7Fv1AvTcY0jAbwzOmGJgHg',
+    },
+    {
+      name: 'Soundtracks',
+      url: 'https://open.spotify.com/playlist/7atlhhcVVExUiKOMwXLNqU',
+      id: '7atlhhcVVExUiKOMwXLNqU',
+    },
+    {
+      name: 'Drunk Songs',
+      url: 'https://open.spotify.com/playlist/1XueDduvvEIfEir2GJc8cG',
+      id: '1XueDduvvEIfEir2GJc8cG',
+    },
+    {
+      name: 'Test',
+      url: 'https://open.spotify.com/playlist/099bxvxES7QkJtj4hrejhT',
+      id: '099bxvxES7QkJtj4hrejhT',
+    },
+    {
+      name: 'Musicals',
+      url: 'https://open.spotify.com/playlist/2B4H5QMz7Jz07LWNzbWtqp',
+      id: '2B4H5QMz7Jz07LWNzbWtqp',
+    },
+    {
+      name: 'Liked from Radio',
+      url: 'https://open.spotify.com/playlist/6DfnDtWIfXNBPLOLrTnRHt',
+      id: '6DfnDtWIfXNBPLOLrTnRHt',
+    },
+    {
+      name: 'My Shazam Tracks',
+      url: 'https://open.spotify.com/playlist/1b1WGErHarH1cd3mH50IHO',
+      id: '1b1WGErHarH1cd3mH50IHO',
+    },
+  ]));
+  loadDevices.mockReturnValueOnce(Promise.resolve([
+    {
+      name: 'DESKTOP-I7U2161 - Computer',
+      id: '49433c0b9868f755ee05b5a58908f31c8d28faaf',
+    },
+    {
+      name: 'AU13282 - Computer',
+      id: '87997bb4312981a00f1d8029eb874c55a211a0cc',
+    },
+  ]));
+  storeSettings.mockReturnValueOnce(Promise.resolve());
+  postEphemeral.mockReturnValueOnce(Promise.resolve());
+  test('should successfully submit settings modal', async () => {
+    const response = await request(server)
+        .post('/slack/actions')
+        .send({payload: '{"type":"view_submission","team":{"id":"TRVUTD7DM","domain":"spotbottest"},"user":{"id":"URVUTD7UP","username":"samchungy","name":"samchungy","team_id":"TRVUTD7DM"},"api_app_id":"ARGK9E735","token":"6r2mZJdBz8Gb8wSl49SHMABa","trigger_id":"894271242517.879979449463.06397d8a86668198eae0f942db97f540","view":{"id":"VRXE10402","team_id":"TRVUTD7DM","type":"modal","blocks":[{"type":"section","block_id":"reauth","text":{"type":"mrkdwn","text":"Click to re-authenticate with Spotify.","verbatim":false},"accessory":{"type":"button","action_id":"reauth","text":{"type":"plain_text","text":":gear: Re-authenticate with Spotify","emoji":true},"value":"reauth"}},{"type":"context","block_id":"auth_confirmation","elements":[{"type":"mrkdwn","text":":white_check_mark: Authenticated with Sam Chung - Spotify Premium","verbatim":false}]},{"type":"input","block_id":"slack_channel","label":{"type":"plain_text","text":"Slack Channel Restriction","emoji":true},"hint":{"type":"plain_text","text":"The channel Slackbot will restrict usage of commands to.","emoji":true},"optional":false,"element":{"type":"channels_select","action_id":"slack_channel","initial_channel":"CRU3H4MEC"}},{"type":"input","block_id":"playlist","label":{"type":"plain_text","text":"Spotbot Playlist","emoji":true},"hint":{"type":"plain_text","text":"The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.","emoji":true},"optional":false,"element":{"type":"external_select","action_id":"playlist","initial_option":{"text":{"type":"plain_text","text":"Spotbot","emoji":true},"value":"6TefVIS1ryrtEmjerqFu1N"},"min_query_length":3}},{"type":"input","block_id":"default_device","label":{"type":"plain_text","text":"Default Spotify Device","emoji":true},"hint":{"type":"plain_text","text":"This helps Spotbot with playing. Turn on your Spotify device now.","emoji":true},"optional":false,"element":{"type":"external_select","action_id":"default_device","initial_option":{"text":{"type":"plain_text","text":"DESKTOP-I7U2161 - Computer","emoji":true},"value":"49433c0b9868f755ee05b5a58908f31c8d28faaf"},"min_query_length":0}},{"type":"input","block_id":"disable_repeats_duration","label":{"type":"plain_text","text":"Disable Repeats Duration (Hours)","emoji":true},"hint":{"type":"plain_text","text":"The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"disable_repeats_duration","placeholder":{"type":"plain_text","text":"Enter a number eg. 4","emoji":true},"initial_value":"4","max_length":5}},{"type":"input","block_id":"back_to_playlist","label":{"type":"plain_text","text":"Jump Back to Playlist","emoji":true},"hint":{"type":"plain_text","text":"Enables Spotify to return to the playlist when a new song is added if the playlist has runs out of songs. (Does not work if repeat is enabled).","emoji":true},"optional":false,"element":{"type":"static_select","action_id":"back_to_playlist","initial_option":{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"},"options":[{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"},{"text":{"type":"plain_text","text":"No","emoji":true},"value":"false"}]}},{"type":"input","block_id":"skip_votes","label":{"type":"plain_text","text":"Skip Votes","emoji":true},"hint":{"type":"plain_text","text":"The number of additional votes needed to skip a song. Integers only","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"skip_votes","placeholder":{"type":"plain_text","text":"Enter a number eg. 2","emoji":true},"initial_value":"2","max_length":2}},{"type":"input","block_id":"skip_votes_ah","label":{"type":"plain_text","text":"Skip Votes - After Hours (6pm-6am)","emoji":true},"hint":{"type":"plain_text","text":"The number of additional votes needed to skip a song. Integers only","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"skip_votes_ah","placeholder":{"type":"plain_text","text":"Enter a number eg. 0","emoji":true},"initial_value":"0","max_length":2}}],"private_metadata":"","callback_id":"settings_modal","state":{"values":{"slack_channel":{"slack_channel":{"type":"channels_select","selected_channel":"CRU3H4MEC"}},"playlist":{"playlist":{"type":"external_select","selected_option":{"text":{"type":"plain_text","text":"Spotbot","emoji":true},"value":"6TefVIS1ryrtEmjerqFu1N"}}},"default_device":{"default_device":{"type":"external_select","selected_option":{"text":{"type":"plain_text","text":"DESKTOP-I7U2161 - Computer","emoji":true},"value":"49433c0b9868f755ee05b5a58908f31c8d28faaf"}}},"disable_repeats_duration":{"disable_repeats_duration":{"type":"plain_text_input","value":"4"}},"back_to_playlist":{"back_to_playlist":{"type":"static_select","selected_option":{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"}}},"skip_votes":{"skip_votes":{"type":"plain_text_input","value":"2"}},"skip_votes_ah":{"skip_votes_ah":{"type":"plain_text_input","value":"0"}}}},"hash":"1578293099.5872de4d","title":{"type":"plain_text","text":"Spotbot Settings","emoji":true},"clear_on_close":false,"notify_on_close":false,"close":{"type":"plain_text","text":"Cancel","emoji":true},"submit":{"type":"plain_text","text":"Save","emoji":true},"previous_view_id":null,"root_view_id":"VRXE10402","app_id":"ARGK9E735","external_id":"","app_installed_team_id":"TRVUTD7DM","bot_id":"BRGKAFS67"}}'});
+    expect(response.status).toEqual(200);
+    expect(loadSettings).toBeCalled();
+    expect(loadPlaylists).toBeCalled();
+    expect(loadDevices).toBeCalled();
+    expect(storeSettings).toBeCalled();
+    expect(postEphemeral).toBeCalledWith({'blocks': null, 'channel': 'CRU3H4MEC', 'text': ':white_check_mark: Settings successfully saved.', 'user': 'URVUTD7UP'});
+  });
+});
+
+describe('Submit a settings modal - default device changed', () => {
+  loadSettings.mockReturnValueOnce(Promise.resolve({
+    slack_channel: 'CRU3H4MEC',
+    playlist: {
+      name: 'Spotbot',
+      url: 'https://open.spotify.com/playlist/6TefVIS1ryrtEmjerqFu1N',
+      id: '6TefVIS1ryrtEmjerqFu1N',
+    },
+    default_device: {
+      name: 'DESKTOP-I7U2161 - Computer',
+      id: '49433c0b9868f755ee05b5a58908f31c8d28faaf',
+    },
+    disable_repeats_duration: '4',
+    back_to_playlist: 'true',
+    skip_votes: '2',
+    skip_votes_ah: '0',
+  }));
+  loadPlaylists.mockReturnValueOnce(Promise.resolve([
+    {
+      name: 'Spotbot',
+      url: 'https://open.spotify.com/playlist/6TefVIS1ryrtEmjerqFu1N',
+      id: '6TefVIS1ryrtEmjerqFu1N',
+    },
+    {
+      name: 'Test',
+      url: 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty',
+      id: '2nuwjAGCHQiPabqGH6SLty',
+    },
+    {
+      name: 'DOperatePlaylist',
+      url: 'https://open.spotify.com/playlist/5DkqssdyTJyQzh3T0bLPTd',
+      id: '5DkqssdyTJyQzh3T0bLPTd',
+    },
+    {
+      name: 'Spring \'19',
+      url: 'https://open.spotify.com/playlist/0AajTcIoODpnHr6m7JqE2Y',
+      id: '0AajTcIoODpnHr6m7JqE2Y',
+    },
+    {
+      name: 'Fall \'19',
+      url: 'https://open.spotify.com/playlist/4lB2bRq79GWAd3jDyulDJ8',
+      id: '4lB2bRq79GWAd3jDyulDJ8',
+    },
+    {
+      name: 'Winter \'19',
+      url: 'https://open.spotify.com/playlist/2M3YrO6fGfqz4bZHDnmnH5',
+      id: '2M3YrO6fGfqz4bZHDnmnH5',
+    },
+    {
+      name: 'Pure Joy',
+      url: 'https://open.spotify.com/playlist/2j5o5jpPRtw2opTpHqMkXQ',
+      id: '2j5o5jpPRtw2opTpHqMkXQ',
+    },
+    {
+      name: 'Me',
+      url: 'https://open.spotify.com/playlist/1J4m05bC5BKQPTwzxuzzz3',
+      id: '1J4m05bC5BKQPTwzxuzzz3',
+    },
+    {
+      name: 'SSSmas',
+      url: 'https://open.spotify.com/playlist/0ykzkVbJFRPiUaacDJHCE2',
+      id: '0ykzkVbJFRPiUaacDJHCE2',
+    },
+    {
+      name: 'SSS BBQ',
+      url: 'https://open.spotify.com/playlist/1n3tj3twqXHQhPWUiWthMm',
+      id: '1n3tj3twqXHQhPWUiWthMm',
+    },
+    {
+      name: '21',
+      url: 'https://open.spotify.com/playlist/7Fv1AvTcY0jAbwzOmGJgHg',
+      id: '7Fv1AvTcY0jAbwzOmGJgHg',
+    },
+    {
+      name: 'Soundtracks',
+      url: 'https://open.spotify.com/playlist/7atlhhcVVExUiKOMwXLNqU',
+      id: '7atlhhcVVExUiKOMwXLNqU',
+    },
+    {
+      name: 'Drunk Songs',
+      url: 'https://open.spotify.com/playlist/1XueDduvvEIfEir2GJc8cG',
+      id: '1XueDduvvEIfEir2GJc8cG',
+    },
+    {
+      name: 'Test',
+      url: 'https://open.spotify.com/playlist/099bxvxES7QkJtj4hrejhT',
+      id: '099bxvxES7QkJtj4hrejhT',
+    },
+    {
+      name: 'Musicals',
+      url: 'https://open.spotify.com/playlist/2B4H5QMz7Jz07LWNzbWtqp',
+      id: '2B4H5QMz7Jz07LWNzbWtqp',
+    },
+    {
+      name: 'Liked from Radio',
+      url: 'https://open.spotify.com/playlist/6DfnDtWIfXNBPLOLrTnRHt',
+      id: '6DfnDtWIfXNBPLOLrTnRHt',
+    },
+    {
+      name: 'My Shazam Tracks',
+      url: 'https://open.spotify.com/playlist/1b1WGErHarH1cd3mH50IHO',
+      id: '1b1WGErHarH1cd3mH50IHO',
+    },
+  ]));
+  postEphemeral.mockReturnValueOnce(Promise.resolve());
+  test('should successfully submit settings modal', async () => {
+    const response = await request(server)
+        .post('/slack/actions')
+        .send({payload: '{"type":"view_submission","team":{"id":"TRVUTD7DM","domain":"spotbottest"},"user":{"id":"URVUTD7UP","username":"samchungy","name":"samchungy","team_id":"TRVUTD7DM"},"api_app_id":"ARGK9E735","token":"6r2mZJdBz8Gb8wSl49SHMABa","trigger_id":"894271242517.879979449463.06397d8a86668198eae0f942db97f540","view":{"id":"VRXE10402","team_id":"TRVUTD7DM","type":"modal","blocks":[{"type":"section","block_id":"reauth","text":{"type":"mrkdwn","text":"Click to re-authenticate with Spotify.","verbatim":false},"accessory":{"type":"button","action_id":"reauth","text":{"type":"plain_text","text":":gear: Re-authenticate with Spotify","emoji":true},"value":"reauth"}},{"type":"context","block_id":"auth_confirmation","elements":[{"type":"mrkdwn","text":":white_check_mark: Authenticated with Sam Chung - Spotify Premium","verbatim":false}]},{"type":"input","block_id":"slack_channel","label":{"type":"plain_text","text":"Slack Channel Restriction","emoji":true},"hint":{"type":"plain_text","text":"The channel Slackbot will restrict usage of commands to.","emoji":true},"optional":false,"element":{"type":"channels_select","action_id":"slack_channel","initial_channel":"CRU3H4MEC"}},{"type":"input","block_id":"playlist","label":{"type":"plain_text","text":"Spotbot Playlist","emoji":true},"hint":{"type":"plain_text","text":"The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.","emoji":true},"optional":false,"element":{"type":"external_select","action_id":"playlist","initial_option":{"text":{"type":"plain_text","text":"Spotbot","emoji":true},"value":"6TefVIS1ryrtEmjerqFu1N"},"min_query_length":3}},{"type":"input","block_id":"default_device","label":{"type":"plain_text","text":"Default Spotify Device","emoji":true},"hint":{"type":"plain_text","text":"This helps Spotbot with playing. Turn on your Spotify device now.","emoji":true},"optional":false,"element":{"type":"external_select","action_id":"default_device","initial_option":{"text":{"type":"plain_text","text":"DESKTOP-I7U2161 - Computer","emoji":true},"value":"49433c0b9868f755ee05b5a58908f31c8d28faaf"},"min_query_length":0}},{"type":"input","block_id":"disable_repeats_duration","label":{"type":"plain_text","text":"Disable Repeats Duration (Hours)","emoji":true},"hint":{"type":"plain_text","text":"The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"disable_repeats_duration","placeholder":{"type":"plain_text","text":"Enter a number eg. 4","emoji":true},"initial_value":"4","max_length":5}},{"type":"input","block_id":"back_to_playlist","label":{"type":"plain_text","text":"Jump Back to Playlist","emoji":true},"hint":{"type":"plain_text","text":"Enables Spotify to return to the playlist when a new song is added if the playlist has runs out of songs. (Does not work if repeat is enabled).","emoji":true},"optional":false,"element":{"type":"static_select","action_id":"back_to_playlist","initial_option":{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"},"options":[{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"},{"text":{"type":"plain_text","text":"No","emoji":true},"value":"false"}]}},{"type":"input","block_id":"skip_votes","label":{"type":"plain_text","text":"Skip Votes","emoji":true},"hint":{"type":"plain_text","text":"The number of additional votes needed to skip a song. Integers only","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"skip_votes","placeholder":{"type":"plain_text","text":"Enter a number eg. 2","emoji":true},"initial_value":"2","max_length":2}},{"type":"input","block_id":"skip_votes_ah","label":{"type":"plain_text","text":"Skip Votes - After Hours (6pm-6am)","emoji":true},"hint":{"type":"plain_text","text":"The number of additional votes needed to skip a song. Integers only","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"skip_votes_ah","placeholder":{"type":"plain_text","text":"Enter a number eg. 0","emoji":true},"initial_value":"0","max_length":2}}],"private_metadata":"","callback_id":"settings_modal","state":{"values":{"slack_channel":{"slack_channel":{"type":"channels_select","selected_channel":"CRU3H4MEC"}},"playlist":{"playlist":{"type":"external_select","selected_option":{"text":{"type":"plain_text","text":"Spotbot","emoji":true},"value":"6TefVIS1ryrtEmjerqFu1N"}}},"default_device":{"default_device":{"type":"external_select","selected_option":{"text":{"type":"plain_text","text":"DESKTOP-I7U2161 - Computer","emoji":true},"value":"49433c0b9868f755ee05b5a58908f31c8d28faaf"}}},"disable_repeats_duration":{"disable_repeats_duration":{"type":"plain_text_input","value":"4"}},"back_to_playlist":{"back_to_playlist":{"type":"static_select","selected_option":{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"}}},"skip_votes":{"skip_votes":{"type":"plain_text_input","value":"2"}},"skip_votes_ah":{"skip_votes_ah":{"type":"plain_text_input","value":"0"}}}},"hash":"1578293099.5872de4d","title":{"type":"plain_text","text":"Spotbot Settings","emoji":true},"clear_on_close":false,"notify_on_close":false,"close":{"type":"plain_text","text":"Cancel","emoji":true},"submit":{"type":"plain_text","text":"Save","emoji":true},"previous_view_id":null,"root_view_id":"VRXE10402","app_id":"ARGK9E735","external_id":"","app_installed_team_id":"TRVUTD7DM","bot_id":"BRGKAFS67"}}'});
+    expect(response.status).toEqual(200);
+    expect(loadSettings).toBeCalled();
+    expect(loadPlaylists).toBeCalled();
+    expect(postEphemeral).toBeCalledWith({'blocks': null, 'channel': 'CRU3H4MEC', 'text': ':white_check_mark: Settings successfully saved.', 'user': 'URVUTD7UP'});
+  });
+});
+
+describe('Submit a settings modal - handle error', () => {
+  loadSettings.mockImplementationOnce(Promise.resolve([]));
+
+  postEphemeral.mockReturnValueOnce(Promise.resolve());
+  test('should post a failed response', async () => {
+    const response = await request(server)
+        .post('/slack/actions')
+        .send({payload: '{"type":"view_submission","team":{"id":"TRVUTD7DM","domain":"spotbottest"},"user":{"id":"URVUTD7UP","username":"samchungy","name":"samchungy","team_id":"TRVUTD7DM"},"api_app_id":"ARGK9E735","token":"6r2mZJdBz8Gb8wSl49SHMABa","trigger_id":"894271242517.879979449463.06397d8a86668198eae0f942db97f540","view":{"id":"VRXE10402","team_id":"TRVUTD7DM","type":"modal","blocks":[{"type":"section","block_id":"reauth","text":{"type":"mrkdwn","text":"Click to re-authenticate with Spotify.","verbatim":false},"accessory":{"type":"button","action_id":"reauth","text":{"type":"plain_text","text":":gear: Re-authenticate with Spotify","emoji":true},"value":"reauth"}},{"type":"context","block_id":"auth_confirmation","elements":[{"type":"mrkdwn","text":":white_check_mark: Authenticated with Sam Chung - Spotify Premium","verbatim":false}]},{"type":"input","block_id":"slack_channel","label":{"type":"plain_text","text":"Slack Channel Restriction","emoji":true},"hint":{"type":"plain_text","text":"The channel Slackbot will restrict usage of commands to.","emoji":true},"optional":false,"element":{"type":"channels_select","action_id":"slack_channel","initial_channel":"CRU3H4MEC"}},{"type":"input","block_id":"playlist","label":{"type":"plain_text","text":"Spotbot Playlist","emoji":true},"hint":{"type":"plain_text","text":"The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.","emoji":true},"optional":false,"element":{"type":"external_select","action_id":"playlist","initial_option":{"text":{"type":"plain_text","text":"Spotbot","emoji":true},"value":"6TefVIS1ryrtEmjerqFu1N"},"min_query_length":3}},{"type":"input","block_id":"default_device","label":{"type":"plain_text","text":"Default Spotify Device","emoji":true},"hint":{"type":"plain_text","text":"This helps Spotbot with playing. Turn on your Spotify device now.","emoji":true},"optional":false,"element":{"type":"external_select","action_id":"default_device","initial_option":{"text":{"type":"plain_text","text":"DESKTOP-I7U2161 - Computer","emoji":true},"value":"49433c0b9868f755ee05b5a58908f31c8d28faaf"},"min_query_length":0}},{"type":"input","block_id":"disable_repeats_duration","label":{"type":"plain_text","text":"Disable Repeats Duration (Hours)","emoji":true},"hint":{"type":"plain_text","text":"The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"disable_repeats_duration","placeholder":{"type":"plain_text","text":"Enter a number eg. 4","emoji":true},"initial_value":"4","max_length":5}},{"type":"input","block_id":"back_to_playlist","label":{"type":"plain_text","text":"Jump Back to Playlist","emoji":true},"hint":{"type":"plain_text","text":"Enables Spotify to return to the playlist when a new song is added if the playlist has runs out of songs. (Does not work if repeat is enabled).","emoji":true},"optional":false,"element":{"type":"static_select","action_id":"back_to_playlist","initial_option":{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"},"options":[{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"},{"text":{"type":"plain_text","text":"No","emoji":true},"value":"false"}]}},{"type":"input","block_id":"skip_votes","label":{"type":"plain_text","text":"Skip Votes","emoji":true},"hint":{"type":"plain_text","text":"The number of additional votes needed to skip a song. Integers only","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"skip_votes","placeholder":{"type":"plain_text","text":"Enter a number eg. 2","emoji":true},"initial_value":"2","max_length":2}},{"type":"input","block_id":"skip_votes_ah","label":{"type":"plain_text","text":"Skip Votes - After Hours (6pm-6am)","emoji":true},"hint":{"type":"plain_text","text":"The number of additional votes needed to skip a song. Integers only","emoji":true},"optional":false,"element":{"type":"plain_text_input","action_id":"skip_votes_ah","placeholder":{"type":"plain_text","text":"Enter a number eg. 0","emoji":true},"initial_value":"0","max_length":2}}],"private_metadata":"","callback_id":"settings_modal","state":{"values":{"slack_channel":{"slack_channel":{"type":"channels_select","selected_channel":"CRU3H4MEC"}},"playlist":{"playlist":{"type":"external_select","selected_option":{"text":{"type":"plain_text","text":"Spotbot","emoji":true},"value":"6TefVIS1ryrtEmjerqFu1N"}}},"default_device":{"default_device":{"type":"external_select","selected_option":{"text":{"type":"plain_text","text":"DESKTOP-I7U2161 - Computer","emoji":true},"value":"49433c0b9868f755ee05b5a58908f31c8d28faaf"}}},"disable_repeats_duration":{"disable_repeats_duration":{"type":"plain_text_input","value":"4"}},"back_to_playlist":{"back_to_playlist":{"type":"static_select","selected_option":{"text":{"type":"plain_text","text":"Yes","emoji":true},"value":"true"}}},"skip_votes":{"skip_votes":{"type":"plain_text_input","value":"2"}},"skip_votes_ah":{"skip_votes_ah":{"type":"plain_text_input","value":"0"}}}},"hash":"1578293099.5872de4d","title":{"type":"plain_text","text":"Spotbot Settings","emoji":true},"clear_on_close":false,"notify_on_close":false,"close":{"type":"plain_text","text":"Cancel","emoji":true},"submit":{"type":"plain_text","text":"Save","emoji":true},"previous_view_id":null,"root_view_id":"VRXE10402","app_id":"ARGK9E735","external_id":"","app_installed_team_id":"TRVUTD7DM","bot_id":"BRGKAFS67"}}'});
+    expect(response.status).toEqual(200);
+    expect(loadSettings).toBeCalled();
+    expect(postEphemeral).toBeCalledWith({'blocks': null, 'channel': 'CRU3H4MEC', 'text': ':x: Something went wrong! Settings were not saved.', 'user': 'URVUTD7UP'});
   });
 });
