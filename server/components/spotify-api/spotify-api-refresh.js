@@ -7,9 +7,9 @@ const {storeTokens} = require('../settings/spotifyauth/spotifyauth-dal');
 async function refreshAccessToken() {
   try {
     const spotifyApi = await spotifyWebApi();
-    const token = await spotifyApi.refreshAccessToken();
-    spotifyApi.setAccessToken(token.body.access_token);
-    await storeTokens(token.body.access_token, spotifyApi.getRefreshToken());
+    const token = (await spotifyApi.refreshAccessToken()).body;
+    spotifyApi.setAccessToken(token.access_token);
+    await storeTokens(token.access_token, spotifyApi.getRefreshToken());
   } catch (error) {
     // Invalidate our current Tokens
     await storeTokens(null, null);

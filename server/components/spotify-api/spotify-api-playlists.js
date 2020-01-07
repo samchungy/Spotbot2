@@ -11,7 +11,7 @@ const PUBLIC = config.get('spotify_api.playlists.public');
  */
 async function fetchPlaylists(offset, limit) {
   const spotifyApi = await spotifyWebApi();
-  return await requester('Get All Playlists', () => spotifyApi.getUserPlaylists({limit: limit, offset: offset}));
+  return (await requester('Get All Playlists', () => spotifyApi.getUserPlaylists({limit: limit, offset: offset}))).body;
 }
 
 /**
@@ -21,7 +21,7 @@ async function fetchPlaylists(offset, limit) {
  */
 async function createPlaylist(profileId, name) {
   const spotifyApi = await spotifyWebApi();
-  return await requester('Create a new playlist', () => spotifyApi.createPlaylist(profileId, name, {collaborative: COLLABORATIVE, public: PUBLIC}));
+  return (await requester('Create a new playlist', () => spotifyApi.createPlaylist(profileId, name, {collaborative: COLLABORATIVE, public: PUBLIC}))).body;
 }
 
 module.exports = {

@@ -18,7 +18,6 @@ const spotifyApi = new SpotifyWebApi({
  */
 async function setTokens() {
   const {accessToken, refreshToken} = await loadTokens();
-  console.log(accessToken, refreshToken);
   spotifyApi.setAccessToken(accessToken);
   spotifyApi.setRefreshToken(refreshToken);
   return spotifyApi;
