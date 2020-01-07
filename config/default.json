@@ -16,7 +16,6 @@
                 "playlist-modify-private",
                 "streaming"
             ],
-            "callback":"auth/callback",
             "playlists": {
                 "limit": 50,
                 "collaborative": true,
@@ -105,15 +104,36 @@
         },
         "slack": {
             "actions" : {
-                "settings_dialog": "settings_dialog",
                 "settings_modal": "settings_modal",
                 "playlist": "playlist",
                 "block_actions": "block_actions",
-                "view_submission": "view_submission"
+                "view_submission": "view_submission",
+                "controller": "controller",
+                "controller_overflow": "controller_overflow",
+                "controls": {
+                  "play": "play",
+                  "pause": "pause",
+                  "skip": "skip",
+                  "reset": "reset",
+                  "clear_one": "clear_one",
+                  "jump_to_start": "jump_to_start",
+                  "shuffle": "shuffle",
+                  "repeat": "repeat"
+                }
             },
             "buttons": {
                 "primary": "primary",
                 "danger": "danger"
+            },
+            "reply": {
+              "in_channel": "in_channel",
+              "ephemeral": null
+            },
+            "responses": {
+              "settings":{
+                "success": ":white_check_mark: Settings successfully saved.",
+                "fail": ":x: Something went wrong! Settings were not saved."
+              }
             }
         }
     }

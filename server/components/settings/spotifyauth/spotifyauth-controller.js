@@ -3,7 +3,8 @@ const logger = require('../../../util/util-logger');
 const {AuthError, PremiumError} = require('../../../errors/errors-auth');
 const {fetchAuthorizeURL, fetchTokens, fetchProfile} = require('../../spotify-api/spotify-api-auth');
 const {loadState, storeState, storeTokens, storeProfile} = require('./spotifyauth-dal');
-const {buttonSection, context} = require('../../slack/format/slack-format-modal');
+const {buttonSection} = require('../../slack/format/slack-format-modal');
+const {contextSection} = require('../../slack/format/slack-format-blocks');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 const HINTS = config.get('settings.hints');
@@ -94,7 +95,7 @@ async function getAuthBlock(triggerId, failState) {
       // Place authenticated blocks
       authBlock.push(
           buttonSection(SETTINGS_HELPER.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_HELPER.reauth),
-          context(SETTINGS_HELPER.auth_confirmation, authStatement(profile.display_name ? profile.display_name : profile.id)),
+          contextSection(SETTINGS_HELPER.auth_confirmation, authStatement(profile.display_name ? profile.display_name : profile.id)),
       );
     }
   } catch (error) {
@@ -107,12 +108,12 @@ async function getAuthBlock(triggerId, failState) {
       if (error instanceof PremiumError) {
         // If the user is not premium
         authBlock.push(
-            context(SETTINGS_HELPER.auth_error, PREMIUM_ERROR),
+            contextSection(SETTINGS_HELPER.auth_error, PREMIUM_ERROR),
         );
       } else if (failState) {
         // If the user failed an authentication.
         authBlock.push(
-            context(SETTINGS_HELPER.auth_error, AUTH_FAIL),
+            contextSection(SETTINGS_HELPER.auth_error, AUTH_FAIL),
         );
       }
     } else {

@@ -135,22 +135,8 @@ const buttonSection = (actionId, text, buttonText, style, url, value) => {
   };
 };
 
-const context = (blockId, text) => {
-  return {
-    block_id: blockId,
-    type: 'context',
-    elements: [
-      {
-        'type': 'mrkdwn',
-        'text': text,
-      },
-    ],
-  };
-};
-
 module.exports = {
   buttonSection,
-  context,
   option,
   optionGroup,
   slackModal,

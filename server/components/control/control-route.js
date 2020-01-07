@@ -1,9 +1,14 @@
+const {openControls} = require('./control-controller');
+const {publicAck} = require('../slack/format/slack-format-reply');
+
 module.exports = ( prefix, Router ) => {
   const router = new Router({
     prefix: prefix,
   });
-  router.get('/', async (ctx, next) => {
-    ctx.body = 'Hello Control!';
+  router.post('/', async (ctx, next) => {
+    const payload = ctx.request.body;
+    openControls(payload.response_url);
+    ctx.body = publicAck('');
   });
   return router;
 };

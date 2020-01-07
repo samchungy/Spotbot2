@@ -4,6 +4,7 @@ const PLAYLIST = config.get('dynamodb.settings.playlist');
 const DEFAULT_DEVICE = config.get('dynamodb.settings.default_device');
 const AUTH_URL = config.get('dynamodb.settings_helper.auth_url');
 const REAUTH = config.get('dynamodb.settings_helper.reauth');
+const CONTROLS = config.get('slack.actions.controls');
 const {changeAuthentication, getAllDevices, getAllPlaylists, saveSettings, saveView, updateView} = require('../settings/settings-controller');
 
 module.exports = ( prefix, Router ) => {
@@ -23,16 +24,19 @@ module.exports = ( prefix, Router ) => {
                   break;
                 case REAUTH:
                   await changeAuthentication();
-                  await updateView(null, payload.view.id, payload.trigger_id);
+                  updateView(null, payload.view.id, payload.trigger_id);
                   ctx.body = '';
                   break;
+                case CONTROLS.play:
+                  up;
+                  ctx.body = '';
               }
               break;
             }
           case SLACK_ACTIONS.view_submission:
             switch (payload.view.callback_id) {
               case SLACK_ACTIONS.settings_modal:
-                const errors = await saveSettings(payload.view, payload.response_url);
+                const errors = await saveSettings(payload.view, payload.user.id);
                 if (errors) {
                   ctx.body = errors;
                 } else {
