@@ -76,10 +76,24 @@ async function postEphemeral(body) {
   }
 }
 
+/**
+ * Update Chat
+ * @param {Object} body
+ */
+async function updateChat(body) {
+  try {
+    await slackClient.chat.update(body);
+  } catch (error) {
+    logger.error(`Slack API: Update Chat failed`, error);
+    throw error;
+  }
+}
+
 module.exports = {
   post,
   postEphemeral,
   reply,
   sendModal,
+  updateChat,
   updateModal,
 };

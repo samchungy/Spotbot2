@@ -1,22 +1,10 @@
-const config = require('config');
 const logger = require('../../util/util-logger');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
-const {actionSection, buttonActionElement, contextSection, imageSection, overflowActionElement, overflowOption} = require('../slack/format/slack-format-blocks');
-const {ephemeralReply, inChannelReply} = require('../slack/format/slack-format-reply');
-const {loadPlaylistSetting} = require('../settings/settings-dal');
-const {reply} = require('../slack/slack-api');
-const Track = require('../../util/util-spotify-track');
-
-const CONTROLLER = config.get('slack.actions.controller');
-const CONTROLLER_OVERFLOW = config.get('slack.actions.controller_overflow');
-const CONTROLS = config.get('slack.actions.controls');
-const currentlyPlayingTextMrkdwn = (title, url, artist, album) => `*Currently Playing*:\n<${url}|*${title}*>\n:studio_microphone: *Artist:* ${artist}\n:dvd: *Album*: ${album}\n`;
-const currentlyPlayingText = (title, artist, album) => `Currently Playing: ${title}\n:studio_microphone: Artist: ${artist}\nAlbum: ${album}\n`;
-const contextOnPlaylist = `:information_source: Currently playing from the Spotbot playlist.`;
-const contextOffPlaylist = `:information_source: Not currently playing from the Spotbot playlist.`;
-const shuffleWarning = ` Shuffle is *enabled*.`;
-const repeatWarning = ` Repeat is *enabled*.`;
-const spotifyNotPlaying = `:information_source: Spotify is currently not playing.`;
+const {getCurrentTrackPanel, getShuffleRepeatPanel, getControlsPanel} = require('./control-panel');
+const {inChannelReply, updateReply, inChannelPost} = require('../slack/format/slack-format-reply');
+const {post, reply} = require('../slack/slack-api');
+const {setPlay} = require('./control-play');
+const {setPause} = require('./control-pause');
 
 /**
  * Opens a menu of Spotbot controls
@@ -25,29 +13,16 @@ const spotifyNotPlaying = `:information_source: Spotify is currently not playing
 async function openControls(responseUrl) {
   try {
     try {
-      // TODO Get Currently Playing Status from Spotify
       const status = await fetchCurrentPlayback();
-      let warning = `:warning:`; // Shuffle/Repeat States
-      const {altText, controlPanel} = getCurrentTrack(status);
+      const {altText, currentPanel} = getCurrentTrackPanel(status);
 
-      // Check if Shuffle/Repeat are enabled
-      if (status.shuffle_state) {
-        warning += shuffleWarning;
-      }
-      if (status.repeat_state && status.repeat_state != `off`) {
-        warning += repeatWarning;
-      }
-      if (warning.includes(shuffleWarning) || warning.includes(repeatWarning)) {
-        controlPanel.push(
-            contextSection(null, warning),
-        );
-      }
+      const controlPanel = [
+        ...currentPanel,
+        ...getShuffleRepeatPanel(status) ? [getShuffleRepeatPanel(status)] : [],
+        getControlsPanel(),
+      ];
 
-      controlPanel.push(
-          getControls(),
-      );
-
-      reply(
+      await reply(
           inChannelReply(altText, controlPanel),
           responseUrl,
       );
@@ -60,37 +35,54 @@ async function openControls(responseUrl) {
   }
 }
 
-/**
- * Get Current Track Panel
- * @param {Object} status
- * @return {Object} Control Panel Block
- */
-function getCurrentTrack(status) {
-  // If we have a song playing push the currently playing stack on
-  let text; let altText;
-  const controlPanel = [];
-  if (status.item) {
-    const track = new Track(status.item);
-    let context = contextOffPlaylist;
-    text = currentlyPlayingTextMrkdwn(track.name, track.url, track.artists, track.album);
-    altText = currentlyPlayingText(track.name, track.artists, track.album);
 
-    // Check if we are playing from the playlist
-    if (status.context) {
-      const playlist = loadPlaylistSetting();
-      if (status.context.uri.includes(playlist.id)) {
-        context = contextOnPlaylist;
+/**
+ * Update the control panel
+ * @param {string} responseUrl
+ * @param {string} response
+ * @param {Object} status
+ */
+async function updatePanel(responseUrl, response, status) {
+  try {
+    if (!status) {
+      status = await fetchCurrentPlayback();
+    }
+    const {altText, currentPanel} = getCurrentTrackPanel(status, response);
+
+    const controlPanel = [
+      ...currentPanel,
+      ...getShuffleRepeatPanel(status) ? [getShuffleRepeatPanel(status)] : [],
+      getControlsPanel(),
+    ];
+
+    await reply(
+        updateReply(altText, controlPanel),
+        responseUrl,
+    );
+  } catch (error) {
+    logger.error(error);
       }
     }
-    controlPanel.push(
-        imageSection(text, track.art, `Album Art`),
-        contextSection(null, context),
-    );
+
+/**
+ * Hits Play on Spotify
+ * @param {string} responseUrl
+ * @param {string} channelId
+ */
+async function play(responseUrl, channelId) {
+  try {
+    const {success, response, status} = await setPlay();
+    if (!success) {
+      await updatePanel(responseUrl, response, status);
   } else {
-    // Not Playing
-    altText = spotifyNotPlaying;
+      await updatePanel(responseUrl, null, status);
+      await post(
+          inChannelPost(channelId, response, null),
+      );
   }
-  return {altText, controlPanel};
+  } catch (error) {
+    logger.error(error);
+}
 }
 
 /**

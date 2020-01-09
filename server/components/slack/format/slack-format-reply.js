@@ -2,6 +2,14 @@ const config = require('config');
 const INCHANNEL = config.get('slack.reply.in_channel');
 const EPHEMERAL = config.get('slack.reply.ephemeral');
 
+const updateReply = (text, blocks) => {
+  return {
+    text: text,
+    replace_original: 'true',
+    ...blocks ? {blocks: blocks} : {},
+  };
+};
+
 const inChannelReply = (text, blocks) => {
   return {
     ...reply(INCHANNEL, text, blocks),
@@ -64,4 +72,5 @@ module.exports = {
   ephemeralReply,
   inChannelPost,
   inChannelReply,
+  updateReply,
 };

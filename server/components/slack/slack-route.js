@@ -6,6 +6,7 @@ const AUTH_URL = config.get('dynamodb.settings_helper.auth_url');
 const REAUTH = config.get('dynamodb.settings_helper.reauth');
 const CONTROLS = config.get('slack.actions.controls');
 const {changeAuthentication, getAllDevices, getAllPlaylists, saveSettings, saveView, updateView} = require('../settings/settings-controller');
+const {pause, play} = require('../control/control-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
@@ -28,8 +29,13 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                   break;
                 case CONTROLS.play:
-                  up;
+                  play(payload.response_url, payload.channel.id);
                   ctx.body = '';
+                  break;
+                case CONTROLS.pause:
+                  pause(payload.response_url, payload.channel.id);
+                  ctx.body = '';
+                  break;
               }
               break;
             }

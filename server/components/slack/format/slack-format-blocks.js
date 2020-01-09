@@ -73,6 +73,16 @@ const overflowOption = (text, value) => {
   };
 };
 
+const textSection = (text) =>{
+  return {
+    'type': 'section',
+    'text': {
+      'type': 'mrkdwn',
+      'text': text,
+    },
+  };
+};
+
 module.exports = {
   actionSection,
   buttonActionElement,
@@ -80,4 +90,5 @@ module.exports = {
   imageSection,
   overflowActionElement,
   overflowOption,
+  textSection,
 };
