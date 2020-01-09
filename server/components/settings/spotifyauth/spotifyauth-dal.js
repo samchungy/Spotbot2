@@ -47,10 +47,10 @@ async function loadTokens() {
 
 /**
  * Store Spotify Profile in db
- * @param {string} id
+ * @param {Object} profileObject
  */
-async function storeProfile(id) {
-  const setting = settingModel(AUTH.spotify_id, id);
+async function storeProfile(profileObject) {
+  const setting = settingModel(AUTH.spotify_id, profileObject);
   return putSetting(setting);
 }
 

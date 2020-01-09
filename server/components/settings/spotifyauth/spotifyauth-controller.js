@@ -3,6 +3,7 @@ const logger = require('../../../util/util-logger');
 const {AuthError, PremiumError} = require('../../../errors/errors-auth');
 const {fetchAuthorizeURL, fetchTokens, fetchProfile} = require('../../spotify-api/spotify-api-auth');
 const {loadState, storeState, storeTokens, storeProfile} = require('./spotifyauth-dal');
+const {modelProfile} = require('../settings-model');
 const {buttonSection} = require('../../slack/format/slack-format-modal');
 const {contextSection} = require('../../slack/format/slack-format-blocks');
 
@@ -65,7 +66,9 @@ async function validateAuthCode(code, state) {
 
     // Get Spotify URI for Authenticator
     const profile = await fetchProfile();
-    await storeProfile(profile.id);
+    await storeProfile(
+        modelProfile(profile.id, profile.country),
+    );
 
     return {success: true, failReason: null};
   } catch (error) {

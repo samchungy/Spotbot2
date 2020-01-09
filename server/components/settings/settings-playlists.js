@@ -64,11 +64,11 @@ async function fetchAllPlaylists(currentPlaylist) {
     }
     let count = 0;
     const playlists = await fetchPlaylists(count, LIMIT);
-    const spotifyId = await loadProfile();
+    const profile = await loadProfile();
     while (true) {
       // Only if it is a collaborative playlist or the owner is ourselves is a playlist compatible.
       for (const playlist of playlists.items) {
-        if (playlist.collaborative == true || playlist.owner.id == spotifyId) {
+        if (playlist.collaborative == true || playlist.owner.id == profile.id) {
           const model = modelPlaylist(playlist.name, playlist.id, playlist.external_urls.spotify);
           if (!isEqual(model, currentPlaylist)) {
             compatiblePlaylists.push(model);
