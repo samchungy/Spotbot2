@@ -33,7 +33,8 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                   break;
                 case CONTROLS.pause:
-                  pause(payload.response_url, payload.channel.id);
+                  console.log(payload);
+                  pause(payload.response_url, payload.channel.id, payload.user.id);
                   ctx.body = '';
                   break;
               }
