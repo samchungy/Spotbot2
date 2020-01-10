@@ -58,23 +58,18 @@ async function getAllPlaylists(query) {
  */
 async function fetchAllPlaylists(currentPlaylist) {
   try {
-    const compatiblePlaylists = [];
-    if (currentPlaylist) {
-      compatiblePlaylists.push(currentPlaylist);
-    }
+    const compatiblePlaylists = [...currentPlaylist ? [currentPlaylist] : []];
     let count = 0;
-    const playlists = await fetchPlaylists(count, LIMIT);
     const profile = await loadProfile();
     while (true) {
-      // Only if it is a collaborative playlist or the owner is ourselves is a playlist compatible.
-      for (const playlist of playlists.items) {
-        if (playlist.collaborative == true || playlist.owner.id == profile.id) {
-          const model = modelPlaylist(playlist.name, playlist.id, playlist.external_urls.spotify);
-          if (!isEqual(model, currentPlaylist)) {
-            compatiblePlaylists.push(model);
-          }
-        }
-      }
+      const playlists = await fetchPlaylists(count, LIMIT);
+
+      // Only if it is a collaborative playlist or the owner is ourselves - a playlist compatible.
+      compatiblePlaylists.push(
+          ...playlists.items
+              .filter((playlist) => playlist.id != currentPlaylist.id && (playlist.collaborative == true || playlist.owner.id == profile.id))
+              .map((playlist) => modelPlaylist(playlist.name, playlist.id, playlist.external_urls.spotify)),
+      );
 
       // See if we can get more playlists as the Spotify Limit is 50 playlists per call.
       if (playlists.total > (count+1) * LIMIT) {
@@ -83,7 +78,7 @@ async function fetchAllPlaylists(currentPlaylist) {
         break;
       }
     }
-    return compatiblePlaylists;
+    return compatiblePlaylists.slice(0, 100);
   } catch (error) {
     logger.error('Fetching all Spotify Playlists failed');
     throw error;
