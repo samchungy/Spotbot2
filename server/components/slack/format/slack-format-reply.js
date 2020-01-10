@@ -2,10 +2,26 @@ const config = require('config');
 const INCHANNEL = config.get('slack.reply.in_channel');
 const EPHEMERAL = config.get('slack.reply.ephemeral');
 
+const deleteMessage = (channel, timestamp) => {
+  return {
+    channel: channel,
+    ts: timestamp,
+  };
+};
+
 const updateReply = (text, blocks) => {
   return {
     text: text,
     replace_original: 'true',
+    ...blocks ? {blocks: blocks} : {},
+  };
+};
+
+const updateMessage = (channel, timestamp, text, blocks) => {
+  return {
+    channel: channel,
+    ts: timestamp,
+    text: text,
     ...blocks ? {blocks: blocks} : {},
   };
 };
@@ -67,10 +83,12 @@ const ack = (text)=> {
 
 module.exports = {
   ack,
+  deleteMessage,
   publicAck,
   ephemeralPost,
   ephemeralReply,
   inChannelPost,
   inChannelReply,
+  updateMessage,
   updateReply,
 };
