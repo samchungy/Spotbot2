@@ -1,12 +1,14 @@
 const config = require('config');
+const logger = require('pino')();
 const SLACK_ACTIONS = config.get('slack.actions');
 const PLAYLIST = config.get('dynamodb.settings.playlist');
 const DEFAULT_DEVICE = config.get('dynamodb.settings.default_device');
+const TIMEZONE = config.get('dynamodb.settings.timezone');
 const AUTH_URL = config.get('dynamodb.settings_helper.auth_url');
 const REAUTH = config.get('dynamodb.settings_helper.reauth');
 const CONTROLS = config.get('slack.actions.controls');
-const {changeAuthentication, getAllDevices, getAllPlaylists, saveSettings, saveView, updateView} = require('../settings/settings-controller');
-const {pause, play} = require('../control/control-controller');
+const {changeAuthentication, getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, saveView, updateView} = require('../settings/settings-controller');
+const {pause, play, skip, voteToSkip} = require('../control/control-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
@@ -33,8 +35,15 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                   break;
                 case CONTROLS.pause:
-                  console.log(payload);
                   pause(payload.response_url, payload.channel.id, payload.user.id);
+                  ctx.body = '';
+                  break;
+                case CONTROLS.skip:
+                  skip(payload.response_url, payload.channel.id, payload.user.id);
+                  ctx.body = '';
+                  break;
+                case SLACK_ACTIONS.skip_vote:
+                  voteToSkip(payload.channel.id, payload.user.id);
                   ctx.body = '';
                   break;
               }
@@ -64,6 +73,10 @@ module.exports = ( prefix, Router ) => {
             break;
           case DEFAULT_DEVICE:
             options = await getAllDevices();
+            ctx.body = options;
+            break;
+          case TIMEZONE:
+            options = await getAllTimezones(payload.value);
             ctx.body = options;
             break;
         }
