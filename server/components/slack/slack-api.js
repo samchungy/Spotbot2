@@ -56,7 +56,7 @@ async function reply(body, responseUrl) {
  */
 async function post(body) {
   try {
-    await slackClient.chat.postMessage(body);
+    return await slackClient.chat.postMessage(body);
   } catch (error) {
     logger.error(`Slack API: Post failed`, error);
     throw error;
@@ -82,14 +82,28 @@ async function postEphemeral(body) {
  */
 async function updateChat(body) {
   try {
-    await slackClient.chat.update(body);
+    return await slackClient.chat.update(body);
   } catch (error) {
     logger.error(`Slack API: Update Chat failed`, error);
     throw error;
   }
 }
 
+/**
+ * Deletes Chat
+ * @param {Object} body
+ */
+async function deleteChat(body) {
+  try {
+    await slackClient.chat.delete(body);
+  } catch (error) {
+    logger.error(`Slack API: Delete Chat failed`, error);
+    throw error;
+  }
+}
+
 module.exports = {
+  deleteChat,
   post,
   postEphemeral,
   reply,
