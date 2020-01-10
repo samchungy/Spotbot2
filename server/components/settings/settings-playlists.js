@@ -5,7 +5,6 @@ const {modelPlaylist} = require('./settings-model');
 const {createPlaylist, fetchPlaylists} = require('../spotify-api/spotify-api-playlists');
 const {loadProfile} = require('./settings-dal');
 const {option, optionGroup} = require('../slack/format/slack-format-modal');
-const {isEqual} = require('../../util/util-objects');
 
 const LIMIT = config.get('spotify_api.playlists.limit');
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
