@@ -18,12 +18,13 @@ const noSongs = (status, playlist) => status.is_playing && !status.item && statu
 async function setPlay() {
   try {
     const status = await fetchCurrentPlayback();
-    const playlist = await loadPlaylistSetting();
 
     // Spotify is already running
     if (status.is_playing && status.item) {
       return {success: false, response: PLAY_FAIL_RESPONSES.already, status: status};
     }
+    const playlist = await loadPlaylistSetting();
+
     // We have an empty playlist and status is IsPlaying
     if (noSongs(status, playlist)) {
       return {success: false, response: PLAY_FAIL_RESPONSES.empty_playlist, status: status};
