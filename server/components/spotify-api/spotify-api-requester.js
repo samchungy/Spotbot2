@@ -25,6 +25,9 @@ async function apiCall(name, api) {
         } else if (error.statusCode == 401) {
           // Try Reauthenticte
           attempts--;
+          if (attempts == 0) {
+            throw error;
+          }
           logger.info('Getting new access token');
           try {
             await refreshAccessToken();
