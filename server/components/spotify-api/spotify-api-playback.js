@@ -5,13 +5,17 @@ const requester = require('./spotify-api-requester');
  * Hits play on Spotify
  * @param {string} deviceId
  * @param {string} context
+ * @param {String} offset
+ * @param {String} ms
  */
-async function play(deviceId, context) {
+async function play(deviceId, context, offset, ms) {
   const spotifyApi = await spotifyWebApi();
   return await requester('Play', async () => {
     await spotifyApi.play({
       device_id: deviceId,
       ...context ? {context_uri: context} : {},
+      ...offset ? {offset: offset} : {},
+      ...ms ? {position_ms: ms} : {},
     });
   });
 }
@@ -37,8 +41,32 @@ async function skip() {
   });
 }
 
+/**
+ * Shuffle Toggle
+ * @param {string} state
+ */
+async function shuffle(state) {
+  const spotifyApi = await spotifyWebApi();
+  return await requester('Shuffle', async () =>{
+    await spotifyApi.setShuffle({state: state});
+  });
+}
+
+/**
+ * Repeat Toggle
+ * @param {string} state
+ */
+async function repeat(state) {
+  const spotifyApi = await spotifyWebApi();
+  return await requester('Repeat', async () =>{
+    await spotifyApi.setRepeat({state: state});
+  });
+}
+
 module.exports = {
   pause,
   play,
+  repeat,
+  shuffle,
   skip,
 };
