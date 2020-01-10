@@ -23,6 +23,7 @@ function extractSubmissions(view) {
         case DB.playlist:
         case DB.default_device:
         case DB.back_to_playlist:
+        case DB.timezone:
           submissions[setting] = values[setting][setting].selected_option.value;
           break;
         case DB.disable_repeats_duration:
