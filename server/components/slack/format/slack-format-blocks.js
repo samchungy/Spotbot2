@@ -6,8 +6,7 @@ const actionSection = (blockId, elements) => {
   };
 };
 
-
-const buttonActionElement = (text, value) => {
+const buttonActionElement = (text, value, confirm) => {
   return {
     'value': value,
     'action_id': value,
@@ -16,6 +15,28 @@ const buttonActionElement = (text, value) => {
       'type': 'plain_text',
       'emoji': true,
       'text': text,
+    },
+    ...confirm ? {'confirm': confirm} : {},
+  };
+};
+
+const confirmObject = (title, text, confirmText, denyText) => {
+  return {
+    'title': {
+      'type': 'plain_text',
+      'text': title,
+    },
+    'text': {
+      'type': 'mrkdwn',
+      'text': text,
+    },
+    'confirm': {
+      'type': 'plain_text',
+      'text': confirmText,
+    },
+    'deny': {
+      'type': 'plain_text',
+      'text': denyText,
     },
   };
 };
@@ -92,6 +113,7 @@ const textSection = (text) =>{
 module.exports = {
   actionSection,
   buttonActionElement,
+  confirmObject,
   divider,
   contextSection,
   imageSection,
