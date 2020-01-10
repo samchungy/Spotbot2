@@ -84,13 +84,17 @@ const selectChannels = (actionId, title, hint, initial) => {
   };
 };
 
-const selectExternal = (actionId, title, hint, initial, min) => {
+const selectExternal = (actionId, title, hint, initial, min, placeholder) => {
   return {
     ...input(title, hint, actionId),
     element: {
       action_id: actionId,
       type: 'external_select',
       min_query_length: min,
+      placeholder: {
+        type: 'plain_text',
+        text: placeholder,
+      },
       ...initial ? {initial_option: initial} : {},
     },
   };
