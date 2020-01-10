@@ -13,11 +13,8 @@ async function refreshAccessToken() {
     await storeTokens(token.access_token, spotifyApi.getRefreshToken());
   } catch (error) {
     logger.error(error);
-    // Invalidate our current Tokens
-    await storeTokens(null, null);
-    storeDeviceSetting(null);
-    storePlaylistSetting(null);
-    // TODO Slack Post -> Run /spotbot settings to reauthenticate
+    // Invalidate our current Tokens and Spotify based Settings
+    await Promise.all([storeTokens(null, null), storeDeviceSetting(null), storePlaylistSetting(null)]);
     throw error;
   }
 }

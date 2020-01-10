@@ -20,8 +20,7 @@ const AUTH_FAIL = config.get('settings.errors.fail');
 async function getAuthorizationURL(triggerId) {
   try {
     // TODO Store triggerId as Spotify Auth state.
-    await storeState(triggerId);
-    const authUrl = await fetchAuthorizeURL(triggerId);
+    const [, authUrl] = await Promise.all([storeState(triggerId), fetchAuthorizeURL(triggerId)]);
     return authUrl;
   } catch (error) {
     logger.error(error);
@@ -61,11 +60,8 @@ async function validateAuthCode(code, state) {
     }
     // Get Tokens from Spotify
     const {access_token: accessToken, refresh_token: refreshToken} = await fetchTokens(code);
-    // Store our tokens in our DB
-    await storeTokens(accessToken, refreshToken);
-
-    // Get Spotify URI for Authenticator
-    const profile = await fetchProfile();
+    // Store our tokens in our DB & Get Spotify URI for authenticator
+    const [, profile] = await Promise.all([storeTokens(accessToken, refreshToken), fetchProfile()]);
     await storeProfile(
         modelProfile(profile.id, profile.country),
     );
