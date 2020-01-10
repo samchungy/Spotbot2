@@ -129,12 +129,12 @@ async function addVote(channelId, userId, currentSkip, skipVotes, status) {
       }
 
       await Promise.all([
-            deleteChat(
-                deleteMessage(channelId, currentSkip.timestamp),
-            ),
-            post(
-                inChannelPost(channelId, skipConfirmation(statusTrack.title, currentSkip.users), null),
-            ),
+        deleteChat(
+            deleteMessage(channelId, currentSkip.timestamp),
+        ),
+        post(
+            inChannelPost(channelId, skipConfirmation(statusTrack.title, currentSkip.users), null),
+        ),
       ]);
     }
   } catch (error) {
