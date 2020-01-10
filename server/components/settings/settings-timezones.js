@@ -7,11 +7,10 @@ const {option, optionGroup} = require('../slack/format/slack-format-modal');
  * @return {Array} Array of timezones
  */
 function getAllTimezones(query) {
-  console.log(query);
   const timezones = moment.tz.names();
   const options = timezones
       .filter((timezone) => timezone.toLowerCase().includes(query.toLowerCase().replace(' ', '_')))
-      .map((timezone) => option(timezone, timezone));
+      .map((timezone) => option(`${timezone} (${moment().tz(timezone).format('Z')})`, timezone));
 
   if (options.length > 100) {
     return {
