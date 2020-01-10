@@ -15,8 +15,7 @@ const PAUSE_RESPONSES = config.get('slack.responses.playback.pause');
  */
 async function setPause(userId) {
   try {
-    const status = await fetchCurrentPlayback();
-    const spotifyDevices = await fetchDevices();
+    const [status, spotifyDevices] = await Promise.all([fetchCurrentPlayback(), fetchDevices()]);
 
     if (!spotifyDevices.devices.length) {
       return {success: false, response: PAUSE_FAIL_RESPONSES.no_devices, status: status};
