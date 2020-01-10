@@ -17,23 +17,21 @@ const NEW_PLAYLIST_REGEX = new RegExp(`^${NEW_PLAYLIST}`);
  */
 async function getAllPlaylists(query) {
   try {
-    const searchPlaylists = [];
     const currentPlaylist = await loadPlaylistSetting();
     const playlists = await fetchAllPlaylists(currentPlaylist);
     await storePlaylists(playlists);
-    for (const playlist of playlists) {
-      if (playlist.name.toLowerCase().includes(query.toLowerCase())) {
-        searchPlaylists.push(
-            option(playlist.name, playlist.id),
-        );
-      }
-    }
+
+    // Converts into Slack Option if it matches the search query
+    const searchPlaylists = playlists
+        .filter((playlist) => playlist.name.toLowerCase().includes(query.toLowerCase()))
+        .map((playlist) => option(playlist.name, playlist.id));
+
     const other = [
       ...currentPlaylist ? [option(`${currentPlaylist.name} (Current Selection)`, `${currentPlaylist.id}`)] : [],
       option(`Create a new playlist called "${query}"`, `${NEW_PLAYLIST}${query}`),
     ];
 
-    if (searchPlaylists.length == 0) {
+    if (!searchPlaylists.length) {
       return {
         option_groups: [optionGroup(`No query results for "${query}"`, other)],
       };
