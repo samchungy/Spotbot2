@@ -1,37 +1,3 @@
-const imageSection = (text, imageUrl, imageAlt) => {
-  return {
-    'type': 'section',
-    'text': {
-      'type': 'mrkdwn',
-      'text': text,
-    },
-    ...imageUrl ? imageAccessory(imageUrl, imageAlt) : {},
-  };
-};
-
-const imageAccessory = (imageUrl, imageAlt) => {
-  return {
-    'accessory': {
-      'type': 'image',
-      'image_url': imageUrl,
-      'alt_text': imageAlt,
-    },
-  };
-};
-
-const contextSection = (blockId, text) => {
-  return {
-    ...blockId ? {'block_id': blockId} : {},
-    'type': 'context',
-    'elements': [
-      {
-        'type': 'mrkdwn',
-        'text': text,
-      },
-    ],
-  };
-};
-
 const actionSection = (blockId, elements) => {
   return {
     'block_id': blockId,
@@ -51,6 +17,46 @@ const buttonActionElement = (text, value) => {
       'emoji': true,
       'text': text,
     },
+  };
+};
+
+const contextSection = (blockId, text) => {
+  return {
+    ...blockId ? {'block_id': blockId} : {},
+    'type': 'context',
+    'elements': [
+      {
+        'type': 'mrkdwn',
+        'text': text,
+      },
+    ],
+  };
+};
+
+const divider = () => {
+  return {
+    'type': 'divider',
+  };
+};
+
+const imageAccessory = (imageUrl, imageAlt) => {
+  return {
+    'accessory': {
+      'type': 'image',
+      'image_url': imageUrl,
+      'alt_text': imageAlt,
+    },
+  };
+};
+
+const imageSection = (text, imageUrl, imageAlt) => {
+  return {
+    'type': 'section',
+    'text': {
+      'type': 'mrkdwn',
+      'text': text,
+    },
+    ...imageUrl ? imageAccessory(imageUrl, imageAlt) : {},
   };
 };
 
@@ -86,6 +92,7 @@ const textSection = (text) =>{
 module.exports = {
   actionSection,
   buttonActionElement,
+  divider,
   contextSection,
   imageSection,
   overflowActionElement,
