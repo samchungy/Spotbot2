@@ -19,7 +19,6 @@ async function play(deviceId, context) {
 /**
  * Hits pause on Spotify
  * @param {string} deviceId
- * @param {string} context
  */
 async function pause(deviceId) {
   const spotifyApi = await spotifyWebApi();
@@ -28,7 +27,18 @@ async function pause(deviceId) {
   });
 }
 
+/**
+ * Hits skip on Spotify
+ */
+async function skip() {
+  const spotifyApi = await spotifyWebApi();
+  return await requester('Pause', async () => {
+    await spotifyApi.skipToNext();
+  });
+}
+
 module.exports = {
   pause,
   play,
+  skip,
 };

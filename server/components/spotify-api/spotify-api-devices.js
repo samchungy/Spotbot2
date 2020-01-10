@@ -7,7 +7,7 @@ const requester = require('./spotify-api-requester');
  */
 async function fetchDevices() {
   const spotifyApi = await spotifyWebApi();
-  return (await requester('Get Spotify Devices', () => spotifyApi.getMyDevices())).body;
+  return (await requester('Get Spotify Devices', async () => await spotifyApi.getMyDevices())).body;
 }
 
 module.exports = {
