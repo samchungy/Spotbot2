@@ -40,7 +40,7 @@ async function setPlay() {
 
     if (device.id != NO_DEVICES) {
       // Default device selected
-      if (spotifyDevices.devices.length == 0 || spotifyDevices.devices.find(({id}) => id === device.id)) {
+      if (spotifyDevices.devices.length == 0 || !spotifyDevices.devices.find(({id}) => id === device.id)) {
         // If selected devices is not turned on
         return {success: false, response: PLAY_FAIL_RESPONSES.no_device, status: status};
       }
