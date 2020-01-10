@@ -14,8 +14,7 @@ const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 async function fetchAllDevices() {
   try {
     const devices = [];
-    const defaultDevice = await loadDefaultDevice();
-    const spotifyDevices = await fetchDevices();
+    const [defaultDevice, spotifyDevices] = await Promise.all([loadDefaultDevice(), fetchDevices()]);
     if (defaultDevice) {
       devices.push(defaultDevice);
     }
