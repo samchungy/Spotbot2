@@ -63,6 +63,7 @@ async function updatePanel(responseUrl, response, status) {
     );
   } catch (error) {
     logger.error(error);
+    throw error;
   }
 }
 
@@ -77,10 +78,12 @@ async function play(responseUrl, channelId) {
     if (!success) {
       await updatePanel(responseUrl, response, status);
     } else {
-      updatePanel(responseUrl, null, status);
-      post(
-          inChannelPost(channelId, response, null),
-      );
+      await Promise.all([
+        updatePanel(responseUrl, null, status),
+        post(
+            inChannelPost(channelId, response, null),
+        ),
+      ]);
     }
   } catch (error) {
     logger.error(error);
@@ -99,10 +102,12 @@ async function pause(responseUrl, channelId, userId) {
     if (!success) {
       await updatePanel(responseUrl, response, status);
     } else {
-      updatePanel(responseUrl, null, status);
-      post(
-          inChannelPost(channelId, response, null),
-      );
+      await Promise.all([
+        updatePanel(responseUrl, null, status),
+        post(
+            inChannelPost(channelId, response, null),
+        ),
+      ]);
     }
   } catch (error) {
     logger.error(error);
