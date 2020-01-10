@@ -2,7 +2,7 @@ const config = require('config');
 const {loadPlaylistSetting} = require('../settings/settings-dal');
 const Track = require('../../util/util-spotify-track');
 const CONTEXT_RESPONSES = config.get('slack.responses.playback.context');
-const {actionSection, buttonActionElement, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('../slack/format/slack-format-blocks');
+const {actionSection, buttonActionElement, confirmObject, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('../slack/format/slack-format-blocks');
 const CONTROLLER = config.get('slack.actions.controller');
 const CONTROLLER_OVERFLOW = config.get('slack.actions.controller_overflow');
 const CONTROLS = config.get('slack.actions.controls');
@@ -75,9 +75,9 @@ function getControlsPanel() {
   ];
   const elements = [
     buttonActionElement(`:arrow_forward: Play`, CONTROLS.play),
-    buttonActionElement(`:double_vertical_bar: Pause`, CONTROLS.pause),
+    buttonActionElement(`:double_vertical_bar: Pause`, CONTROLS.pause, confirmObject('Are you sure?', 'This will pause playback of Spotbot.', 'Do it', 'Cancel')),
     buttonActionElement(`:black_right_pointing_double_triangle_with_vertical_bar: Skip`, CONTROLS.skip),
-    overflowActionElement(CONTROLLER_OVERFLOW, overflowOptions),
+    overflowActionElement(CONTROLLER_OVERFLOW, overflowOptions, confirmObject('Are you sure?', 'Make sure everyone is okay with you doing this.', 'Do it', 'Cancel')),
   ];
   return actionSection(CONTROLLER, elements);
 }
