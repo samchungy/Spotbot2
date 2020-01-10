@@ -5,6 +5,7 @@ const {inChannelReply, updateReply, inChannelPost} = require('../slack/format/sl
 const {post, reply} = require('../slack/slack-api');
 const {setPlay} = require('./control-play');
 const {setPause} = require('./control-pause');
+const {startSkipVote, addVote} = require('./contol-skip');
 
 /**
  * Opens a menu of Spotbot controls
@@ -108,8 +109,40 @@ async function pause(responseUrl, channelId, userId) {
   }
 }
 
+/**
+ * Hits pause on Spotify
+ * @param {string} responseUrl
+ * @param {string} channelId
+ * @param {string} userId
+ */
+async function skip(responseUrl, channelId, userId) {
+  try {
+    const {success, response, status} = await startSkipVote(channelId, userId);
+    if (!success) {
+      await updatePanel(responseUrl, response, status);
+    }
+  } catch (error) {
+    logger.error(error);
+  }
+}
+
+/**
+ * Add vote to skip
+ * @param {string} channelId
+ * @param {string} userId
+ */
+async function voteToSkip(channelId, userId) {
+  try {
+    await addVote(channelId, userId);
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   openControls,
   pause,
   play,
+  skip,
+  voteToSkip,
 };
