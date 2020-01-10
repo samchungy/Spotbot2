@@ -7,8 +7,8 @@ const CONTROLLER = config.get('slack.actions.controller');
 const CONTROLLER_OVERFLOW = config.get('slack.actions.controller_overflow');
 const CONTROLS = config.get('slack.actions.controls');
 const PLAY_RESPONSES = config.get('slack.responses.playback.play');
-const currentlyPlayingTextMrkdwn = (title, url, artist, album) => `*Currently Playing...*\n<${url}|*${title}*>\n:studio_microphone: *Artist:* ${artist}\n:dvd: *Album*: ${album}\n`;
-const currentlyPlayingText = (title, artist, album) => `Currently Playing... ${title}\n:studio_microphone: Artist: ${artist}\nAlbum: ${album}\n`;
+const currentlyPlayingTextMrkdwn = (title, url, artist, album) => `*Currently Playing...*\n<${url}|*${title}*>\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`;
+const currentlyPlayingText = (title, artist, album) => `Currently Playing... ${title}\n:studio_microphone: Artists: ${artist}\nAlbum: ${album}\n`;
 
 
 /**
