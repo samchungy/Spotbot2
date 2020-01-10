@@ -36,8 +36,8 @@ async function setPlay() {
     }
 
     // Load our default Device and fetch all available Spotify devices
-    const device = await loadDefaultDevice();
-    const spotifyDevices = await fetchDevices();
+
+    const [device, spotifyDevices] = await Promise.all([loadDefaultDevice(), fetchDevices()]);
 
     if (device.id != NO_DEVICES) {
       // Default device selected
