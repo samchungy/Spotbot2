@@ -27,9 +27,8 @@ const skipConfirmation = (title, users) => `:black_right_pointing_double_triangl
 async function startSkipVote(channelId, userId) {
   try {
     // Get current playback status
-    let skipVotes;
-    const status = await fetchCurrentPlayback();
-    const timezone = await loadTimezone();
+    let skipVotes; s;
+    const [status, timezone] = await Promise.all([fetchCurrentPlayback(), loadTimezone()]);
     // If Time is before 6am or after 6pm local time.
     if (moment().isBefore(moment.tz('6:00', 'hh:mm', timezone)) || moment().isAfter(moment.tz('18:00', 'hh:mm', timezone))) {
       skipVotes = parseInt(await loadSkipVotesAfterHours());
@@ -85,9 +84,8 @@ async function startSkipVote(channelId, userId) {
 async function addVote(channelId, userId, currentSkip, skipVotes, status) {
   try {
     if (!currentSkip) {
-      currentSkip = await loadSkip();
-      skipVotes = parseInt(await loadSkipVotes());
-      status = await fetchCurrentPlayback();
+      [currentSkip, skipVotes, status] = await Promise.all([loadSkip(), loadSkipVotes(), fetchCurrentPlayback()]);
+      skipVotes = parseInt(skipVotes);
     }
     const statusTrack = new Track(status.item);
 
@@ -120,7 +118,7 @@ async function addVote(channelId, userId, currentSkip, skipVotes, status) {
       try {
         await skip();
       } catch (error) {
-        await Promise.all( [
+        await Promise.all([
           deleteChat(
               deleteMessage(channelId, currentSkip.timestamp),
           ),
@@ -130,16 +128,14 @@ async function addVote(channelId, userId, currentSkip, skipVotes, status) {
         ]);
       }
 
-      await Promise.all(
-          [
+      await Promise.all([
             deleteChat(
                 deleteMessage(channelId, currentSkip.timestamp),
             ),
             post(
                 inChannelPost(channelId, skipConfirmation(statusTrack.title, currentSkip.users), null),
             ),
-          ],
-      );
+      ]);
     }
   } catch (error) {
     logger.error(error);
