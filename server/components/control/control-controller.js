@@ -6,6 +6,7 @@ const {post, reply} = require('../slack/slack-api');
 const {setPlay} = require('./control-play');
 const {setPause} = require('./control-pause');
 const {startSkipVote, addVote} = require('./contol-skip');
+const {setRepeat, setShuffle} = require('./control-shuffle-repeat');
 
 /**
  * Opens a menu of Spotbot controls
@@ -48,7 +49,6 @@ async function updatePanel(responseUrl, response, status) {
     if (!status) {
       status = await fetchCurrentPlayback();
     }
-    console.log(status);
     const {altText, currentPanel} = getCurrentTrackPanel(status, response);
 
     const controlPanel = [
@@ -144,10 +144,60 @@ async function voteToSkip(channelId, userId) {
   }
 }
 
+/**
+ * Toggles shuffle on Spotify
+ * @param {String} responseUrl
+ * @param {String} channelId
+ * @param {String} userId
+ */
+async function toggleShuffle(responseUrl, channelId, userId) {
+  try {
+    const {success, response, status} = await setShuffle(userId);
+    if (!success) {
+      await updatePanel(responseUrl, response, status);
+    } else {
+      await Promise.all([
+        updatePanel(responseUrl, null, status),
+        post(
+            inChannelPost(channelId, response, null),
+        ),
+      ]);
+    }
+  } catch (error) {
+    logger.error(error);
+  }
+}
+
+/**
+ * Toggles repeat on Spotify
+ * @param {String} responseUrl
+ * @param {String} channelId
+ * @param {String} userId
+ */
+async function toggleRepeat(responseUrl, channelId, userId) {
+  try {
+    const {success, response, status} = await setRepeat(userId);
+    if (!success) {
+      await updatePanel(responseUrl, response, status);
+    } else {
+      await Promise.all([
+        updatePanel(responseUrl, null, status),
+        post(
+            inChannelPost(channelId, response, null),
+        ),
+      ]);
+    }
+  } catch (error) {
+    logger.error(error);
+  }
+}
+
 module.exports = {
   openControls,
   pause,
   play,
   skip,
+  toggleRepeat,
+  toggleShuffle,
   voteToSkip,
 };

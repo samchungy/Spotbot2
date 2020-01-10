@@ -7,8 +7,9 @@ const TIMEZONE = config.get('dynamodb.settings.timezone');
 const AUTH_URL = config.get('dynamodb.settings_helper.auth_url');
 const REAUTH = config.get('dynamodb.settings_helper.reauth');
 const CONTROLS = config.get('slack.actions.controls');
+const OVERFLOW = config.get('slack.actions.controller_overflow');
 const {changeAuthentication, getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, saveView, updateView} = require('../settings/settings-controller');
-const {pause, play, skip, voteToSkip} = require('../control/control-controller');
+const {pause, play, skip, toggleRepeat, toggleShuffle, voteToSkip} = require('../control/control-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
@@ -45,6 +46,18 @@ module.exports = ( prefix, Router ) => {
                 case SLACK_ACTIONS.skip_vote:
                   voteToSkip(payload.channel.id, payload.user.id);
                   ctx.body = '';
+                  break;
+                case OVERFLOW:
+                  switch (payload.actions[0].selected_option.value) {
+                    case CONTROLS.shuffle:
+                      toggleShuffle(payload.response_url, payload.channel.id, payload.user.id);
+                      ctx.body = '';
+                      break;
+                    case CONTROLS.repeat:
+                      toggleRepeat(payload.response_url, payload.channel.id, payload.user.id);
+                      ctx.body = '';
+                      break;
+                  }
                   break;
               }
               break;
