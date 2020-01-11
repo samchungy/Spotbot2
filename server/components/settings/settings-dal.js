@@ -86,26 +86,14 @@ async function loadSettings() {
   try {
     const settings = {...SETTINGS};
     // Create a default set of values
-    for (const key in settings) {
-      if ({}.hasOwnProperty.call(settings, key)) {
-        settings[key] = null;
-      }
-    }
-    const settingsList = [];
+    Object.keys(settings).forEach((key) => settings[key] = null);
 
-    // Initialise Search Keys
-    for (const key in SETTINGS) {
-      if ({}.hasOwnProperty.call(SETTINGS, key)) {
-        settingsList.push(settingModel(SETTINGS[key], null));
-      }
-    }
+    const settingsList = Object.keys(SETTINGS).map((key) => settingModel(SETTINGS[key], null));
     const batchSettings = await batchGetSettings(settingsList);
     // Read values into settings, should be only 1 table
     for (const table in batchSettings.Responses) {
       if ({}.hasOwnProperty.call(batchSettings.Responses, table)) {
-        for (const key of batchSettings.Responses[table]) {
-          settings[key.name] = key.value;
-        }
+        batchSettings.Responses[table].forEach((key) => settings[key.name] = key.value);
       }
     }
 
@@ -180,12 +168,7 @@ async function loadView() {
  */
 async function storeSettings(newSettings) {
   try {
-    const settings = [];
-    for (const key in newSettings) {
-      if ({}.hasOwnProperty.call(newSettings, key)) {
-        settings.push(putRequest(key, newSettings[key]));
-      }
-    }
+    const settings = Object.keys(newSettings).map((key) => putRequest(key, newSettings[key]));
     await batchPutSettings(settings);
   } catch (error) {
     logger.error('Storing Settings in Dynamodb failed');
