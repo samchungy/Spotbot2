@@ -7,8 +7,8 @@ const CONTROLLER = config.get('slack.actions.controller');
 const CONTROLLER_OVERFLOW = config.get('slack.actions.controller_overflow');
 const CONTROLS = config.get('slack.actions.controls');
 const PLAY_RESPONSES = config.get('slack.responses.playback.play');
-const currentlyPlayingTextMrkdwn = (title, url, artist, album) => `*Currently Playing...*\n<${url}|*${title}*>\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`;
-const currentlyPlayingText = (title, artist, album) => `Currently Playing... ${title}\n:studio_microphone: Artists: ${artist}\nAlbum: ${album}\n`;
+const currentlyPlayingTextMrkdwn = (title, url, artist, album) => `:sound: *Currently Playing...*\n\n<${url}|*${title}*>\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`;
+const currentlyPlayingText = (title, artist, album) => `:sound: Currently Playing... ${title}\n\n:studio_microphone: Artists: ${artist}\nAlbum: ${album}\n`;
 
 
 /**
@@ -23,21 +23,8 @@ async function getCurrentTrackPanel(status, response) {
   const currentPanel = [];
   if (status.item) {
     const track = new Track(status.item);
-    context = CONTEXT_RESPONSES.not_on_playlist;
     const text = currentlyPlayingTextMrkdwn(track.name, track.url, track.artists, track.album);
     altText = currentlyPlayingText(track.name, track.artists, track.album);
-    // Check if we are playing from the playlist
-    if (status.context) {
-      const playlist = await loadPlaylistSetting();
-      if (status.context.uri.includes(playlist.id)) {
-        context = CONTEXT_RESPONSES.on_playlist;
-      }
-    }
-
-    if (!status.is_playing) {
-      context = CONTEXT_RESPONSES.paused;
-    }
-
     currentPanel.push(
         imageSection(text, track.art, `Album Art`),
     );
@@ -49,8 +36,24 @@ async function getCurrentTrackPanel(status, response) {
     );
   }
 
+  // Set the contexts
+  // If we had a previous action
   if (response) {
     context = response;
+  } else {
+  // Check if we are playing from the playlist
+    if (status.context) {
+      const playlist = await loadPlaylistSetting();
+      if (status.context.uri.includes(playlist.id)) {
+        context = CONTEXT_RESPONSES.on_playlist;
+      }
+    } else {
+      context = CONTEXT_RESPONSES.not_on_playlist;
+    }
+
+    if (!status.is_playing) {
+      context = CONTEXT_RESPONSES.paused;
+    }
   }
 
   if (context) {
