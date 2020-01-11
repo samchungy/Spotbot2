@@ -13,10 +13,10 @@ const Track = require('../../util/util-spotify-track');
 
 const SKIP_RESPONSE = config.get('slack.responses.playback.skip');
 const SKIP_VOTE = config.get('slack.actions.skip_vote');
-const skipRequest = (userId, title) => `:black_right_pointing_double_triangle_with_vertical_bar: <@${userId}> has requested to skip ${title}`;
+const skipRequest = (userId, title) => `:black_right_pointing_double_triangle_with_vertical_bar: *Skip Request:*\n\n <@${userId}> has requested to skip ${title}`;
 const skipVoters = (users) => `*Votes*: ${userList(users)}.`;
 const userList = (users) => `${users.map((user) => `<@${user}>`).join(', ')}`;
-const skipVotesNeeded = (votes) => `${votes} more ${votes == 1 ? 'vote' : 'votes'} needed.`;
+const skipVotesNeeded = (votes) => `*${votes}* more ${votes == 1 ? 'vote' : 'votes'} needed.`;
 const skipConfirmation = (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} was skipped by ${userList(users)}.`;
 
 /**
@@ -27,7 +27,7 @@ const skipConfirmation = (title, users) => `:black_right_pointing_double_triangl
 async function startSkipVote(channelId, userId) {
   try {
     // Get current playback status
-    let skipVotes; s;
+    let skipVotes;
     const [status, timezone] = await Promise.all([fetchCurrentPlayback(), loadTimezone()]);
     // If Time is before 6am or after 6pm local time.
     if (moment().isBefore(moment.tz('6:00', 'hh:mm', timezone)) || moment().isAfter(moment.tz('18:00', 'hh:mm', timezone))) {
@@ -154,9 +154,9 @@ async function addVote(channelId, userId, currentSkip, skipVotes, status) {
 function getSkipBlock(userId, votesNeeded, trackName, users) {
   return [
     textSection(skipRequest(userId, trackName)),
-    actionSection(SKIP_VOTE, [buttonActionElement(`:black_right_pointing_double_triangle_with_vertical_bar: Skip`, SKIP_VOTE)]),
     contextSection(null, skipVotesNeeded(votesNeeded)),
     contextSection(null, skipVoters(users)),
+    actionSection(SKIP_VOTE, [buttonActionElement(`:black_right_pointing_double_triangle_with_vertical_bar: Skip`, SKIP_VOTE)]),
   ];
 }
 
