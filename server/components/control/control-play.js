@@ -4,7 +4,6 @@ const {loadDefaultDevice, loadPlaylistSetting} = require('../settings/settings-d
 const {play} = require('../spotify-api/spotify-api-playback');
 const {fetchDevices} = require('../spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
-const {idToUri} = require('../../util/util-spotify-context');
 const {PlaybackError} = require('../../errors/errors-playback');
 const {sleep} = require('../../util/util-timeout');
 const NO_DEVICES = config.get('dynamodb.settings_helper.no_devices');
@@ -87,7 +86,7 @@ async function attemptPlay(deviceId, status, playlist, attempt) {
 
   // Unique Spotify edge case where it gets stuck
   if (status && status.currently_playing_type=='unknown' && !status.context && !status.item) {
-    await play(deviceId, idToUri(playlist.id));
+    await play(deviceId, playlist.uri);
   } else {
     await play(deviceId);
   }

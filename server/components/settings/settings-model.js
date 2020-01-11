@@ -5,10 +5,11 @@ const modelDevice = (name, id) => {
   };
 };
 
-const modelPlaylist = (name, id, url) => {
+const modelPlaylist = (name, id, uri, url) => {
   return {
     name: name,
     id: id,
+    uri: uri,
     url: url,
   };
 };

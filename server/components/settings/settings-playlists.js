@@ -65,7 +65,7 @@ async function fetchAllPlaylists(currentPlaylist) {
       compatiblePlaylists.push(
           ...playlists.items
               .filter((playlist) => playlist.id != currentPlaylist.id && (playlist.collaborative == true || playlist.owner.id == profile.id))
-              .map((playlist) => modelPlaylist(playlist.name, playlist.id, playlist.external_urls.spotify)),
+              .map((playlist) => modelPlaylist(playlist.name, playlist.id, playlist.uri, playlist.external_urls.spotify)),
       );
 
       // See if we can get more playlists as the Spotify Limit is 50 playlists per call.
@@ -93,7 +93,7 @@ async function getPlaylistValue(newValue) {
       // Create a new playlist using Spotify API
       const spotifyId = await loadProfile();
       const newPlaylist = await createPlaylist(spotifyId, newValue);
-      return modelPlaylist(newValue, newPlaylist.id, newPlaylist.external_urls.spotify);
+      return modelPlaylist(newValue, newPlaylist.id, newPlaylist.uri, newPlaylist.external_urls.spotify);
     } else {
       // Grab the playlist object from our earlier Database playlist fetch
       const playlists = await loadPlaylists();
