@@ -91,7 +91,7 @@ async function attemptPlay(deviceId, status, playlist, attempt) {
     await play(deviceId);
   }
   // Wait before verifying that Spotify is playing
-  await sleep(1000);
+  await sleep(100);
   const newStatus = await fetchCurrentPlayback();
   return await attemptPlay(deviceId, newStatus, playlist, attempt+1);
 }

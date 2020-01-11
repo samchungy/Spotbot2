@@ -17,16 +17,19 @@ async function setShuffle(userId) {
     if (!status.device) {
       return {success: false, response: SHUFFLE.not_playing, status: status};
     }
+    if (status.actions && status.actions.disallows && status.actions.disallows.toggling_shuffle) {
+      return {success: false, response: SHUFFLE.cannot, status: status};
+    }
 
     if (status.shuffle_state) {
       // Turn off shuffle
       await shuffle(false);
-      await sleep(1000);
+      await sleep(100);
       return {success: true, response: `${SHUFFLE.off} <@${userId}>.`, status: null};
     } else {
       // Turn on Shuffle
       await shuffle(true);
-      await sleep(1000);
+      await sleep(100);
       return {success: true, response: `${SHUFFLE.on} <@${userId}>.`, status: null};
     }
   } catch (error) {
@@ -46,16 +49,19 @@ async function setRepeat(userId) {
     if (!status.device) {
       return {success: false, response: REPEAT.not_playing, status: status};
     }
+    if (status.actions && status.actions.disallows && status.actions.disallows.toggling_repeat_context) {
+      return {success: false, response: REPEAT.cannot, status: status};
+    }
 
     if (status.repeat_state === 'track' || status.repeat_state === 'context') {
       // Turn off repeat
       await repeat('off');
-      await sleep(1000);
+      await sleep(100);
       return {success: true, response: `${REPEAT.off} <@${userId}>.`, status: null};
     } else {
       // Turn on repeat
       await repeat('context');
-      await sleep(1000);
+      await sleep(100);
       return {success: true, response: `${REPEAT.on} <@${userId}>.`, status: null};
     }
   } catch (error) {

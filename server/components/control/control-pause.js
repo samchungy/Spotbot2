@@ -27,7 +27,7 @@ async function setPause(userId) {
 
     // Try Pause
     await pause(status.device.id);
-    await sleep(1000);
+    await sleep(100);
     const newStatus = await fetchCurrentPlayback();
     if (!newStatus.is_playing) {
       return {success: true, response: `${PAUSE_RESPONSES.success} <@${userId}>.`, status: newStatus};
