@@ -13,13 +13,12 @@ const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 async function fetchAllDevices() {
   try {
     const [defaultDevice, spotifyDevices] = await Promise.all([loadDefaultDevice(), fetchDevices()]);
-    const devices = [...defaultDevice ? [defaultDevice] : []];
-
-    devices.push(
-        ...spotifyDevices.devices
-            .filter((device) => device.id != defaultDevice.id)
-            .map((device) => modelDevice(`${device.name} - ${device.type}`, device.id)),
-    );
+    const devices = [
+      ...defaultDevice ? [defaultDevice] : [], // If default device, add
+      ...spotifyDevices.devices
+          .filter((device) => device.id != defaultDevice.id)
+          .map((device) => modelDevice(`${device.name} - ${device.type}`, device.id)),
+    ];
 
     return devices;
   } catch (error) {
@@ -36,8 +35,10 @@ async function getAllDevices() {
     const spotifyDevices = await fetchAllDevices();
     await storeDevices(spotifyDevices);
     // Add a none option
-    const devices = [option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices)];
-    devices.push(...spotifyDevices.map((device) => option(device.name, device.id)));
+    const devices = [
+      option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices),
+      ...spotifyDevices.map((device) => option(device.name, device.id)),
+    ];
 
     return {
       options: devices,
