@@ -97,11 +97,7 @@ async function getPlaylistValue(newValue) {
     } else {
       // Grab the playlist object from our earlier Database playlist fetch
       const playlists = await loadPlaylists();
-      for (const playlist of playlists) {
-        if (playlist.id === newValue) {
-          return playlist;
-        }
-      }
+      return playlists.find((playlist) => playlist.id === newValue);
     }
   } catch (error) {
     logger.error('Converting Playlist Value failed');

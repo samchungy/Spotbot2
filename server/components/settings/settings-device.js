@@ -62,11 +62,7 @@ async function getDeviceValue(newValue, oldValue) {
         return modelDevice(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices);
       default:
         const spotifyDevices = await loadDevices();
-        for (const device of spotifyDevices) {
-          if (device.id == newValue) {
-            return device;
-          }
-        }
+        return spotifyDevices.find((device) => device.id === newValue);
     }
   } catch (error) {
     logger.error('Getting Device Value failed');
