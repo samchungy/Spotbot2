@@ -1,21 +1,22 @@
-const adminRouter = require('./components/admins/route');
-const spotifyAuthRouter = require('./components/spotify-auth/route')
-const controlRouter = require('./components/control/route');
-const tracksRouter = require('./components/tracks/route');
+
+const slackRouter = require('./components/slack/slack-route');
+const settingsRouter = require('./components/settings/settings-route');
+const controlRouter = require('./components/control/control-route');
+const tracksRouter = require('./components/tracks/tracks-route');
 
 module.exports = ({Router}) => {
-    const router = new Router();
+  const router = new Router();
 
-    const adminRoute = adminRouter('/admin', Router);
-    const controlRoute = controlRouter('/control', Router);
-    const tracksRoute = tracksRouter('/tracks', Router);
-    const spotifyAuthRoute = spotifyAuthRouter('/auth', Router);
-    
-    router
-        .use(adminRoute.routes())
-        .use(controlRoute.routes())
-        .use(tracksRoute.routes())
-        .use(spotifyAuthRoute.routes())
-        
-    return router;
-}
+  const slackRoute = slackRouter('/slack/actions', Router);
+  const settingsRoute = settingsRouter('/settings', Router);
+  const controlRoute = controlRouter('/control', Router);
+  const tracksRoute = tracksRouter('/tracks', Router);
+
+  router
+      .use(slackRoute.routes())
+      .use(settingsRoute.routes())
+      .use(controlRoute.routes())
+      .use(tracksRoute.routes());
+
+  return router;
+};
