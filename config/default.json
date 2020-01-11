@@ -72,7 +72,7 @@
                 "reauth_url_button": ":gear: Re-authenticate with Spotify",
                 "auth_verify": "Click to verify Spotify authentication.",
                 "auth_verify_button": "Verify",
-                "timezone": "This is to configure the time based skip votes."
+                "timezone": "This is to configure the time based skip votes. Type in a location."
             },
             "labels": {
                 "auth_url": "Click to authenticate with Spotify.",
@@ -149,7 +149,8 @@
                 },
                 "play":{
                   "success": ":arrow_forward: Spotify is now playing.",
-                  "not_playing": ":information_source: Spotify is currently not playing."
+                  "not_playing": ":information_source: Spotify is currently not playing.",
+                  "currently": ":sound: Currently Playing..."
                 },
                 "play_fail": {
                   "already": ":information_source: Spotify is already playing. Check if speaker is muted.",
@@ -171,10 +172,27 @@
                   "repeat": " Repeat is *enabled*."
                 },
                 "skip":{
-                  "not_playing": ":information_source: Spotify is currently not playing.",
+                  "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
                   "already": ":information_source: You have already voted on this.",
                   "expired": "information_source: Skip vote has expired.",
                   "failed": ":information_source: Skip Failed. Check if Spotify is currently playing."
+                },
+                "shuffle": {
+                  "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
+                  "cannot": ":information_source: Spotify cannot toggle shuffling right now.",
+                  "on": ":information_source: Shuffle was enabled by",
+                  "off": ":information_source: Shuffle was disabled by"
+                },
+                "repeat": {
+                  "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
+                  "cannot": ":information_source: Spotify cannot toggle repeating right now.",
+                  "on": ":information_source: Repeat was enabled by",
+                  "off": ":information_source: Repeat was disabled by"
+                },
+                "jump":{
+                  "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
+                  "success": ":arrow_forward: Spotify is now playing from the start of the playlist. Set by",
+                  "fail": ":warning: Spotify failed to jump to the start of the playlist."
                 }
               }
             }
