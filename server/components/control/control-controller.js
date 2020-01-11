@@ -7,6 +7,7 @@ const {setPlay} = require('./control-play');
 const {setPause} = require('./control-pause');
 const {startSkipVote, addVote} = require('./contol-skip');
 const {setRepeat, setShuffle} = require('./control-shuffle-repeat');
+const {setJumpToStart} = require('./control-jump');
 
 /**
  * Opens a menu of Spotbot controls
@@ -192,7 +193,33 @@ async function toggleRepeat(responseUrl, channelId, userId) {
   }
 }
 
+
+/**
+ * Jumps to start of playlist on Spotify
+ * @param {String} responseUrl
+ * @param {String} channelId
+ * @param {String} userId
+ */
+async function jumpToStart(responseUrl, channelId, userId) {
+  try {
+    const {success, response, status} = await setJumpToStart(userId);
+    if (!success) {
+      await updatePanel(responseUrl, response, status);
+    } else {
+      await Promise.all([
+        updatePanel(responseUrl, null, status),
+        post(
+            inChannelPost(channelId, response, null),
+        ),
+      ]);
+    }
+  } catch (error) {
+    logger.error(error);
+  }
+}
+
 module.exports = {
+  jumpToStart,
   openControls,
   pause,
   play,

@@ -9,7 +9,7 @@ const REAUTH = config.get('dynamodb.settings_helper.reauth');
 const CONTROLS = config.get('slack.actions.controls');
 const OVERFLOW = config.get('slack.actions.controller_overflow');
 const {changeAuthentication, getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, saveView, updateView} = require('../settings/settings-controller');
-const {pause, play, skip, toggleRepeat, toggleShuffle, voteToSkip} = require('../control/control-controller');
+const {jumpToStart, pause, play, skip, toggleRepeat, toggleShuffle, voteToSkip} = require('../control/control-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
@@ -49,6 +49,10 @@ module.exports = ( prefix, Router ) => {
                   break;
                 case OVERFLOW:
                   switch (payload.actions[0].selected_option.value) {
+                    case CONTROLS.jump_to_start:
+                      jumpToStart(payload.response_url, payload.channel.id, payload.user.id);
+                      ctx.body = '';
+                      break;
                     case CONTROLS.shuffle:
                       toggleShuffle(payload.response_url, payload.channel.id, payload.user.id);
                       ctx.body = '';
