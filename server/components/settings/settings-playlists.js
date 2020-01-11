@@ -62,14 +62,16 @@ async function fetchAllPlaylists(currentPlaylist) {
       const playlists = await fetchPlaylists(count, LIMIT);
 
       // Only if it is a collaborative playlist or the owner is ourselves - a playlist compatible.
+      // and current playlist is not in the list
       compatiblePlaylists.push(
           ...playlists.items
-              .filter((playlist) => playlist.id != currentPlaylist.id && (playlist.collaborative == true || playlist.owner.id == profile.id))
+              .filter((playlist) => (!currentPlaylist || (playlist.id != currentPlaylist.id)) &&
+                (playlist.collaborative == true || playlist.owner.id == profile.id))
               .map((playlist) => modelPlaylist(playlist.name, playlist.id, playlist.uri, playlist.external_urls.spotify)),
       );
 
       // See if we can get more playlists as the Spotify Limit is 50 playlists per call.
-      if (playlists.total > (count+1) * LIMIT) {
+      if (playlists.total > ((count+1) * LIMIT)) {
         count++;
       } else {
         break;

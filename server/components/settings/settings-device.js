@@ -16,7 +16,7 @@ async function fetchAllDevices() {
     const devices = [
       ...defaultDevice ? [defaultDevice] : [], // If default device, add
       ...spotifyDevices.devices
-          .filter((device) => device.id != defaultDevice.id)
+          .filter((device) => (!defaultDevice || device.id != defaultDevice.id))
           .map((device) => modelDevice(`${device.name} - ${device.type}`, device.id)),
     ];
 
