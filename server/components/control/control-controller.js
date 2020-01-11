@@ -16,7 +16,7 @@ async function openControls(responseUrl) {
   try {
     try {
       const status = await fetchCurrentPlayback();
-      const {altText, currentPanel} = getCurrentTrackPanel(status);
+      const {altText, currentPanel} = await getCurrentTrackPanel(status);
 
       const controlPanel = [
         ...currentPanel,
@@ -49,7 +49,7 @@ async function updatePanel(responseUrl, response, status) {
     if (!status) {
       status = await fetchCurrentPlayback();
     }
-    const {altText, currentPanel} = getCurrentTrackPanel(status, response);
+    const {altText, currentPanel} = await getCurrentTrackPanel(status, response);
 
     const controlPanel = [
       ...currentPanel,
