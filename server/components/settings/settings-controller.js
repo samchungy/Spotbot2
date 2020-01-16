@@ -1,7 +1,7 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
 const moment = require('moment-timezone');
-const {option, slackModal, selectChannels, selectExternal, selectStatic, textInput} = require('../slack/format/slack-format-modal');
+const {option, slackModal, selectChannels, selectExternal, selectStatic, textInput, yesOrNo} = require('../slack/format/slack-format-modal');
 const {sendModal, updateModal} = require('../slack/slack-api');
 
 const {getAuthBlock, resetAuthentication} = require('./spotifyauth/spotifyauth-controller');
@@ -61,7 +61,7 @@ async function openSettings(triggerId) {
       ...!authError ? await getSettingsBlocks() : [],
     ];
 
-    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks);
+    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, null);
     await sendModal(triggerId, modal);
   } catch (error) {
     logger.error('Open Settings Failed');
@@ -176,7 +176,7 @@ async function updateView(failReason, viewId, triggerId) {
       ...!authError ? await getSettingsBlocks() : [],
     ];
 
-    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks);
+    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, null);
     await updateModal(viewId, modal);
   } catch (error) {
     logger.error(error);
@@ -191,17 +191,6 @@ async function updateView(failReason, viewId, triggerId) {
 async function saveView(viewId, triggerId) {
   const store = modelView(viewId, triggerId);
   storeView(store);
-}
-
-/**
- * Generates a yes or no option array
- * @return {array} Yes or No options
- */
-function yesOrNo() {
-  return [
-    option(`Yes`, `true`),
-    option(`No`, `false`),
-  ];
 }
 
 /**
