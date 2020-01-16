@@ -9,6 +9,7 @@ class Track {
   constructor(trackObject) {
     this.name = trackObject.name;
     this.id = trackObject.id;
+    this.uri = trackObject.uri;
     this.artists = trackObject.artists.map((artist) => artist.name).join(', ');
     this.url = trackObject.external_urls.spotify;
     this.album = trackObject.album.name;
