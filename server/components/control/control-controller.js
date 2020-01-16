@@ -117,16 +117,14 @@ async function pause(responseUrl, channelId, userId) {
 
 /**
  * Hits pause on Spotify
- * @param {string} responseUrl
+ * @param {string} timestamp
  * @param {string} channelId
  * @param {string} userId
  */
-async function skip(responseUrl, channelId, userId) {
+async function skip(timestamp, channelId, userId) {
   try {
-    const {success, response, status} = await startSkipVote(channelId, userId);
-    if (!success) {
-      await updatePanel(responseUrl, response, status);
-    }
+    const {response, status} = await startSkipVote(channelId, userId);
+    await updatePanel(timestamp, channelId, response, status);
   } catch (error) {
     logger.error(error);
   }
@@ -136,12 +134,14 @@ async function skip(responseUrl, channelId, userId) {
  * Add vote to skip
  * @param {string} channelId
  * @param {string} userId
+ * @param {string} value
+ * @param {string} responseUrl
  */
-async function voteToSkip(channelId, userId) {
+async function voteToSkip(channelId, userId, value, responseUrl) {
   try {
-    await addVote(channelId, userId);
+    await addVoteFromPost(channelId, userId, value, responseUrl);
   } catch (error) {
-    throw error;
+    logger.error('Vote failed');
   }
 }
 
