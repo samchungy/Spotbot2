@@ -42,8 +42,7 @@ async function updateModal(viewId, view) {
  */
 async function reply(body, responseUrl) {
   try {
-    await axios.post(responseUrl, body);
-    return;
+    return await axios.post(responseUrl, body);
   } catch (error) {
     logger.error(`Slack API: Reply failed`, error);
     throw error;
