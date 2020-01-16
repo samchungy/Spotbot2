@@ -50,7 +50,7 @@ module.exports = ( prefix, Router ) => {
                 case OVERFLOW:
                   switch (payload.actions[0].selected_option.value) {
                     case CONTROLS.jump_to_start:
-                      jumpToStart(payload.response_url, payload.channel.id, payload.user.id);
+                      jumpToStart(payload.message.ts, payload.channel.id, payload.user.id);
                       ctx.body = '';
                       break;
                     case CONTROLS.shuffle:

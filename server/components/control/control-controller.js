@@ -196,14 +196,28 @@ async function toggleRepeat(responseUrl, channelId, userId) {
 
 /**
  * Jumps to start of playlist on Spotify
- * @param {String} responseUrl
+ * @param {String} timestamp
  * @param {String} channelId
  * @param {String} userId
  */
-async function jumpToStart(responseUrl, channelId, userId) {
+async function jumpToStart(timestamp, channelId, userId) {
   try {
     const {success, response, status} = await setJumpToStart(userId);
     if (!success) {
+      await updatePanel(timestamp, channelId, response, status);
+    } else {
+      await Promise.all([
+        updatePanel(timestamp, channelId, null, status),
+        post(
+            inChannelPost(channelId, response, null),
+        ),
+      ]);
+    }
+  } catch (error) {
+    logger.error(error);
+  }
+}
+
 /**
  * Clear Songs older than one day
  * @param {String} timestamp

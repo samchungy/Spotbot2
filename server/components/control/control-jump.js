@@ -1,6 +1,7 @@
 const config = require('config');
 const logger = require('pino')();
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
+const {fetchPlaylistTotal} = require('../spotify-api/spotify-api-playlists');
 const {loadDefaultDevice, loadPlaylistSetting} = require('../settings/settings-dal');
 const {play} = require('../spotify-api/spotify-api-playback');
 const {sleep} = require('../../util/util-timeout');
@@ -17,8 +18,14 @@ async function setJumpToStart(userId) {
     if (!status.device) {
       return {success: false, response: JUMP.not_playing, status: status};
     }
+    const playlist = await loadPlaylistSetting();
+    const {tracks: {total}} = await fetchPlaylistTotal(playlist.id);
+    if (!total) {
+      return {success: false, response: JUMP.empty, status: status};
+    }
 
-    const [playlist, device] = await Promise.all([loadPlaylistSetting(), loadDefaultDevice()]);
+
+    const device = await loadDefaultDevice();
     await play(device.id, playlist.uri);
     await sleep(100);
 
