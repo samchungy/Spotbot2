@@ -16,12 +16,15 @@
                 "playlist-modify-private",
                 "streaming"
             ],
-            "callback":"auth/callback",
             "playlists": {
                 "limit": 50,
                 "collaborative": true,
-                "public": false
-            }
+                "public": false,
+                "tracks": {
+                  "limit": 100
+                }
+            },
+            "africa": "spotify:track:2374M0fQpWi3dLnB54qaLX"
         },
         "dynamodb": {
             "auth": {
@@ -40,7 +43,8 @@
                 "disable_repeats_duration": "disable_repeats_duration",
                 "back_to_playlist": "back_to_playlist",
                 "skip_votes": "skip_votes",
-                "skip_votes_ah": "skip_votes_ah"
+                "skip_votes_ah": "skip_votes_ah",
+                "timezone": "timezone"
             },
             "settings_helper": {
                 "spotify_playlists": "spotify_playlists",
@@ -53,7 +57,8 @@
                 "auth_verify": "auth_verify",
                 "auth_confirmation": "auth_confirmation",
                 "auth_error": "auth_error"
-            }
+            },
+            "skip": "skip"
         },
         "events": {
             "update_tokens" : "update_tokens"
@@ -70,7 +75,8 @@
                 "auth_url_button": ":link: Authenticate with Spotify",
                 "reauth_url_button": ":gear: Re-authenticate with Spotify",
                 "auth_verify": "Click to verify Spotify authentication.",
-                "auth_verify_button": "Verify"
+                "auth_verify_button": "Verify",
+                "timezone": "This is to configure the time based skip votes. Type in a location."
             },
             "labels": {
                 "auth_url": "Click to authenticate with Spotify.",
@@ -81,12 +87,16 @@
                 "disable_repeats_duration" : "Disable Repeats Duration (Hours)",
                 "back_to_playlist": "Jump Back to Playlist",
                 "skip_votes": "Skip Votes",
-                "skip_votes_ah": "Skip Votes - After Hours (6pm-6am)"
+                "skip_votes_ah": "Skip Votes - After Hours (6pm-6am)",
+                "timezone": "Timezone"
             },
             "placeholders": {
                 "disable_repeats_duration": "Enter a number eg. 4",
                 "skip_votes": "Enter a number eg. 2",
-                "skip_votes_ah": "Enter a number eg. 0"
+                "skip_votes_ah": "Enter a number eg. 0",
+                "playlist": "Enter a playlist name",
+                "default_device": "Pick an option",
+                "timezone": "Find your timezone"
             },
             "limits": {
                 "disable_repeats_duration": 5,
@@ -100,20 +110,108 @@
             },
             "query_lengths": {
                 "default_device": 0,
-                "playlist": 3
+                "playlist": 3,
+                "timezone": 3
             }
         },
         "slack": {
             "actions" : {
-                "settings_dialog": "settings_dialog",
                 "settings_modal": "settings_modal",
                 "playlist": "playlist",
                 "block_actions": "block_actions",
-                "view_submission": "view_submission"
+                "view_submission": "view_submission",
+                "view_closed": "view_closed",
+                "controller": "controller",
+                "controller_overflow": "controller_overflow",
+                "reset_review": "reset_review",
+                "reset_review_jump": "reset_review_jump",
+                "controls": {
+                  "play": "play",
+                  "pause": "pause",
+                  "skip": "skip",
+                  "reset": "reset",
+                  "clear_one": "clear_one",
+                  "jump_to_start": "jump_to_start",
+                  "shuffle": "shuffle",
+                  "repeat": "repeat"
+                },
+                "skip_vote": "skip_vote"
             },
             "buttons": {
                 "primary": "primary",
                 "danger": "danger"
+            },
+            "reply": {
+              "in_channel": "in_channel",
+              "ephemeral": null
+            },
+            "responses": {
+              "settings":{
+                "success": ":white_check_mark: Settings successfully saved.",
+                "fail": ":x: Something went wrong! Settings were not saved."
+              },
+              "playback":{
+                "pause":{
+                  "success": ":double_vertical_bar: Spotify was paused by"
+                },
+                "play":{
+                  "success": ":arrow_forward: Spotify is now playing.",
+                  "not_playing": ":information_source: Spotify is currently not playing.",
+                  "currently": ":sound: Currently Playing..."
+                },
+                "play_fail": {
+                  "already": ":information_source: Spotify is already playing. Check if speaker is muted.",
+                  "empty_playlist": ":information_source: Playlist is empty. Please add songs to the playlist.",
+                  "no_devices": ":warning: Spotify is not open on any device.",
+                  "no_device": ":warning: Spotify is not open on your selected device.",
+                  "error": ":warning: An error occured."
+                },
+                "pause_fail": {
+                  "no_devices": ":warning: Spotify is not open on any device.",
+                  "already": ":information_source: Spotify is already paused.",
+                  "error": ":warning: An error occured."
+                },
+                "context": {
+                  "paused": ":double_vertical_bar: Spotify is currently paused.",
+                  "on_playlist": ":information_source: Currently playing from the Spotbot playlist.",
+                  "not_on_playlist": ":information_source: Not currently playing from the Spotbot playlist.",
+                  "shuffle": " Shuffle is *enabled*.",
+                  "repeat": " Repeat is *enabled*."
+                },
+                "skip":{
+                  "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
+                  "already": ":information_source: You have already voted on this.",
+                  "expired": ":information_source: Skip vote has expired.",
+                  "failed": ":warning: Skip Failed."
+                },
+                "shuffle": {
+                  "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
+                  "cannot": ":information_source: Spotify cannot toggle shuffling right now.",
+                  "on": ":information_source: Shuffle was enabled by",
+                  "off": ":information_source: Shuffle was disabled by"
+                },
+                "repeat": {
+                  "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
+                  "cannot": ":information_source: Spotify cannot toggle repeating right now.",
+                  "on": ":information_source: Repeat was enabled by",
+                  "off": ":information_source: Repeat was disabled by"
+                },
+                "jump":{
+                  "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
+                  "success": ":arrow_forward: Spotify is now playing from the start of the playlist. Set by",
+                  "fail": ":warning: Spotify failed to jump to the start of the playlist.",
+                  "empty": ":information_source: The Spotbot playlist is empty. Please add tracks before trying to jumping back to the playlist."
+                },
+                "reset": {
+                  "success": ":put_litter_in_its_place: The Spotbot playlist was reset by",
+                  "empty": ":information_source: Playlist is already empty.",
+                  "error": ":warning: An error occured."
+                },
+                "clear_one": {
+                  "success": ":put_litter_in_its_place: Tracks older than one day were removed from the playlist by",
+                  "error": ":warning: An error occured."
+                }
+              }
             }
         }
     }

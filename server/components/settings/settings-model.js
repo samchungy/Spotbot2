@@ -1,26 +1,3 @@
-// Data Store Models
-const modelView = (viewId, triggerId) => {
-  return {
-    viewId: viewId,
-    triggerId: triggerId,
-  };
-};
-
-/**
- * Playlist Setting Model
- * @param {string} name
- * @param {string} id
- * @param {string} url
- * @return {object} Playlist Setting Model
- */
-const modelPlaylist = (name, id, url) => {
-  return {
-    name: name,
-    id: id,
-    url: url,
-  };
-};
-
 const modelDevice = (name, id) => {
   return {
     name: name,
@@ -28,8 +5,32 @@ const modelDevice = (name, id) => {
   };
 };
 
+const modelPlaylist = (name, id, uri, url) => {
+  return {
+    name: name,
+    id: id,
+    uri: uri,
+    url: url,
+  };
+};
+
+const modelProfile = (id, country) => {
+  return {
+    country: country,
+    id: id,
+  };
+};
+
+const modelView = (viewId, triggerId) => {
+  return {
+    viewId: viewId,
+    triggerId: triggerId,
+  };
+};
+
 module.exports = {
   modelDevice,
   modelPlaylist,
+  modelProfile,
   modelView,
 };

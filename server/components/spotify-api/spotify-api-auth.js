@@ -8,7 +8,7 @@ const SCOPES = config.get('spotify_api.scopes');
  */
 async function fetchProfile() {
   const spotifyApi = await spotifyWebApi();
-  return (await requester('Get Spotify Profile', () => spotifyApi.getMe())).body;
+  return (await requester('Get Spotify Profile', async () => await spotifyApi.getMe())).body;
 }
 
 /**
@@ -17,7 +17,7 @@ async function fetchProfile() {
  */
 async function fetchAuthorizeURL(triggerId) {
   const spotifyApi = await spotifyWebApi();
-  return await requester('Create Authorize URL', () => spotifyApi.createAuthorizeURL(SCOPES, triggerId, true));
+  return await requester('Create Authorize URL', async () => await spotifyApi.createAuthorizeURL(SCOPES, triggerId, true));
 }
 
 /**
@@ -26,7 +26,7 @@ async function fetchAuthorizeURL(triggerId) {
  */
 async function fetchTokens(code) {
   const spotifyApi = await spotifyWebApi();
-  return (await requester('Authorization Code Grant', () => spotifyApi.authorizationCodeGrant(code))).body;
+  return (await requester('Authorization Code Grant', async () => await spotifyApi.authorizationCodeGrant(code))).body;
 }
 
 module.exports = {

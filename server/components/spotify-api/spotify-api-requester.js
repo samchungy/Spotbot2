@@ -20,11 +20,14 @@ async function apiCall(name, api) {
         // Retry 500 errors
         if (error.statusCode >= 500 && error.statusCode < 600) {
           attempts--;
-          // Wait a few seconds before the next execution.
-          await sleep(3000);
+          // Wait a second before the next execution.
+          await sleep(1000);
         } else if (error.statusCode == 401) {
           // Try Reauthenticte
           attempts--;
+          if (attempts == 0) {
+            throw error;
+          }
           logger.info('Getting new access token');
           try {
             await refreshAccessToken();

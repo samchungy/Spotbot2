@@ -3,7 +3,9 @@ const logger = require('../../../util/util-logger');
 const {AuthError, PremiumError} = require('../../../errors/errors-auth');
 const {fetchAuthorizeURL, fetchTokens, fetchProfile} = require('../../spotify-api/spotify-api-auth');
 const {loadState, storeState, storeTokens, storeProfile} = require('./spotifyauth-dal');
-const {buttonSection, context} = require('../../slack/format/slack-format-modal');
+const {modelProfile} = require('../settings-model');
+const {buttonSection} = require('../../slack/format/slack-format-modal');
+const {contextSection} = require('../../slack/format/slack-format-blocks');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 const HINTS = config.get('settings.hints');
@@ -18,8 +20,7 @@ const AUTH_FAIL = config.get('settings.errors.fail');
 async function getAuthorizationURL(triggerId) {
   try {
     // TODO Store triggerId as Spotify Auth state.
-    await storeState(triggerId);
-    const authUrl = await fetchAuthorizeURL(triggerId);
+    const [, authUrl] = await Promise.all([storeState(triggerId), fetchAuthorizeURL(triggerId)]);
     return authUrl;
   } catch (error) {
     logger.error(error);
@@ -59,12 +60,11 @@ async function validateAuthCode(code, state) {
     }
     // Get Tokens from Spotify
     const {access_token: accessToken, refresh_token: refreshToken} = await fetchTokens(code);
-    // Store our tokens in our DB
-    await storeTokens(accessToken, refreshToken);
-
-    // Get Spotify URI for Authenticator
-    const profile = await fetchProfile();
-    await storeProfile(profile.id);
+    // Store our tokens in our DB & Get Spotify URI for authenticator
+    const [, profile] = await Promise.all([storeTokens(accessToken, refreshToken), fetchProfile()]);
+    await storeProfile(
+        modelProfile(profile.id, profile.country),
+    );
 
     return {success: true, failReason: null};
   } catch (error) {
@@ -94,7 +94,7 @@ async function getAuthBlock(triggerId, failState) {
       // Place authenticated blocks
       authBlock.push(
           buttonSection(SETTINGS_HELPER.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_HELPER.reauth),
-          context(SETTINGS_HELPER.auth_confirmation, authStatement(profile.display_name ? profile.display_name : profile.id)),
+          contextSection(SETTINGS_HELPER.auth_confirmation, authStatement(profile.display_name ? profile.display_name : profile.id)),
       );
     }
   } catch (error) {
@@ -107,12 +107,12 @@ async function getAuthBlock(triggerId, failState) {
       if (error instanceof PremiumError) {
         // If the user is not premium
         authBlock.push(
-            context(SETTINGS_HELPER.auth_error, PREMIUM_ERROR),
+            contextSection(SETTINGS_HELPER.auth_error, PREMIUM_ERROR),
         );
       } else if (failState) {
         // If the user failed an authentication.
         authBlock.push(
-            context(SETTINGS_HELPER.auth_error, AUTH_FAIL),
+            contextSection(SETTINGS_HELPER.auth_error, AUTH_FAIL),
         );
       }
     } else {

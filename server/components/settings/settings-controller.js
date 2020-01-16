@@ -1,11 +1,13 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
-const {option, slackModal, selectChannels, selectExternal, selectStatic, textInput} = require('../slack/format/slack-format-modal');
+const moment = require('moment-timezone');
+const {option, slackModal, selectChannels, selectExternal, selectStatic, textInput, yesOrNo} = require('../slack/format/slack-format-modal');
 const {sendModal, updateModal} = require('../slack/slack-api');
 
 const {getAuthBlock, resetAuthentication} = require('./spotifyauth/spotifyauth-controller');
 const {getAllPlaylists} = require('./settings-playlists');
 const {getAllDevices} = require('./settings-device');
+const {getAllTimezones} = require('./settings-timezones');
 const {transformValue} = require('./settings-transform');
 const {extractBlocks, extractSubmissions, verifySettings} = require('./settings-verify');
 
@@ -44,6 +46,7 @@ async function changeAuthentication() {
     throw error;
   }
 }
+
 /**
  * Open the Spotbot Settings Panel via Slack Modal.
  * @param {string} triggerId
@@ -58,7 +61,7 @@ async function openSettings(triggerId) {
       ...!authError ? await getSettingsBlocks() : [],
     ];
 
-    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks);
+    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, null);
     await sendModal(triggerId, modal);
   } catch (error) {
     logger.error('Open Settings Failed');
@@ -74,10 +77,11 @@ async function getSettingsBlocks() {
     const settings = await loadSettings();
     return [
       selectChannels(DB.slack_channel, LABELS.slack_channel, HINTS.slack_channel, settings.slack_channel),
-      selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist),
-      selectExternal(DB.default_device, LABELS.default_device, HINTS.default_device, settings.default_device ? option(settings.default_device.name, settings.default_device.id) : null, QUERY.default_device),
+      selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist, PLACE.playlist),
+      selectExternal(DB.default_device, LABELS.default_device, HINTS.default_device, settings.default_device ? option(settings.default_device.name, settings.default_device.id) : null, QUERY.default_device, PLACE.default_device),
       textInput(DB.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, settings.disable_repeats_duration, LIMITS.disable_repeats_duration, PLACE.disable_repeats_duration),
       selectStatic(DB.back_to_playlist, LABELS.back_to_playlist, HINTS.back_to_playlist, settings.back_to_playlist ? setYesOrNo(settings.back_to_playlist) : null, yesOrNo()),
+      selectExternal(DB.timezone, LABELS.timezone, HINTS.timezone, settings.timezone ? option(`${settings.timezone} (${moment().tz(settings.timezone).format('Z')})`, settings.timezone) : null, QUERY.timezone, PLACE.timezone),
       textInput(DB.skip_votes, LABELS.skip_votes, HINTS.skip_votes_ah, settings.skip_votes, LIMITS.skip_votes, PLACE.skip_votes),
       textInput(DB.skip_votes_ah, LABELS.skip_votes_ah, HINTS.skip_votes_ah, settings.skip_votes_ah, LIMITS.skip_votes, PLACE.skip_votes_ah),
     ];
@@ -118,7 +122,6 @@ async function saveSettings(view, userId) {
           let newValue = submissions[key];
           // Some settings need extra values saved alongside the Slack submission payload.
           newValue = await transformValue(key, newValue, oldValue);
-
           // Save on unecessary Read/Writes
           if (isEqual(oldValue, newValue)) {
             delete settings[key];
@@ -173,10 +176,10 @@ async function updateView(failReason, viewId, triggerId) {
       ...!authError ? await getSettingsBlocks() : [],
     ];
 
-    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks);
+    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, null);
     await updateModal(viewId, modal);
   } catch (error) {
-    throw error;
+    logger.error(error);
   }
 }
 
@@ -188,17 +191,6 @@ async function updateView(failReason, viewId, triggerId) {
 async function saveView(viewId, triggerId) {
   const store = modelView(viewId, triggerId);
   storeView(store);
-}
-
-/**
- * Generates a yes or no option array
- * @return {array} Yes or No options
- */
-function yesOrNo() {
-  return [
-    option(`Yes`, `true`),
-    option(`No`, `false`),
-  ];
 }
 
 /**
@@ -214,10 +206,12 @@ function setYesOrNo(value) {
   }
 }
 
+
 module.exports = {
   changeAuthentication,
   getAllDevices,
   getAllPlaylists,
+  getAllTimezones,
   openSettings,
   saveSettings,
   saveView,

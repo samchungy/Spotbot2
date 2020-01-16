@@ -5,7 +5,6 @@ const {modelPlaylist} = require('./settings-model');
 const {createPlaylist, fetchPlaylists} = require('../spotify-api/spotify-api-playlists');
 const {loadProfile} = require('./settings-dal');
 const {option, optionGroup} = require('../slack/format/slack-format-modal');
-const {isEqual} = require('../../util/util-objects');
 
 const LIMIT = config.get('spotify_api.playlists.limit');
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
@@ -18,23 +17,21 @@ const NEW_PLAYLIST_REGEX = new RegExp(`^${NEW_PLAYLIST}`);
  */
 async function getAllPlaylists(query) {
   try {
-    const searchPlaylists = [];
     const currentPlaylist = await loadPlaylistSetting();
     const playlists = await fetchAllPlaylists(currentPlaylist);
     await storePlaylists(playlists);
-    for (const playlist of playlists) {
-      if (playlist.name.toLowerCase().includes(query.toLowerCase())) {
-        searchPlaylists.push(
-            option(playlist.name, playlist.id),
-        );
-      }
-    }
+
+    // Converts into Slack Option if it matches the search query
+    const searchPlaylists = playlists
+        .filter((playlist) => playlist.name.toLowerCase().includes(query.toLowerCase()))
+        .map((playlist) => option(playlist.name, playlist.id));
+
     const other = [
       ...currentPlaylist ? [option(`${currentPlaylist.name} (Current Selection)`, `${currentPlaylist.id}`)] : [],
       option(`Create a new playlist called "${query}"`, `${NEW_PLAYLIST}${query}`),
     ];
 
-    if (searchPlaylists.length == 0) {
+    if (!searchPlaylists.length) {
       return {
         option_groups: [optionGroup(`No query results for "${query}"`, other)],
       };
@@ -58,32 +55,29 @@ async function getAllPlaylists(query) {
  */
 async function fetchAllPlaylists(currentPlaylist) {
   try {
-    const compatiblePlaylists = [];
-    if (currentPlaylist) {
-      compatiblePlaylists.push(currentPlaylist);
-    }
+    const compatiblePlaylists = [...currentPlaylist ? [currentPlaylist] : []];
     let count = 0;
-    const playlists = await fetchPlaylists(count, LIMIT);
-    const spotifyId = await loadProfile();
+    const profile = await loadProfile();
     while (true) {
-      // Only if it is a collaborative playlist or the owner is ourselves is a playlist compatible.
-      for (const playlist of playlists.items) {
-        if (playlist.collaborative == true || playlist.owner.id == spotifyId) {
-          const model = modelPlaylist(playlist.name, playlist.id, playlist.external_urls.spotify);
-          if (!isEqual(model, currentPlaylist)) {
-            compatiblePlaylists.push(model);
-          }
-        }
-      }
+      const playlists = await fetchPlaylists(count, LIMIT);
+
+      // Only if it is a collaborative playlist or the owner is ourselves - a playlist compatible.
+      // and current playlist is not in the list
+      compatiblePlaylists.push(
+          ...playlists.items
+              .filter((playlist) => (!currentPlaylist || (playlist.id != currentPlaylist.id)) &&
+                (playlist.collaborative == true || playlist.owner.id == profile.id))
+              .map((playlist) => modelPlaylist(playlist.name, playlist.id, playlist.uri, playlist.external_urls.spotify)),
+      );
 
       // See if we can get more playlists as the Spotify Limit is 50 playlists per call.
-      if (playlists.total > (count+1) * LIMIT) {
+      if (playlists.total > ((count+1) * LIMIT)) {
         count++;
       } else {
         break;
       }
     }
-    return compatiblePlaylists;
+    return compatiblePlaylists.slice(0, 100);
   } catch (error) {
     logger.error('Fetching all Spotify Playlists failed');
     throw error;
@@ -101,15 +95,11 @@ async function getPlaylistValue(newValue) {
       // Create a new playlist using Spotify API
       const spotifyId = await loadProfile();
       const newPlaylist = await createPlaylist(spotifyId, newValue);
-      return modelPlaylist(newValue, newPlaylist.id, newPlaylist.external_urls.spotify);
+      return modelPlaylist(newValue, newPlaylist.id, newPlaylist.uri, newPlaylist.external_urls.spotify);
     } else {
       // Grab the playlist object from our earlier Database playlist fetch
       const playlists = await loadPlaylists();
-      for (const playlist of playlists) {
-        if (playlist.id === newValue) {
-          return playlist;
-        }
-      }
+      return playlists.find((playlist) => playlist.id === newValue);
     }
   } catch (error) {
     logger.error('Converting Playlist Value failed');
