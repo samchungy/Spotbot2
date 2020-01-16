@@ -6,10 +6,10 @@ const actionSection = (blockId, elements) => {
   };
 };
 
-const buttonActionElement = (text, value, confirm) => {
+const buttonActionElement = (actionId, text, value, confirm) => {
   return {
     'value': value,
-    'action_id': value,
+    'action_id': actionId,
     'type': 'button',
     'text': {
       'type': 'plain_text',

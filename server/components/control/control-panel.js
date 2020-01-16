@@ -46,6 +46,8 @@ async function getCurrentTrackPanel(status, response) {
       const playlist = await loadPlaylistSetting();
       if (status.context.uri.includes(playlist.id)) {
         context = CONTEXT_RESPONSES.on_playlist;
+      } else {
+        context = CONTEXT_RESPONSES.not_on_playlist;
       }
     } else {
       context = CONTEXT_RESPONSES.not_on_playlist;
@@ -77,9 +79,9 @@ function getControlsPanel() {
     overflowOption(`:repeat: Toggle Repeat`, CONTROLS.repeat),
   ];
   const elements = [
-    buttonActionElement(`:arrow_forward: Play`, CONTROLS.play),
-    buttonActionElement(`:double_vertical_bar: Pause`, CONTROLS.pause, confirmObject('Are you sure?', 'This will pause playback of Spotbot.', 'Do it', 'Cancel')),
-    buttonActionElement(`:black_right_pointing_double_triangle_with_vertical_bar: Skip`, CONTROLS.skip),
+    buttonActionElement(CONTROLS.play, `:arrow_forward: Play`, CONTROLS.play),
+    buttonActionElement(CONTROLS.pause, `:double_vertical_bar: Pause`, CONTROLS.pause, confirmObject('Are you sure?', 'This will pause playback of Spotbot.', 'Do it', 'Cancel')),
+    buttonActionElement(CONTROLS.skip, `:black_right_pointing_double_triangle_with_vertical_bar: Skip`, CONTROLS.skip),
     overflowActionElement(CONTROLLER_OVERFLOW, overflowOptions, confirmObject('Are you sure?', 'Make sure everyone is okay with you doing this.', 'Do it', 'Cancel')),
   ];
   return actionSection(CONTROLLER, elements);
