@@ -204,10 +204,20 @@ async function jumpToStart(responseUrl, channelId, userId) {
   try {
     const {success, response, status} = await setJumpToStart(userId);
     if (!success) {
-      await updatePanel(responseUrl, response, status);
+/**
+ * Clear Songs older than one day
+ * @param {String} timestamp
+ * @param {String} channelId
+ * @param {String} userId
+ */
+async function clearOneDay(timestamp, channelId, userId) {
+  try {
+    const {success, response, status} = await setClearOneDay(userId);
+    if (!success) {
+      await updatePanel(timestamp, channelId, response, status);
     } else {
       await Promise.all([
-        updatePanel(responseUrl, null, status),
+        updatePanel(timestamp, channelId, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),

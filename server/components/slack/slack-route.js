@@ -58,7 +58,8 @@ module.exports = ( prefix, Router ) => {
                       ctx.body = '';
                       break;
                     case CONTROLS.repeat:
-                      toggleRepeat(payload.response_url, payload.channel.id, payload.user.id);
+                    case CONTROLS.clear_one:
+                      clearOneDay(payload.message.ts, payload.channel.id, payload.user.id);
                       ctx.body = '';
                       break;
                   }
