@@ -36,7 +36,7 @@ async function pause(deviceId) {
  */
 async function skip() {
   const spotifyApi = await spotifyWebApi();
-  return await requester('Pause', async () => {
+  return await requester('Skip', async () => {
     await spotifyApi.skipToNext();
   });
 }

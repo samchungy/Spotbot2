@@ -40,11 +40,11 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                   break;
                 case CONTROLS.skip:
-                  skip(payload.response_url, payload.channel.id, payload.user.id);
+                  skip(payload.message.ts, payload.channel.id, payload.user.id);
                   ctx.body = '';
                   break;
                 case SLACK_ACTIONS.skip_vote:
-                  voteToSkip(payload.channel.id, payload.user.id);
+                  voteToSkip(payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
                   ctx.body = '';
                   break;
                 case OVERFLOW:
