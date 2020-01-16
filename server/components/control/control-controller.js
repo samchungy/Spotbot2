@@ -1,19 +1,22 @@
 const logger = require('../../util/util-logger');
+const config = require('config');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {getCurrentTrackPanel, getShuffleRepeatPanel, getControlsPanel} = require('./control-panel');
-const {inChannelReply, updateReply, inChannelPost} = require('../slack/format/slack-format-reply');
-const {post, reply} = require('../slack/slack-api');
+const {inChannelPost, messageUpdate} = require('../slack/format/slack-format-reply');
+const {post, updateChat} = require('../slack/slack-api');
 const {setPlay} = require('./control-play');
 const {setPause} = require('./control-pause');
-const {startSkipVote, addVote} = require('./contol-skip');
+const {startSkipVote, addVoteFromPost} = require('./contol-skip');
 const {setRepeat, setShuffle} = require('./control-shuffle-repeat');
 const {setJumpToStart} = require('./control-jump');
+const {startReset, resetReview} = require('./control-reset');
+const {setClearOneDay} = require('./control-clear-one');
 
 /**
  * Opens a menu of Spotbot controls
- * @param {string} responseUrl
+ * @param {string} channelId
  */
-async function openControls(responseUrl) {
+async function openControls(channelId) {
   try {
     try {
       const status = await fetchCurrentPlayback();
@@ -25,9 +28,8 @@ async function openControls(responseUrl) {
         getControlsPanel(),
       ];
 
-      await reply(
-          inChannelReply(altText, controlPanel),
-          responseUrl,
+      await post(
+          inChannelPost(channelId, altText, controlPanel),
       );
     } catch (error) {
       console.error(error);
@@ -41,11 +43,12 @@ async function openControls(responseUrl) {
 
 /**
  * Update the control panel
- * @param {string} responseUrl
+ * @param {string} timestamp
+ * @param {string} channelId
  * @param {string} response
  * @param {Object} status
  */
-async function updatePanel(responseUrl, response, status) {
+async function updatePanel(timestamp, channelId, response, status) {
   try {
     if (!status) {
       status = await fetchCurrentPlayback();
@@ -58,9 +61,8 @@ async function updatePanel(responseUrl, response, status) {
       getControlsPanel(),
     ];
 
-    await reply(
-        updateReply(altText, controlPanel),
-        responseUrl,
+    await updateChat(
+        messageUpdate(channelId, timestamp, altText, controlPanel),
     );
   } catch (error) {
     logger.error(error);
@@ -70,17 +72,17 @@ async function updatePanel(responseUrl, response, status) {
 
 /**
  * Hits Play on Spotify
- * @param {string} responseUrl
+ * @param {string} timestamp
  * @param {string} channelId
  */
-async function play(responseUrl, channelId) {
+async function play(timestamp, channelId) {
   try {
     const {success, response, status} = await setPlay();
     if (!success) {
-      await updatePanel(responseUrl, response, status);
+      await updatePanel(timestamp, channelId, response, status);
     } else {
       await Promise.all([
-        updatePanel(responseUrl, null, status),
+        updatePanel(timestamp, channelId, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -93,18 +95,18 @@ async function play(responseUrl, channelId) {
 
 /**
  * Hits pause on Spotify
- * @param {string} responseUrl
+ * @param {string} timestamp
  * @param {string} channelId
  * @param {string} userId
  */
-async function pause(responseUrl, channelId, userId) {
+async function pause(timestamp, channelId, userId) {
   try {
     const {success, response, status} = await setPause(userId);
     if (!success) {
-      await updatePanel(responseUrl, response, status);
+      await updatePanel(timestamp, channelId, response, status);
     } else {
       await Promise.all([
-        updatePanel(responseUrl, null, status),
+        updatePanel(timestamp, channelId, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -147,18 +149,18 @@ async function voteToSkip(channelId, userId, value, responseUrl) {
 
 /**
  * Toggles shuffle on Spotify
- * @param {String} responseUrl
+ * @param {String} timestamp
  * @param {String} channelId
  * @param {String} userId
  */
-async function toggleShuffle(responseUrl, channelId, userId) {
+async function toggleShuffle(timestamp, channelId, userId) {
   try {
     const {success, response, status} = await setShuffle(userId);
     if (!success) {
-      await updatePanel(responseUrl, response, status);
+      await updatePanel(timestamp, channelId, response, status);
     } else {
       await Promise.all([
-        updatePanel(responseUrl, null, status),
+        updatePanel(timestamp, channelId, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -171,18 +173,18 @@ async function toggleShuffle(responseUrl, channelId, userId) {
 
 /**
  * Toggles repeat on Spotify
- * @param {String} responseUrl
+ * @param {String} timestamp
  * @param {String} channelId
  * @param {String} userId
  */
-async function toggleRepeat(responseUrl, channelId, userId) {
+async function toggleRepeat(timestamp, channelId, userId) {
   try {
     const {success, response, status} = await setRepeat(userId);
     if (!success) {
-      await updatePanel(responseUrl, response, status);
+      await updatePanel(timestamp, channelId, response, status);
     } else {
       await Promise.all([
-        updatePanel(responseUrl, null, status),
+        updatePanel(timestamp, channelId, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -293,12 +295,15 @@ async function clearOneDay(timestamp, channelId, userId) {
 }
 
 module.exports = {
+  clearOneDay,
   jumpToStart,
   openControls,
   pause,
   play,
+  reset,
   skip,
   toggleRepeat,
   toggleShuffle,
+  verifyResetReview,
   voteToSkip,
 };

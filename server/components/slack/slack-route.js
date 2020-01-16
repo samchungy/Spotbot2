@@ -9,7 +9,7 @@ const REAUTH = config.get('dynamodb.settings_helper.reauth');
 const CONTROLS = config.get('slack.actions.controls');
 const OVERFLOW = config.get('slack.actions.controller_overflow');
 const {changeAuthentication, getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, saveView, updateView} = require('../settings/settings-controller');
-const {jumpToStart, pause, play, skip, toggleRepeat, toggleShuffle, voteToSkip} = require('../control/control-controller');
+const {clearOneDay, jumpToStart, pause, play, reset, skip, toggleRepeat, toggleShuffle, verifyResetReview, voteToSkip} = require('../control/control-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
@@ -18,6 +18,7 @@ module.exports = ( prefix, Router ) => {
   router
       .post('/', async (ctx, next) => {
         const payload = JSON.parse(ctx.request.body.payload);
+        console.log(payload);
         switch (payload.type) {
           case SLACK_ACTIONS.block_actions:
             if (payload.actions.length > 0) {
@@ -32,11 +33,11 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                   break;
                 case CONTROLS.play:
-                  play(payload.response_url, payload.channel.id);
+                  play(payload.message.ts, payload.channel.id);
                   ctx.body = '';
                   break;
                 case CONTROLS.pause:
-                  pause(payload.response_url, payload.channel.id, payload.user.id);
+                  pause(payload.message.ts, payload.channel.id, payload.user.id);
                   ctx.body = '';
                   break;
                 case CONTROLS.skip:
@@ -54,10 +55,13 @@ module.exports = ( prefix, Router ) => {
                       ctx.body = '';
                       break;
                     case CONTROLS.shuffle:
-                      toggleShuffle(payload.response_url, payload.channel.id, payload.user.id);
+                      toggleShuffle(payload.message.ts, payload.channel.id, payload.user.id);
                       ctx.body = '';
                       break;
                     case CONTROLS.repeat:
+                      toggleRepeat(payload.message.ts, payload.channel.id, payload.user.id);
+                      ctx.body = '';
+                      break;
                     case CONTROLS.reset:
                       reset(payload.message.ts, payload.channel.id, payload.user.id, payload.trigger_id);
                       ctx.body = '';
@@ -87,6 +91,13 @@ module.exports = ( prefix, Router ) => {
                 break;
             }
             break;
+          case SLACK_ACTIONS.view_closed:
+            switch (payload.view.callback_id) {
+              case SLACK_ACTIONS.reset_review:
+                verifyResetReview(true, payload.view, payload.user.id);
+                ctx.body = '';
+                break;
+            }
         }
       })
       .post('/options', async (ctx, next) =>{
