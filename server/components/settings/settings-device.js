@@ -34,10 +34,11 @@ async function getAllDevices() {
   try {
     const spotifyDevices = await fetchAllDevices();
     await storeDevices(spotifyDevices);
-    // Add a none option
     const devices = [
-      option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices),
-      ...spotifyDevices.map((device) => option(device.name, device.id)),
+      option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices), // Add a none option
+      ...spotifyDevices
+          .filter((device) => device.id != SETTINGS_HELPER.no_devices)
+          .map((device) => option(device.name, device.id)),
     ];
 
     return {
