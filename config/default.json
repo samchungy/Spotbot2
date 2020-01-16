@@ -19,8 +19,12 @@
             "playlists": {
                 "limit": 50,
                 "collaborative": true,
-                "public": false
-            }
+                "public": false,
+                "tracks": {
+                  "limit": 100
+                }
+            },
+            "africa": "spotify:track:2374M0fQpWi3dLnB54qaLX"
         },
         "dynamodb": {
             "auth": {
@@ -116,8 +120,11 @@
                 "playlist": "playlist",
                 "block_actions": "block_actions",
                 "view_submission": "view_submission",
+                "view_closed": "view_closed",
                 "controller": "controller",
                 "controller_overflow": "controller_overflow",
+                "reset_review": "reset_review",
+                "reset_review_jump": "reset_review_jump",
                 "controls": {
                   "play": "play",
                   "pause": "pause",
@@ -174,8 +181,8 @@
                 "skip":{
                   "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
                   "already": ":information_source: You have already voted on this.",
-                  "expired": "information_source: Skip vote has expired.",
-                  "failed": ":information_source: Skip Failed. Check if Spotify is currently playing."
+                  "expired": ":information_source: Skip vote has expired.",
+                  "failed": ":warning: Skip Failed."
                 },
                 "shuffle": {
                   "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
@@ -192,7 +199,17 @@
                 "jump":{
                   "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
                   "success": ":arrow_forward: Spotify is now playing from the start of the playlist. Set by",
-                  "fail": ":warning: Spotify failed to jump to the start of the playlist."
+                  "fail": ":warning: Spotify failed to jump to the start of the playlist.",
+                  "empty": ":information_source: The Spotbot playlist is empty. Please add tracks before trying to jumping back to the playlist."
+                },
+                "reset": {
+                  "success": ":put_litter_in_its_place: The Spotbot playlist was reset by",
+                  "empty": ":information_source: Playlist is already empty.",
+                  "error": ":warning: An error occured."
+                },
+                "clear_one": {
+                  "success": ":put_litter_in_its_place: Tracks older than one day were removed from the playlist by",
+                  "error": ":warning: An error occured."
                 }
               }
             }
