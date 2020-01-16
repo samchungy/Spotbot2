@@ -219,6 +219,56 @@ async function jumpToStart(timestamp, channelId, userId) {
 }
 
 /**
+ * Reset a playlist on Spotify
+ * @param {String} timestamp
+ * @param {String} channelId
+ * @param {String} userId
+ * @param {String} triggerId
+ */
+async function reset(timestamp, channelId, userId, triggerId) {
+  try {
+    const {success, response, status} = await startReset(timestamp, channelId, userId, triggerId);
+    if (!success) {
+      await updatePanel(timestamp, channelId, response, status);
+    } else {
+      await Promise.all([
+        updatePanel(timestamp, channelId, null, status),
+        post(
+            inChannelPost(channelId, response, null),
+        ),
+      ]);
+    }
+  } catch (error) {
+    logger.error(error);
+  }
+}
+
+/**
+ * Verify Reset Review
+ * @param {String} isClose
+ * @param {Object} view
+ * @param {String} userId
+ */
+async function verifyResetReview(isClose, view, userId) {
+  try {
+    const metadata = view.private_metadata;
+    const {channelId, timestamp, playlistId} = JSON.parse(metadata);
+    const {success, response, status} = await resetReview(isClose, view, playlistId, userId);
+    if (!success) {
+      await updatePanel(timestamp, channelId, response, status);
+    } else {
+      await Promise.all([
+        updatePanel(timestamp, channelId, null, status),
+        post(
+            inChannelPost(channelId, response, null),
+        ),
+      ]);
+    }
+  } catch (error) {
+    logger.error(error);
+  }
+}
+/**
  * Clear Songs older than one day
  * @param {String} timestamp
  * @param {String} channelId

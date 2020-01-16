@@ -58,6 +58,10 @@ module.exports = ( prefix, Router ) => {
                       ctx.body = '';
                       break;
                     case CONTROLS.repeat:
+                    case CONTROLS.reset:
+                      reset(payload.message.ts, payload.channel.id, payload.user.id, payload.trigger_id);
+                      ctx.body = '';
+                      break;
                     case CONTROLS.clear_one:
                       clearOneDay(payload.message.ts, payload.channel.id, payload.user.id);
                       ctx.body = '';
@@ -76,6 +80,10 @@ module.exports = ( prefix, Router ) => {
                 } else {
                   ctx.body = '';
                 }
+                break;
+              case SLACK_ACTIONS.reset_review:
+                verifyResetReview(false, payload.view, payload.user.id);
+                ctx.body = '';
                 break;
             }
             break;
