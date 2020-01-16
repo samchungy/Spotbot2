@@ -7,7 +7,7 @@ module.exports = ( prefix, Router ) => {
   });
   router.post('/', async (ctx, next) => {
     const payload = ctx.request.body;
-    openControls(payload.response_url);
+    openControls(payload.channel_id);
     ctx.body = publicAck('');
   });
   return router;
