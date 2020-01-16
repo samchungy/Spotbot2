@@ -17,7 +17,7 @@ const updateReply = (text, blocks) => {
   };
 };
 
-const updateMessage = (channel, timestamp, text, blocks) => {
+const messageUpdate = (channel, timestamp, text, blocks) => {
   return {
     channel: channel,
     ts: timestamp,
@@ -89,6 +89,6 @@ module.exports = {
   ephemeralReply,
   inChannelPost,
   inChannelReply,
-  updateMessage,
+  messageUpdate,
   updateReply,
 };
