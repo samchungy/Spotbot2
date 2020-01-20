@@ -9,10 +9,12 @@ const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 
 /**
  * Fetch all spotifyDevices from Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function fetchAllDevices() {
+async function fetchAllDevices(teamId, channelId) {
   try {
-    const [defaultDevice, spotifyDevices] = await Promise.all([loadDefaultDevice(), fetchDevices()]);
+    const [defaultDevice, spotifyDevices] = await Promise.all([loadDefaultDevice(teamId, channelId), fetchDevices(teamId, channelId )]);
     const devices = [
       ...defaultDevice ? [defaultDevice] : [], // If default device, add
       ...spotifyDevices.devices
@@ -29,11 +31,13 @@ async function fetchAllDevices() {
 
 /**
  * Return device devices for the settings panel.
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function getAllDevices() {
+async function getAllDevices(teamId, channelId) {
   try {
-    const spotifyDevices = await fetchAllDevices();
-    await storeDevices(spotifyDevices);
+    const spotifyDevices = await fetchAllDevices(teamId, channelId);
+    await storeDevices(teamId, channelId, spotifyDevices);
     const devices = [
       option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices), // Add a none option
       ...spotifyDevices
@@ -52,10 +56,12 @@ async function getAllDevices() {
 
 /**
  * Get the device value from devices fetch
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} newValue
  * @param {string} oldValue
  */
-async function getDeviceValue(newValue, oldValue) {
+async function getDeviceValue(teamId, channelId, newValue, oldValue) {
   try {
     switch (newValue) {
       case (oldValue ? oldValue.id : null):
@@ -63,7 +69,7 @@ async function getDeviceValue(newValue, oldValue) {
       case SETTINGS_HELPER.no_devices:
         return modelDevice(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices);
       default:
-        const spotifyDevices = await loadDevices();
+        const spotifyDevices = await loadDevices(teamId, channelId);
         return spotifyDevices.find((device) => device.id === newValue);
     }
   } catch (error) {

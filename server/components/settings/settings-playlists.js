@@ -13,13 +13,15 @@ const NEW_PLAYLIST_REGEX = new RegExp(`^${NEW_PLAYLIST}`);
 
 /**
  * Get all playlists based on a query query
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} query
  */
-async function getAllPlaylists(query) {
+async function getAllPlaylists(teamId, channelId, query) {
   try {
-    const currentPlaylist = await loadPlaylistSetting();
-    const playlists = await fetchAllPlaylists(currentPlaylist);
-    await storePlaylists(playlists);
+    const currentPlaylist = await loadPlaylistSetting(teamId, channelId );
+    const playlists = await fetchAllPlaylists(teamId, channelId, currentPlaylist);
+    await storePlaylists(teamId, channelId, playlists);
 
     // Converts into Slack Option if it matches the search query
     const searchPlaylists = playlists
@@ -51,15 +53,17 @@ async function getAllPlaylists(query) {
 
 /**
  * Fetch all compatible Spotify playlists
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {modelPlaylist} currentPlaylist
  */
-async function fetchAllPlaylists(currentPlaylist) {
+async function fetchAllPlaylists(teamId, channelId, currentPlaylist) {
   try {
     const compatiblePlaylists = [...currentPlaylist ? [currentPlaylist] : []];
     let count = 0;
-    const profile = await loadProfile();
+    const profile = await loadProfile(teamId, channelId );
     while (true) {
-      const playlists = await fetchPlaylists(count, LIMIT);
+      const playlists = await fetchPlaylists(teamId, channelId, count, LIMIT);
 
       // Only if it is a collaborative playlist or the owner is ourselves - a playlist compatible.
       // and current playlist is not in the list
@@ -86,19 +90,21 @@ async function fetchAllPlaylists(currentPlaylist) {
 
 /**
  * Get the playlist value from our playlists fetch
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} newValue
  */
-async function getPlaylistValue(newValue) {
+async function getPlaylistValue(teamId, channelId, newValue) {
   try {
     if (newValue.includes(NEW_PLAYLIST)) {
       newValue = newValue.replace(NEW_PLAYLIST_REGEX, '');
       // Create a new playlist using Spotify API
-      const spotifyId = await loadProfile();
-      const newPlaylist = await createPlaylist(spotifyId, newValue);
+      const spotifyId = await loadProfile(teamId, channelId );
+      const newPlaylist = await createPlaylist(teamId, channelId, spotifyId, newValue);
       return modelPlaylist(newValue, newPlaylist.id, newPlaylist.uri, newPlaylist.external_urls.spotify);
     } else {
       // Grab the playlist object from our earlier Database playlist fetch
-      const playlists = await loadPlaylists();
+      const playlists = await loadPlaylists(teamId, channelId );
       return playlists.find((playlist) => playlist.id === newValue);
     }
   } catch (error) {

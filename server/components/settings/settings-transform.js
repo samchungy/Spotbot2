@@ -5,17 +5,19 @@ const SETTINGS = config.get('dynamodb.settings');
 
 /**
  * Transform our value from the Submission into a setting to store
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} attribute
  * @param {string} newValue
  * @param {string} oldValue
  */
-async function transformValue(attribute, newValue, oldValue) {
+async function transformValue(teamId, channelId, attribute, newValue, oldValue) {
   switch (attribute) {
     case SETTINGS.playlist:
-      newValue = await getPlaylistValue(newValue);
+      newValue = await getPlaylistValue(teamId, channelId, newValue);
       break;
     case SETTINGS.default_device:
-      newValue = await getDeviceValue(newValue, oldValue);
+      newValue = await getDeviceValue(teamId, channelId, newValue, oldValue);
       break;
   }
   return newValue;

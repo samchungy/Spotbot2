@@ -8,11 +8,13 @@ const REPEAT = config.get('slack.responses.playback.repeat');
 
 /**
  * Toggles shuffle on Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {String} userId
  */
-async function setShuffle(userId) {
+async function setShuffle(teamId, channelId, userId) {
   try {
-    const status = await fetchCurrentPlayback();
+    const status = await fetchCurrentPlayback(teamId, channelId );
     // Spotify is not playing
     if (!status.device) {
       return {success: false, response: SHUFFLE.not_playing, status: status};
@@ -23,12 +25,12 @@ async function setShuffle(userId) {
 
     if (status.shuffle_state) {
       // Turn off shuffle
-      await shuffle(false);
+      await shuffle(teamId, channelId, false);
       await sleep(100);
       return {success: true, response: `${SHUFFLE.off} <@${userId}>.`, status: null};
     } else {
       // Turn on Shuffle
-      await shuffle(true);
+      await shuffle(teamId, channelId, true);
       await sleep(100);
       return {success: true, response: `${SHUFFLE.on} <@${userId}>.`, status: null};
     }

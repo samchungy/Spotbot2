@@ -22,21 +22,22 @@ const reviewTitle = (numTracks) => `Hold up! *${numTracks}* ${numTracks > 1 ? `t
 
 /**
  * Review reset modal
+ * @param {String} teamId
+ * @param {string} channelId
  * @param {String} isClose
  * @param {Object} view
  * @param {String} playlistId
  * @param {String} userId
  */
-async function resetReview(isClose, view, playlistId, userId) {
+async function resetReview(teamId, channelId, isClose, view, playlistId, userId) {
   try {
     if (isClose) {
       // Slack Modal was closed. Keep no tracks
-      return {success, response, status} = await setReset(playlistId, null, userId, false);
+      return {success, response, status} = await setReset(teamId, channelId, playlistId, null, userId, false);
     } else {
       // Slack Modal was submitted. Keep whatever tracks were selected
       const {[REVIEW]: trackUris, [REVIEW_JUMP]: jump} = extractSubmissions(view);
-      console.log(trackUris, jump);
-      return {success, response, status} = await setReset(playlistId, trackUris, userId, (jump == 'true'));
+      return {success, response, status} = await setReset(teamId, channelId, playlistId, trackUris, userId, (jump == 'true'));
     }
   } catch (error) {
     logger.error(error);
@@ -46,24 +47,25 @@ async function resetReview(isClose, view, playlistId, userId) {
 
 /**
  * Gets Spotify to reset
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {String} playlistId
  * @param {String} trackUris
  * @param {String} userId
  * @param {boolean} jump
  */
-async function setReset(playlistId, trackUris, userId, jump) {
+async function setReset(teamId, channelId, playlistId, trackUris, userId, jump) {
   try {
     let res = `${RESET.success} <@${userId}>.`;
-    console.log(trackUris);
     if (trackUris) {
       res = res + ` ${trackUris.length} ${trackUris.length > 1 ? `tracks` : `track`} from the past 30 minutes ${trackUris.length > 1 ? `were` : `was`} kept.`;
-      const {tracks: {total}} = await fetchPlaylistTotal(playlistId);
+      const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlistId);
       // Delete selected tracks. We use this method to preserve the order and time added of the previous tracks.
       const promises = [];
       const attempts = Math.ceil(total/LIMIT);
       for (let offset=0; offset<attempts; offset++) {
         promises.push(new Promise(async (resolve) =>{
-          const spotifyTracks = await fetchTracks(playlistId, null, offset*LIMIT);
+          const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, null, offset*LIMIT);
           const tracksToDelete = [];
           spotifyTracks.items
               .map((track) => new PlaylistTrack(track))
@@ -80,13 +82,13 @@ async function setReset(playlistId, trackUris, userId, jump) {
       }
       const allTracksPromises = await Promise.all(promises);
       const allTracks = allTracksPromises.flat();
-      await deleteTracks(playlistId, allTracks);
+      await deleteTracks(teamId, channelId, playlistId, allTracks);
     } else {
-      await replaceTracks(playlistId, [AFRICA]);
-      await deleteTracks(playlistId, [apiTrack(AFRICA)]);
+      await replaceTracks(teamId, channelId, playlistId, [AFRICA]);
+      await deleteTracks(teamId, channelId, playlistId, [apiTrack(AFRICA)]);
     }
     if (jump) {
-      const {success, status} = await setJumpToStart(userId);
+      const {success, status} = await setJumpToStart(teamId, channelId, userId);
       if (!success) {
         res = res + ` Spotbot failed to return to the start of the playlist.`;
       } else {
@@ -103,31 +105,32 @@ async function setReset(playlistId, trackUris, userId, jump) {
 
 /**
  * Set Reset
- * @param {String} timestamp
+ * @param {String} teamId
  * @param {String} channelId
+ * @param {String} timestamp
  * @param {String} userId
  * @param {String} triggerId
  */
-async function startReset(timestamp, channelId, userId, triggerId) {
+async function startReset(teamId, channelId, timestamp, userId, triggerId) {
   try {
     // Get Tracks Total
-    const playlist = await loadPlaylistSetting();
-    const {tracks: {total}} = await fetchPlaylistTotal(playlist.id);
+    const playlist = await loadPlaylistSetting(teamId, channelId);
+    const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
 
     if (!total) {
       return {success: false, response: RESET.empty, status: null};
     }
-    const reviewTracks = await getReviewTracks(playlist, total);
+    const reviewTracks = await getReviewTracks(teamId, channelId, playlist, total);
     if (reviewTracks.length) {
       // We have tracks to review, send a modal
       const blocks = await getReviewBlocks(reviewTracks);
-      const metadata = JSON.stringify({playlistId: playlist.id, channelId, timestamp});
+      const metadata = JSON.stringify({teamId: teamId, playlistId: playlist.id, channelId, timestamp});
       const view = slackModal(REVIEW, `Reset: Review Tracks`, `Confirm`, `Close`, blocks, true, metadata);
       await sendModal(triggerId, view);
       return {success: false, response: null, status: null};
     } else {
       // reset
-      return await setReset(playlist.id, null, userId);
+      return await setReset(teamId, channelId, playlist.id, null, userId);
     }
   } catch (error) {
     logger.error('Set reset failed', error);
@@ -188,15 +191,17 @@ async function getReviewBlocks(playlistTracks) {
 
 /**
  * Get tracks to review (Tracks added less than half an hour ago)
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {Object} playlist
  * @param {Number} total
  */
-async function getReviewTracks(playlist, total) {
+async function getReviewTracks(teamId, channelId, playlist, total) {
   try {
     const reviewTracks = [];
     const hourBefore = moment().subtract(30, 'minutes');
     const offset = Math.max(0, total-LIMIT);
-    const spotifyTracks = await fetchTracks(playlist.id, null, offset);
+    const spotifyTracks = await fetchTracks(teamId, channelId, playlist.id, null, offset);
     const playlistTracks = spotifyTracks.items.map((track) => new PlaylistTrack(track)).reverse();
     for (track of playlistTracks) {
     // If it was added within the past half an hour

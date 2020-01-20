@@ -28,9 +28,18 @@ const modelView = (viewId, triggerId) => {
   };
 };
 
+const modelState = (teamId, channelId, triggerId) => {
+  return {
+    teamId: teamId,
+    channelId: channelId,
+    triggerId: triggerId,
+  };
+};
+
 module.exports = {
   modelDevice,
   modelPlaylist,
   modelProfile,
+  modelState,
   modelView,
 };

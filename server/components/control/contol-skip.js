@@ -21,14 +21,15 @@ const skipConfirmation = (title, users) => `:black_right_pointing_double_triangl
 
 /**
  * Skip the track on Spotify
+ * @param {String} teamId
  * @param {String} channelId
  * @param {String} userId
  */
-async function startSkipVote(channelId, userId) {
+async function startSkipVote(teamId, channelId, userId) {
   try {
     // Get current playback status
     let skipVotes;
-    const status = await fetchCurrentPlayback();
+    const status = await fetchCurrentPlayback(teamId, channelId );
 
     // Spotify is not playing anything so we cannot skip
     if (!status.device || !status.item) {
@@ -37,7 +38,7 @@ async function startSkipVote(channelId, userId) {
 
     const statusTrack = new Track(status.item);
     // See if there is an existing skip request
-    const currentSkip = await loadSkip();
+    const currentSkip = await loadSkip(teamId, channelId);
     if (currentSkip && currentSkip.track.id == statusTrack.id) {
       // If so - Add Vote to Skip
       await addVote(channelId, userId, currentSkip, status);
@@ -45,16 +46,16 @@ async function startSkipVote(channelId, userId) {
     }
 
     // If Time is before 6am or after 6pm local time.
-    const timezone = await loadTimezone();
+    const timezone = await loadTimezone(teamId, channelId );
     if (moment().isBefore(moment.tz('6:00', 'hh:mm', timezone)) || moment().isAfter(moment.tz('18:00', 'hh:mm', timezone))) {
-      skipVotes = parseInt(await loadSkipVotesAfterHours());
+      skipVotes = parseInt(await loadSkipVotesAfterHours(teamId, channelId));
     } else {
-      skipVotes = parseInt(await loadSkipVotes());
+      skipVotes = parseInt(await loadSkipVotes(teamId, channelId ));
     }
 
     // Skip threshold is 0
     if (!skipVotes) {
-      await setSkip();
+      await setSkip(teamId, channelId );
       await post(
           inChannelPost(channelId, skipConfirmation(statusTrack.title, [userId])),
       );
@@ -69,7 +70,7 @@ async function startSkipVote(channelId, userId) {
 
     // Store skip with the message timestamp so that we can update the message later
     const model = modelSkip(slackPost.message.ts, statusTrack, [userId], skipVotes);
-    await storeSkip(model);
+    await storeSkip(teamId, channelId, model);
     return {success: true, response: null, status: null};
   } catch (error) {
     logger.error(error);
@@ -79,13 +80,14 @@ async function startSkipVote(channelId, userId) {
 
 /**
  * Adds a skip vote from our skip post
+ * @param {string} teamId
  * @param {string} channelId
  * @param {string} userId
  * @param {string} value
  * @param {string} responseUrl
  */
-async function addVoteFromPost(channelId, userId, value, responseUrl) {
-  const [currentSkip, status] = await Promise.all([loadSkip(), fetchCurrentPlayback()]);
+async function addVoteFromPost(teamId, channelId, userId, value, responseUrl) {
+  const [currentSkip, status] = await Promise.all([loadSkip(teamId, channelId), fetchCurrentPlayback(teamId, channelId )]);
   // Skip Vote has expired
   if (!status.item || value != currentSkip.track.id || value != status.item.id) {
     const expiredBlock = [textSection(SKIP_RESPONSE.expired)];
@@ -100,12 +102,13 @@ async function addVoteFromPost(channelId, userId, value, responseUrl) {
 
 /**
  * Add a vote to the skip vote, determine if over the threshold
+ * @param {String} teamId
  * @param {String} channelId
  * @param {String} userId
  * @param {String} currentSkip
  * @param {Object} status
  */
-async function addVote(channelId, userId, currentSkip, status) {
+async function addVote(teamId, channelId, userId, currentSkip, status) {
   try {
     const statusTrack = new Track(status.item);
 
@@ -126,7 +129,7 @@ async function addVote(channelId, userId, currentSkip, status) {
       await updateChat(
           messageUpdate(channelId, currentSkip.timestamp, skipRequest(currentSkip.users[0], currentSkip.track.title), skipBlock),
       );
-      await storeSkip(currentSkip);
+      await storeSkip(teamId, channelId, currentSkip);
       return;
     } else {
       // Attempt to skip
@@ -134,7 +137,7 @@ async function addVote(channelId, userId, currentSkip, status) {
         await deleteChat(
             deleteMessage(channelId, currentSkip.timestamp),
         ),
-        await skip();
+        await skip(teamId, channelId );
         // Skip Vote threshold reached
         await post(
             inChannelPost(channelId, skipConfirmation(statusTrack.title, currentSkip.users), null),
@@ -181,10 +184,12 @@ function getSkipBlock(userId, votesNeeded, trackName, trackId, users) {
 
 /**
  * Skip
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function setSkip() {
+async function setSkip(teamId, channelId ) {
   try {
-    await skip();
+    await skip(teamId, channelId );
   } catch (error) {
     logger.error(error);
     throw error;

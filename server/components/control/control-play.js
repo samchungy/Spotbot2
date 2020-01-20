@@ -13,16 +13,18 @@ const noSongs = (status, playlist) => status.is_playing && !status.item && statu
 
 /**
  * Try to play Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function setPlay() {
+async function setPlay(teamId, channelId) {
   try {
-    const status = await fetchCurrentPlayback();
+    const status = await fetchCurrentPlayback(teamId, channelId );
 
     // Spotify is already running
     if (status.is_playing && status.item) {
       return {success: false, response: PLAY_FAIL_RESPONSES.already, status: status};
     }
-    const playlist = await loadPlaylistSetting();
+    const playlist = await loadPlaylistSetting(teamId, channelId );
 
     // We have an empty playlist and status is IsPlaying
     if (noSongs(status, playlist)) {
@@ -31,12 +33,12 @@ async function setPlay() {
 
     // If we are playing from a spotify device already, just keep using it
     if (status.device) {
-      return await attemptPlay(status.device.id, status, playlist, 0);
+      return await attemptPlay(teamId, channelId, status.device.id, status, playlist, 0);
     }
 
     // Load our default Device and fetch all available Spotify devices
 
-    const [device, spotifyDevices] = await Promise.all([loadDefaultDevice(), fetchDevices()]);
+    const [device, spotifyDevices] = await Promise.all([loadDefaultDevice(teamId, channelId), fetchDevices(teamId, channelId )]);
 
     if (device.id != NO_DEVICES) {
       // Default device selected
@@ -45,7 +47,7 @@ async function setPlay() {
         return {success: false, response: PLAY_FAIL_RESPONSES.no_device, status: status};
       }
       // Use our selected devices.
-      return await attemptPlay(device.id, status, playlist, 0);
+      return await attemptPlay(teamId, channelId, device.id, status, playlist, 0);
     } else {
       // No default device selected -- Choose any available
       if (spotifyDevices.devices.length == 0) {
@@ -53,7 +55,7 @@ async function setPlay() {
         return {success: false, response: PLAY_FAIL_RESPONSES.no_devices, status: status};
       } else {
         // Use the first available device
-        return await attemptPlay(spotifyDevices.devices[0].id, status, playlist, 0);
+        return await attemptPlay(teamId, channelId, spotifyDevices.devices[0].id, status, playlist, 0);
       }
     }
   } catch (error) {
@@ -64,12 +66,14 @@ async function setPlay() {
 
 /**
  * Recursive Retries to Play
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {String} deviceId
  * @param {Object} status
  * @param {Object} playlist
  * @param {Number} attempt
  */
-async function attemptPlay(deviceId, status, playlist, attempt) {
+async function attemptPlay(teamId, channelId, deviceId, status, playlist, attempt) {
   if (attempt) {
     // Base Cases
     if (status.is_playing && status.item) {
@@ -86,14 +90,14 @@ async function attemptPlay(deviceId, status, playlist, attempt) {
 
   // Unique Spotify edge case where it gets stuck
   if (status && status.currently_playing_type=='unknown' && !status.context && !status.item) {
-    await play(deviceId, playlist.uri);
+    await play(teamId, channelId, deviceId, playlist.uri);
   } else {
-    await play(deviceId);
+    await play(teamId, channelId, deviceId);
   }
   // Wait before verifying that Spotify is playing
   await sleep(100);
-  const newStatus = await fetchCurrentPlayback();
-  return await attemptPlay(deviceId, newStatus, playlist, attempt+1);
+  const newStatus = await fetchCurrentPlayback(teamId, channelId );
+  return await attemptPlay(teamId, channelId, deviceId, newStatus, playlist, attempt+1);
 }
 
 module.exports = {

@@ -3,24 +3,28 @@ const logger = require('../../../util/util-logger');
 const {AuthError, PremiumError} = require('../../../errors/errors-auth');
 const {fetchAuthorizeURL, fetchTokens, fetchProfile} = require('../../spotify-api/spotify-api-auth');
 const {loadState, storeState, storeTokens, storeProfile} = require('./spotifyauth-dal');
-const {modelProfile} = require('../settings-model');
+const {modelProfile, modelState} = require('../settings-model');
 const {buttonSection} = require('../../slack/format/slack-format-modal');
 const {contextSection} = require('../../slack/format/slack-format-blocks');
+const {isEqual} = require('../../../util/util-objects');
 
-const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
+const SETTINGS_AUTH = config.get('dynamodb.settings_auth');
 const HINTS = config.get('settings.hints');
 const LABELS = config.get('settings.labels');
 const PREMIUM_ERROR = config.get('settings.errors.premium');
-const AUTH_FAIL = config.get('settings.errors.fail');
 
 /**
  * Generates a Spotify Authorization URL and stores a state in our db
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} triggerId
  */
-async function getAuthorizationURL(triggerId) {
+async function getAuthorizationURL(teamId, channelId, triggerId) {
   try {
     // TODO Store triggerId as Spotify Auth state.
-    const [, authUrl] = await Promise.all([storeState(triggerId), fetchAuthorizeURL(triggerId)]);
+    const state = modelState(teamId, channelId, triggerId);
+    const [, authUrl] = await Promise.all([storeState(teamId, channelId, state), fetchAuthorizeURL(teamId, channelId, encodeURI(JSON.stringify(state)))]);
+    console.log(authUrl);
     return authUrl;
   } catch (error) {
     logger.error(error);
@@ -31,10 +35,12 @@ async function getAuthorizationURL(triggerId) {
 
 /**
  * New Authentication Attempt, reset current auth
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function resetAuthentication() {
+async function resetAuthentication(teamId, channelId) {
   // Invalidate any previous auth we had
-  await storeTokens(null, null);
+  await storeTokens(teamId, channelId, null, null);
 }
 
 /**
@@ -42,10 +48,18 @@ async function resetAuthentication() {
  * @param {string} state
  */
 async function verifyState(state) {
-  // Check state is valid, else redirect.
-  const currentState = await loadState();
-  return currentState === state;
-  // TODO:
+  try {
+    const stateJson = JSON.parse(state);
+    // Check state is valid, else redirect.
+    const currentState = await loadState(stateJson.teamId, stateJson.channelId);
+    if (isEqual(stateJson, currentState)) {
+      return currentState;
+    }
+  } catch (error) {
+    logger.error('Verify state failed');
+    logger.error(error);
+  }
+  return null;
 }
 
 /**
@@ -55,21 +69,25 @@ async function verifyState(state) {
  */
 async function validateAuthCode(code, state) {
   try {
-    if (!await verifyState(state)) {
-      return {success: false, failReason: 'Invalid State'};
+    const stateJson = await verifyState(state);
+    if (!stateJson) {
+      return {success: false, failReason: 'Invalid State', state: stateJson};
     }
     // Get Tokens from Spotify
-    const {access_token: accessToken, refresh_token: refreshToken} = await fetchTokens(code);
+    const {access_token: accessToken, refresh_token: refreshToken} = await fetchTokens(stateJson.teamId, stateJson.channelId, code);
     // Store our tokens in our DB & Get Spotify URI for authenticator
-    const [, profile] = await Promise.all([storeTokens(accessToken, refreshToken), fetchProfile()]);
-    await storeProfile(
+    const [, profile] = await Promise.all([
+      storeTokens(stateJson.teamId, stateJson.channelId, accessToken, refreshToken),
+      fetchProfile(stateJson.teamId, stateJson.channelId),
+    ]);
+    await storeProfile(stateJson.teamId, stateJson.channelId,
         modelProfile(profile.id, profile.country),
     );
 
-    return {success: true, failReason: null};
+    return {success: true, failReason: null, state: stateJson};
   } catch (error) {
     logger.error(error);
-    return {success: false, failReason: `${error.message}`};
+    return {success: false, failReason: `${error.message}`, state: null};
     // TODO Handle status report to Slack
   }
 }
@@ -77,24 +95,26 @@ async function validateAuthCode(code, state) {
 const authStatement = (user) => `:white_check_mark: Authenticated with ${user} - Spotify Premium`;
 
 /**
- *
+ * Geenerate the authentication block in Settings modal.
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} triggerId
  * @param {boolean} failState
  */
-async function getAuthBlock(triggerId, failState) {
+async function getAuthBlock(teamId, channelId, triggerId) {
   let authError;
   const authBlock = [];
-  const url = await getAuthorizationURL(triggerId);
+  const url = await getAuthorizationURL(teamId, channelId, triggerId);
 
   try {
-    const profile = await fetchProfile();
+    const profile = await fetchProfile(teamId, channelId );
     if (profile.product !== 'premium') {
       throw new PremiumError();
     } else {
       // Place authenticated blocks
       authBlock.push(
-          buttonSection(SETTINGS_HELPER.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_HELPER.reauth),
-          contextSection(SETTINGS_HELPER.auth_confirmation, authStatement(profile.display_name ? profile.display_name : profile.id)),
+          buttonSection(SETTINGS_AUTH.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_AUTH.reauth),
+          contextSection(SETTINGS_AUTH.auth_confirmation, authStatement(profile.display_name ? profile.display_name : profile.id)),
       );
     }
   } catch (error) {
@@ -102,17 +122,12 @@ async function getAuthBlock(triggerId, failState) {
       authError = true;
       // We are not authenticated - push non-authenticated blocks
       authBlock.push(
-          buttonSection(SETTINGS_HELPER.auth_url, LABELS.auth_url, HINTS.auth_url_button, null, url, null),
+          buttonSection(SETTINGS_AUTH.auth_url, LABELS.auth_url, HINTS.auth_url_button, null, url, null),
       );
       if (error instanceof PremiumError) {
         // If the user is not premium
         authBlock.push(
-            contextSection(SETTINGS_HELPER.auth_error, PREMIUM_ERROR),
-        );
-      } else if (failState) {
-        // If the user failed an authentication.
-        authBlock.push(
-            contextSection(SETTINGS_HELPER.auth_error, AUTH_FAIL),
+            contextSection(SETTINGS_AUTH.auth_error, PREMIUM_ERROR),
         );
       }
     } else {

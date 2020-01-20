@@ -13,11 +13,13 @@ const currentlyPlayingText = (title, artist, album) => `:sound: Currently Playin
 
 /**
  * Get Current Track Panel
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {Object} status
  * @param {string} response
  * @return {Object} Control Panel Block
  */
-async function getCurrentTrackPanel(status, response) {
+async function getCurrentTrackPanel(teamId, channelId, status, response) {
   // If we have a song playing push the currently playing stack on
   let altText; let context;
   const currentPanel = [];
@@ -43,7 +45,7 @@ async function getCurrentTrackPanel(status, response) {
   } else {
   // Check if we are playing from the playlist
     if (status.context) {
-      const playlist = await loadPlaylistSetting();
+      const playlist = await loadPlaylistSetting(teamId, channelId );
       if (status.context.uri.includes(playlist.id)) {
         context = CONTEXT_RESPONSES.on_playlist;
       } else {
