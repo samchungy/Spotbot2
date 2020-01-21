@@ -30,7 +30,6 @@ async function startSkipVote(teamId, channelId, userId) {
     // Get current playback status
     let skipVotes;
     const status = await fetchCurrentPlayback(teamId, channelId );
-    console.log(status);
 
     // Spotify is not playing anything so we cannot skip
     if (!status.device || !status.item) {
@@ -40,7 +39,6 @@ async function startSkipVote(teamId, channelId, userId) {
     const statusTrack = new Track(status.item);
     // See if there is an existing skip request
     const currentSkip = await loadSkip(teamId, channelId);
-    console.log(currentSkip, status);
     if (currentSkip && currentSkip.track.id == statusTrack.id) {
       // If so - Add Vote to Skip
       await addVote(teamId, channelId, userId, currentSkip, status);
@@ -49,7 +47,9 @@ async function startSkipVote(teamId, channelId, userId) {
 
     // If Time is before 6am or after 6pm local time.
     const timezone = await loadTimezone(teamId, channelId );
-    if (moment().isBefore(moment.tz('6:00', 'hh:mm', timezone)) || moment().isAfter(moment.tz('18:00', 'hh:mm', timezone))) {
+    const now = moment().tz(timezone);
+    const currentDay = now.format('YYYY-MM-DD');
+    if (now.isBefore(moment.tz(`${currentDay} 06:00`, timezone)) || now.isAfter(moment.tz(`${currentDay} 18:00`, timezone))) {
       skipVotes = parseInt(await loadSkipVotesAfterHours(teamId, channelId));
     } else {
       skipVotes = parseInt(await loadSkipVotes(teamId, channelId ));
@@ -112,7 +112,6 @@ async function addVoteFromPost(teamId, channelId, userId, value, responseUrl) {
  */
 async function addVote(teamId, channelId, userId, currentSkip, status) {
   try {
-    console.log(status);
     const statusTrack = new Track(status.item);
 
     if (currentSkip.users.includes(userId)) {
