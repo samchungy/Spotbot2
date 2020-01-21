@@ -1,5 +1,4 @@
 const config = require('config');
-const logger = require('pino')();
 const SLACK_ACTIONS = config.get('slack.actions');
 const PLAYLIST = config.get('dynamodb.settings.playlist');
 const DEFAULT_DEVICE = config.get('dynamodb.settings.default_device');
@@ -28,8 +27,8 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                   break;
                 case REAUTH:
-                  await changeAuthentication();
-                  updateView(payload.team.id, payload.channel.id, payload.view.id, payload.trigger_id);
+                  await changeAuthentication(payload.team.id, payload.view.private_metadata);
+                  updateView(payload.team.id, payload.view.private_metadata, payload.view.id, payload.trigger_id);
                   ctx.body = '';
                   break;
                 case CONTROLS.play:
@@ -78,7 +77,7 @@ module.exports = ( prefix, Router ) => {
           case SLACK_ACTIONS.view_submission:
             switch (payload.view.callback_id) {
               case SLACK_ACTIONS.settings_modal:
-                const errors = await saveSettings(payload.view, payload.user.id);
+                const errors = await saveSettings(payload.team.id, payload.view.private_metadata, payload.view, payload.user.id);
                 if (errors) {
                   ctx.body = errors;
                 } else {

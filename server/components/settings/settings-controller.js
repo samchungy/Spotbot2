@@ -183,7 +183,7 @@ async function updateView(teamId, channelId, viewId, triggerId) {
       ...!authError ? await getSettingsBlocks(teamId, channelId ) : [],
     ];
 
-    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, null);
+    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, channelId);
     await updateModal(viewId, modal);
   } catch (error) {
     logger.error(error);

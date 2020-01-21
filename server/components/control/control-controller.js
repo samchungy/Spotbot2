@@ -20,7 +20,7 @@ const {setClearOneDay} = require('./control-clear-one');
 async function openControls(teamId, channelId) {
   try {
     try {
-      const status = await fetchCurrentPlayback();
+      const status = await fetchCurrentPlayback(teamId, channelId);
       const {altText, currentPanel} = await getCurrentTrackPanel(teamId, channelId, status);
 
       const controlPanel = [

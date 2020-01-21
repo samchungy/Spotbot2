@@ -5,8 +5,6 @@ const requester = require('./spotify-api-requester');
  * Fetches user current playback in Spotify
  * @param {string} teamId
  * @param {string} channelId
- * @param {number} offset
- * @param {number} limit
  */
 async function fetchCurrentPlayback(teamId, channelId ) {
   const spotifyApi = await spotifyWebApi(teamId, channelId );
