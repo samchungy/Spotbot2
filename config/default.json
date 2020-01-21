@@ -24,7 +24,10 @@
                   "limit": 100
                 }
             },
-            "africa": "spotify:track:2374M0fQpWi3dLnB54qaLX"
+            "africa": "spotify:track:2374M0fQpWi3dLnB54qaLX",
+            "tracks": {
+              "limit": 30
+            }
         },
         "dynamodb": {
             "auth": {
@@ -46,17 +49,19 @@
                 "skip_votes_ah": "skip_votes_ah",
                 "timezone": "timezone"
             },
+            "settings_auth": {
+              "reauth": "reauth",
+              "auth_url": "auth_url",
+              "auth_verify": "auth_verify",
+              "auth_confirmation": "auth_confirmation",
+              "auth_error": "auth_error"
+            },
             "settings_helper": {
                 "spotify_playlists": "spotify_playlists",
                 "spotify_devices": "spotify_devices",
                 "no_devices": "no_devices",
                 "no_devices_label": "None",
-                "create_new_playlist": "create_new_playlist.",
-                "reauth": "reauth",
-                "auth_url": "auth_url",
-                "auth_verify": "auth_verify",
-                "auth_confirmation": "auth_confirmation",
-                "auth_error": "auth_error"
+                "create_new_playlist": "create_new_playlist."
             },
             "skip": "skip"
         },
@@ -65,6 +70,7 @@
         },
         "settings": {
             "hints" : {
+                "auth_urL_fail": "Try again",
                 "slack_channel": "The channel Slackbot will restrict usage of commands to.",
                 "playlist": "The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.",
                 "default_device": "This helps Spotbot with playing. Turn on your Spotify device now.",
@@ -79,6 +85,7 @@
                 "timezone": "This is to configure the time based skip votes. Type in a location."
             },
             "labels": {
+                "auth_urL_fail": ":warning: Authentication attempt failed.",
                 "auth_url": "Click to authenticate with Spotify.",
                 "reauth": "Click to re-authenticate with Spotify.",
                 "slack_channel": "Slack Channel Restriction",
@@ -146,6 +153,13 @@
               "ephemeral": null
             },
             "responses": {
+              "tracks": {
+                "query": {
+                  "error": ":warning: Invalid query, please try again."
+                },
+                "no_tracks": ":information_source: No tracks found.",
+                "error": ":warning: An error occured."
+              },
               "settings":{
                 "success": ":white_check_mark: Settings successfully saved.",
                 "fail": ":x: Something went wrong! Settings were not saved."
