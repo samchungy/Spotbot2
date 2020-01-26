@@ -2,7 +2,7 @@ const {spotifyWebApi} = require('./spotify-api-initialise');
 const requester = require('./spotify-api-requester');
 
 /**
- * Hits play on Spotify
+ * Find Search Tracks
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} query
@@ -12,7 +12,7 @@ const requester = require('./spotify-api-requester');
  */
 async function fetchSearchTracks(teamId, channelId, query, market, limit) {
   const spotifyApi = await spotifyWebApi(teamId, channelId );
-  return await requester(`Find Search Tracks: "${query}"`, async () => {
+  return await requester(teamId, channelId, `Find Search Tracks: "${query}"`, async () => {
     return (await spotifyApi.searchTracks(query, {
       market: market,
       limit: limit,

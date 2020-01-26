@@ -7,8 +7,12 @@ const AUTH_URL = config.get('dynamodb.settings_auth.auth_url');
 const REAUTH = config.get('dynamodb.settings_auth.reauth');
 const CONTROLS = config.get('slack.actions.controls');
 const OVERFLOW = config.get('slack.actions.controller_overflow');
+const CANCEL = config.get('slack.actions.tracks.cancel_search');
+const MORE_TRACKS = config.get('slack.actions.tracks.see_more_results');
+const ADD_TRACK = config.get('slack.actions.tracks.add_to_playlist');
 const {changeAuthentication, getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, saveView, updateView} = require('../settings/settings-controller');
 const {clearOneDay, jumpToStart, pause, play, reset, skip, toggleRepeat, toggleShuffle, verifyResetReview, voteToSkip} = require('../control/control-controller');
+const {getMoreTracks, cancelSearch, setTrack} = require('../tracks/tracks-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
@@ -17,11 +21,25 @@ module.exports = ( prefix, Router ) => {
   router
       .post('/', async (ctx, next) => {
         const payload = JSON.parse(ctx.request.body.payload);
-        console.log(payload);
         switch (payload.type) {
           case SLACK_ACTIONS.block_actions:
+            console.log(payload);
             if (payload.actions.length > 0) {
               switch (payload.actions[0].action_id) {
+                // TRACKS
+                case CANCEL:
+                  cancelSearch(payload.response_url);
+                  ctx.body = '';
+                  break;
+                case MORE_TRACKS:
+                  getMoreTracks(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url);
+                  ctx.body = '';
+                  break;
+                case ADD_TRACK:
+                  setTrack(payload.team.id, payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
+                  ctx.body = '';
+                  break;
+                // AUTH
                 case AUTH_URL:
                   saveView(payload.team.id, payload.view.private_metadata, payload.view.id, payload.trigger_id);
                   ctx.body = '';
@@ -31,6 +49,7 @@ module.exports = ( prefix, Router ) => {
                   updateView(payload.team.id, payload.view.private_metadata, payload.view.id, payload.trigger_id);
                   ctx.body = '';
                   break;
+                // CONTROLS
                 case CONTROLS.play:
                   play(payload.team.id, payload.channel.id, payload.message.ts);
                   ctx.body = '';
