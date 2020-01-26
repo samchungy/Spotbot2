@@ -163,7 +163,8 @@
         "responses": {
           "tracks": {
             "query": {
-              "error": ":warning: Invalid query, please try again."
+              "error": ":warning: Invalid query, please try again.",
+              "empty": ":information_source: No query entered. Please enter a query."
             },
             "no_tracks": ":information_source: No tracks found for the query ",
             "error": ":warning: An error occured.",

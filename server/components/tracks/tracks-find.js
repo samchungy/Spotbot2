@@ -25,6 +25,9 @@ const trackPanel = (title, url, artist, album, time) => `<${url}|*${title}*>\n:c
  */
 async function findAndStore(teamId, channelId, query, triggerId) {
   try {
+    if (query === '') {
+      return {success: false, response: TRACKS.query.empty};
+    }
     if (isInvalidQuery(query)) {
       return {success: false, response: TRACKS.query.error};
     }

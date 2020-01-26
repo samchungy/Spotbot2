@@ -6,7 +6,7 @@ const {getCurrentInfo} = require('./tracks-current');
 const {getWhom} = require('./tracks-whom');
 const {addTrack} = require('./tracks-add');
 const {postEphemeral, post, reply} = require('../slack/slack-api');
-const {ephemeralPost, inChannelPost, updateReply} = require('../slack/format/slack-format-reply');
+const {deleteReply, ephemeralPost, inChannelPost, updateReply} = require('../slack/format/slack-format-reply');
 
 /**
  * Jumps to start of playlist on Spotify
@@ -73,8 +73,9 @@ async function getMoreTracks(teamId, channelId, triggerId, responseUrl) {
 async function setTrack(teamId, channelId, userId, trackUri, responseUrl) {
   try {
     const response = await addTrack(teamId, channelId, userId, trackUri, responseUrl);
-    await post(
-        inChannelPost(channelId, response, null),
+    reply(
+        deleteReply(response, null),
+        responseUrl,
     );
   } catch (error) {
     logger.error(error);
