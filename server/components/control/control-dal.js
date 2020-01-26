@@ -5,11 +5,13 @@ const SKIP = config.get('dynamodb.skip');
 
 /**
  * Stores our skip request/vote to the DB
- * @param {*} skip
+ * @param {string} team
+ * @param {string} channel
+ * @param {object} skip
  */
-async function storeSkip(skip) {
+async function storeSkip(team, channel, skip) {
   try {
-    const setting = settingModel(SKIP, skip);
+    const setting = settingModel(team, channel, SKIP, skip);
     await putSetting(setting);
   } catch (error) {
     logger.error('Storing Skip to Dyanmodb failed.');
@@ -19,10 +21,12 @@ async function storeSkip(skip) {
 
 /**
  * Loads our skip request/vote from the DB
+ * @param {string} team
+ * @param {string} channel
  */
-async function loadSkip() {
+async function loadSkip(team, channel) {
   try {
-    const setting = settingModel(SKIP, null);
+    const setting = settingModel(team, channel, SKIP, null);
     const item = await getSetting(setting);
     return item.Item ? item.Item.value : null;
   } catch (error) {

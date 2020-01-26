@@ -14,10 +14,12 @@ const TIMEZONE = config.get('dynamodb.settings.timezone');
 
 /**
  * Loads the default device from the db
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function loadDefaultDevice() {
+async function loadDefaultDevice(teamId, channelId) {
   try {
-    const setting = settingModel(SETTINGS.default_device, null);
+    const setting = settingModel(teamId, channelId, SETTINGS.default_device, null);
     const item = await getSetting(setting);
     return item.Item ? item.Item.value : null;
   } catch (error) {
@@ -28,10 +30,12 @@ async function loadDefaultDevice() {
 
 /**
  * Loads the stored devices from the db
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function loadDevices() {
+async function loadDevices(teamId, channelId) {
   try {
-    const setting = settingModel(SETTINGS_HELPER.spotify_devices, null);
+    const setting = settingModel(teamId, channelId, SETTINGS_HELPER.spotify_devices, null);
     return (await getSetting(setting)).Item.value;
   } catch (error) {
     logger.error('Loading stored Spotify Devices from Dynamodb failed');
@@ -41,10 +45,12 @@ async function loadDevices() {
 
 /**
  * Load the stored playlists from the db
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function loadPlaylists() {
+async function loadPlaylists(teamId, channelId ) {
   try {
-    const setting = settingModel(SETTINGS_HELPER.spotify_playlists, null);
+    const setting = settingModel(teamId, channelId, SETTINGS_HELPER.spotify_playlists, null);
     return (await getSetting(setting)).Item.value;
   } catch (error) {
     logger.error('Loading stored Spotify Playlists from Dynamodb failed');
@@ -54,10 +60,12 @@ async function loadPlaylists() {
 
 /**
  * Load the Spotbot Playlist settings from the db
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function loadPlaylistSetting() {
+async function loadPlaylistSetting(teamId, channelId ) {
   try {
-    const setting = settingModel(SETTINGS.playlist, null);
+    const setting = settingModel(teamId, channelId, SETTINGS.playlist, null);
     const item = await getSetting(setting);
     return item.Item ? item.Item.value : null;
   } catch (error) {
@@ -68,10 +76,12 @@ async function loadPlaylistSetting() {
 
 /**
  * Load the Spotify profile from the db
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function loadProfile() {
+async function loadProfile(teamId, channelId ) {
   try {
-    const setting = settingModel(PROFILE, null);
+    const setting = settingModel(teamId, channelId, PROFILE, null);
     return (await getSetting(setting)).Item.value;
   } catch (error) {
     logger.error('Getting Spotify profile from dynamodb failed');
@@ -81,14 +91,19 @@ async function loadProfile() {
 
 /**
  * Load saved Settings from the db
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function loadSettings() {
+async function loadSettings(teamId, channelId ) {
   try {
     const settings = {...SETTINGS};
     // Create a default set of values
     Object.keys(settings).forEach((key) => settings[key] = null);
+    if (!teamId || !channelId) {
+      return settings;
+    }
 
-    const settingsList = Object.keys(SETTINGS).map((key) => settingModel(SETTINGS[key], null));
+    const settingsList = Object.keys(SETTINGS).map((key) => settingModel(teamId, channelId, SETTINGS[key], null));
     const batchSettings = await batchGetSettings(settingsList);
     // Read values into settings, should be only 1 table
     for (const table in batchSettings.Responses) {
@@ -106,10 +121,12 @@ async function loadSettings() {
 
 /**
  * Load Skip Votes from db
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function loadSkipVotes() {
+async function loadSkipVotes(teamId, channelId ) {
   try {
-    const setting = settingModel(SKIP_VOTES, null);
+    const setting = settingModel(teamId, channelId, SKIP_VOTES, null);
     const item = await getSetting(setting);
     return item.Item ? item.Item.value : null;
   } catch (error) {
@@ -120,10 +137,12 @@ async function loadSkipVotes() {
 
 /**
  * Load Skip Votes After Hours from db
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function loadSkipVotesAfterHours() {
+async function loadSkipVotesAfterHours(teamId, channelId ) {
   try {
-    const setting = settingModel(SKIP_VOTES_AH, null);
+    const setting = settingModel(teamId, channelId, SKIP_VOTES_AH, null);
     const item = await getSetting(setting);
     return item.Item ? item.Item.value : null;
   } catch (error) {
@@ -134,10 +153,12 @@ async function loadSkipVotesAfterHours() {
 
 /**
  * Load Timezone from db
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function loadTimezone() {
+async function loadTimezone(teamId, channelId ) {
   try {
-    const setting = settingModel(TIMEZONE, null);
+    const setting = settingModel(teamId, channelId, TIMEZONE, null);
     const item = await getSetting(setting);
     return item.Item ? item.Item.value : null;
   } catch (error) {
@@ -148,10 +169,12 @@ async function loadTimezone() {
 
 /**
  * Load stored View from db
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function loadView() {
+async function loadView(teamId, channelId ) {
   try {
-    const setting = settingModel(VIEW, null);
+    const setting = settingModel(teamId, channelId, VIEW, null);
     const item = await getSetting(setting);
     return item.Item ? item.Item.value : null;
   } catch (error) {
@@ -164,11 +187,13 @@ async function loadView() {
 
 /**
  * Stores the settings object in db
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {object} newSettings
  */
-async function storeSettings(newSettings) {
+async function storeSettings(teamId, channelId, newSettings) {
   try {
-    const settings = Object.keys(newSettings).map((key) => putRequest(key, newSettings[key]));
+    const settings = Object.keys(newSettings).map((key) => putRequest(teamId, channelId, key, newSettings[key]));
     await batchPutSettings(settings);
   } catch (error) {
     logger.error('Storing Settings in Dynamodb failed');
@@ -178,11 +203,13 @@ async function storeSettings(newSettings) {
 
 /**
  * Stores a playlist object in db
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {modelPlaylist} playlists
  */
-async function storePlaylists(playlists) {
+async function storePlaylists(teamId, channelId, playlists) {
   try {
-    const setting = settingModel(SETTINGS_HELPER.spotify_playlists, playlists);
+    const setting = settingModel(teamId, channelId, SETTINGS_HELPER.spotify_playlists, playlists);
     await putSetting(setting);
   } catch (error) {
     logger.error('Store Spotify Playlists to Dynamodb failed');
@@ -192,11 +219,13 @@ async function storePlaylists(playlists) {
 
 /**
  * Store a playlist setting in db
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {modelPlaylist} playlist
  */
-async function storePlaylistSetting(playlist) {
+async function storePlaylistSetting(teamId, channelId, playlist) {
   try {
-    const setting = settingModel(SETTINGS.playlist, playlist);
+    const setting = settingModel(teamId, channelId, SETTINGS.playlist, playlist);
     await putSetting(setting);
   } catch (error) {
     logger.error('Store Playlist setting to Dynamodb failed');
@@ -206,11 +235,13 @@ async function storePlaylistSetting(playlist) {
 
 /**
  * Store a device setting in db
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {modelDevice} device
  */
-async function storeDeviceSetting(device) {
+async function storeDeviceSetting(teamId, channelId, device) {
   try {
-    const setting = settingModel(SETTINGS.default_device, device);
+    const setting = settingModel(teamId, channelId, SETTINGS.default_device, device);
     await putSetting(setting);
   } catch (error) {
     logger.error('Store Default Device to Dynamodb failed');
@@ -220,11 +251,13 @@ async function storeDeviceSetting(device) {
 
 /**
  * Stores a device object in db
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {modelDevice} devices
  */
-async function storeDevices(devices) {
+async function storeDevices(teamId, channelId, devices) {
   try {
-    const setting = settingModel(SETTINGS_HELPER.spotify_devices, devices);
+    const setting = settingModel(teamId, channelId, SETTINGS_HELPER.spotify_devices, devices);
     return await putSetting(setting);
   } catch (error) {
     logger.error('Storing devices to Dynamodb failed');
@@ -234,11 +267,13 @@ async function storeDevices(devices) {
 
 /**
  * Stores a model object in db
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {modelView} view
  */
-async function storeView(view) {
+async function storeView(teamId, channelId, view) {
   try {
-    const setting = settingModel(VIEW, view);
+    const setting = settingModel(teamId, channelId, VIEW, view);
     return await putSetting(setting);
   } catch (error) {
     logger.error('Storing view to Dynamodb failed');

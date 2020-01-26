@@ -9,19 +9,20 @@ const CLEAR_ONE_RESPONSE = config.get('slack.responses.playback.clear_one');
 
 /**
  * Clear tracks older than one day from playlist
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} userId
  */
-async function setClearOneDay(userId) {
+async function setClearOneDay(teamId, channelId, userId) {
   try {
     const promises = [];
-    const playlist = await loadPlaylistSetting();
-    const {tracks: {total}} = await fetchPlaylistTotal(playlist.id);
+    const playlist = await loadPlaylistSetting(teamId, channelId );
+    const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
     const aDayAgo = moment().subtract('1', 'day');
     const attempts = Math.ceil(total/LIMIT);
-    console.log(attempts);
     for (let offset=0; offset<attempts; offset++) {
       promises.push(new Promise(async (resolve) =>{
-        const spotifyTracks = await fetchTracks(playlist.id, null, offset*LIMIT);
+        const spotifyTracks = await fetchTracks(teamId, channelId, playlist.id, null, offset*LIMIT);
         const tracksToDelete = [];
         spotifyTracks.items
             .map((track) => new PlaylistTrack(track))
@@ -39,7 +40,7 @@ async function setClearOneDay(userId) {
     const allTracksPromises = await Promise.all(promises);
     const allTracks = allTracksPromises.flat();
     if (allTracks.length > 0) {
-      await deleteTracks(playlist.id, allTracks);
+      await deleteTracks(teamId, channelId, playlist.id, allTracks);
     }
     return {success: true, response: `${CLEAR_ONE_RESPONSE.success} <@${userId}>.`, status: null};
   } catch (error) {

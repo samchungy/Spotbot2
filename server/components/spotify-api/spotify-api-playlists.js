@@ -7,43 +7,51 @@ const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 
 /**
  * Fetches user playlists from Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {number} offset
  * @param {number} limit
  */
-async function fetchPlaylists(offset, limit) {
-  const spotifyApi = await spotifyWebApi();
-  return (await requester('Get All Playlists', async () => await spotifyApi.getUserPlaylists({limit: limit, offset: offset}))).body;
+async function fetchPlaylists(teamId, channelId, offset, limit) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId);
+  return (await requester(teamId, channelId, 'Get All Playlists', async () => await spotifyApi.getUserPlaylists({limit: limit, offset: offset}))).body;
 }
 
 /**
  * Creates a new playlist on Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} profileId
  * @param {string} name
  */
-async function createPlaylist(profileId, name) {
-  const spotifyApi = await spotifyWebApi();
-  return (await requester('Create a new playlist', async () => await spotifyApi.createPlaylist(profileId, name, {collaborative: COLLABORATIVE, public: PUBLIC}))).body;
+async function createPlaylist(teamId, channelId, profileId, name) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId);
+  return (await requester(teamId, channelId, 'Create a new playlist', async () => await spotifyApi.createPlaylist(profileId, name, {collaborative: COLLABORATIVE, public: PUBLIC}))).body;
 }
 
 /**
  * Replace tracks in playlist on Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} playlistId
  * @param {Array} uris
  */
-async function replaceTracks(playlistId, uris) {
-  const spotifyApi = await spotifyWebApi();
-  return (await requester('Replace Tracks', async () => await spotifyApi.replaceTracksInPlaylist(playlistId, uris))).body;
+async function replaceTracks(teamId, channelId, playlistId, uris) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId);
+  return (await requester(teamId, channelId, 'Replace Tracks', async () => await spotifyApi.replaceTracksInPlaylist(playlistId, uris))).body;
 }
 
 /**
  * Get Tracks from playlist on Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {String} playlistId
  * @param {String} market
  * @param {Number} offset
  */
-async function fetchTracks(playlistId, market, offset) {
-  const spotifyApi = await spotifyWebApi();
-  return (await requester('Fetch Tracks', async () => await spotifyApi.getPlaylistTracks(playlistId, {
+async function fetchTracks(teamId, channelId, playlistId, market, offset) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId);
+  return (await requester(teamId, channelId, 'Fetch Tracks', async () => await spotifyApi.getPlaylistTracks(playlistId, {
     limit: LIMIT,
     ...market ? {market: market} : {},
     offset: offset,
@@ -53,24 +61,28 @@ async function fetchTracks(playlistId, market, offset) {
 
 /**
  * Get Playlist
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {String} playlistId
  */
-async function fetchPlaylistTotal(playlistId) {
-  const spotifyApi = await spotifyWebApi();
-  return (await requester('Fetch Playlist', async () => await spotifyApi.getPlaylist(playlistId, {
+async function fetchPlaylistTotal(teamId, channelId, playlistId) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId);
+  return (await requester(teamId, channelId, 'Fetch Playlist', async () => await spotifyApi.getPlaylist(playlistId, {
     fields: 'tracks.total',
   }))).body;
 }
 
 /**
  * Delete Playlist Tracks
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {String} playlistId
  * @param {Array} trackUris
  */
-async function deleteTracks(playlistId, trackUris) {
+async function deleteTracks(teamId, channelId, playlistId, trackUris) {
   console.log(playlistId, trackUris);
-  const spotifyApi = await spotifyWebApi();
-  return (await requester('Delete playlist tracks', async () => await spotifyApi.removeTracksFromPlaylist(playlistId, trackUris))).body;
+  const spotifyApi = await spotifyWebApi(teamId, channelId );
+  return (await requester(teamId, channelId, 'Delete playlist tracks', async () => await spotifyApi.removeTracksFromPlaylist(playlistId, trackUris))).body;
 }
 
 module.exports = {

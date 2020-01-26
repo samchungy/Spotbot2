@@ -1,11 +1,10 @@
 const config = require('config');
-const logger = require('pino')();
 const SLACK_ACTIONS = config.get('slack.actions');
 const PLAYLIST = config.get('dynamodb.settings.playlist');
 const DEFAULT_DEVICE = config.get('dynamodb.settings.default_device');
 const TIMEZONE = config.get('dynamodb.settings.timezone');
-const AUTH_URL = config.get('dynamodb.settings_helper.auth_url');
-const REAUTH = config.get('dynamodb.settings_helper.reauth');
+const AUTH_URL = config.get('dynamodb.settings_auth.auth_url');
+const REAUTH = config.get('dynamodb.settings_auth.reauth');
 const CONTROLS = config.get('slack.actions.controls');
 const OVERFLOW = config.get('slack.actions.controller_overflow');
 const {changeAuthentication, getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, saveView, updateView} = require('../settings/settings-controller');
@@ -24,50 +23,50 @@ module.exports = ( prefix, Router ) => {
             if (payload.actions.length > 0) {
               switch (payload.actions[0].action_id) {
                 case AUTH_URL:
-                  saveView(payload.view.id, payload.trigger_id);
+                  saveView(payload.team.id, payload.view.private_metadata, payload.view.id, payload.trigger_id);
                   ctx.body = '';
                   break;
                 case REAUTH:
-                  await changeAuthentication();
-                  updateView(null, payload.view.id, payload.trigger_id);
+                  await changeAuthentication(payload.team.id, payload.view.private_metadata);
+                  updateView(payload.team.id, payload.view.private_metadata, payload.view.id, payload.trigger_id);
                   ctx.body = '';
                   break;
                 case CONTROLS.play:
-                  play(payload.message.ts, payload.channel.id);
+                  play(payload.team.id, payload.channel.id, payload.message.ts);
                   ctx.body = '';
                   break;
                 case CONTROLS.pause:
-                  pause(payload.message.ts, payload.channel.id, payload.user.id);
+                  pause(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
                   ctx.body = '';
                   break;
                 case CONTROLS.skip:
-                  skip(payload.message.ts, payload.channel.id, payload.user.id);
+                  skip(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
                   ctx.body = '';
                   break;
                 case SLACK_ACTIONS.skip_vote:
-                  voteToSkip(payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
+                  voteToSkip(payload.team.id, payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
                   ctx.body = '';
                   break;
                 case OVERFLOW:
                   switch (payload.actions[0].selected_option.value) {
                     case CONTROLS.jump_to_start:
-                      jumpToStart(payload.message.ts, payload.channel.id, payload.user.id);
+                      jumpToStart(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
                       ctx.body = '';
                       break;
                     case CONTROLS.shuffle:
-                      toggleShuffle(payload.message.ts, payload.channel.id, payload.user.id);
+                      toggleShuffle(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
                       ctx.body = '';
                       break;
                     case CONTROLS.repeat:
-                      toggleRepeat(payload.message.ts, payload.channel.id, payload.user.id);
+                      toggleRepeat(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
                       ctx.body = '';
                       break;
                     case CONTROLS.reset:
-                      reset(payload.message.ts, payload.channel.id, payload.user.id, payload.trigger_id);
+                      reset(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id, payload.trigger_id);
                       ctx.body = '';
                       break;
                     case CONTROLS.clear_one:
-                      clearOneDay(payload.message.ts, payload.channel.id, payload.user.id);
+                      clearOneDay(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
                       ctx.body = '';
                       break;
                   }
@@ -78,7 +77,7 @@ module.exports = ( prefix, Router ) => {
           case SLACK_ACTIONS.view_submission:
             switch (payload.view.callback_id) {
               case SLACK_ACTIONS.settings_modal:
-                const errors = await saveSettings(payload.view, payload.user.id);
+                const errors = await saveSettings(payload.team.id, payload.view.private_metadata, payload.view, payload.user.id);
                 if (errors) {
                   ctx.body = errors;
                 } else {
@@ -105,11 +104,11 @@ module.exports = ( prefix, Router ) => {
         let options;
         switch (payload.action_id) {
           case PLAYLIST:
-            options = await getAllPlaylists(payload.value);
+            options = await getAllPlaylists(payload.team.id, payload.view.private_metadata, payload.value);
             ctx.body = options;
             break;
           case DEFAULT_DEVICE:
-            options = await getAllDevices();
+            options = await getAllDevices(payload.team.id, payload.view.private_metadata);
             ctx.body = options;
             break;
           case TIMEZONE:

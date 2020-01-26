@@ -1,5 +1,4 @@
 const logger = require('../../util/util-logger');
-const config = require('config');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {getCurrentTrackPanel, getShuffleRepeatPanel, getControlsPanel} = require('./control-panel');
 const {inChannelPost, messageUpdate} = require('../slack/format/slack-format-reply');
@@ -14,13 +13,15 @@ const {setClearOneDay} = require('./control-clear-one');
 
 /**
  * Opens a menu of Spotbot controls
+ * @param {string} teamId
  * @param {string} channelId
+ *
  */
-async function openControls(channelId) {
+async function openControls(teamId, channelId) {
   try {
     try {
-      const status = await fetchCurrentPlayback();
-      const {altText, currentPanel} = await getCurrentTrackPanel(status);
+      const status = await fetchCurrentPlayback(teamId, channelId);
+      const {altText, currentPanel} = await getCurrentTrackPanel(teamId, channelId, status);
 
       const controlPanel = [
         ...currentPanel,
@@ -43,17 +44,18 @@ async function openControls(channelId) {
 
 /**
  * Update the control panel
- * @param {string} timestamp
+ * @param {string} teamId
  * @param {string} channelId
+ * @param {string} timestamp
  * @param {string} response
  * @param {Object} status
  */
-async function updatePanel(timestamp, channelId, response, status) {
+async function updatePanel(teamId, channelId, timestamp, response, status) {
   try {
     if (!status) {
-      status = await fetchCurrentPlayback();
+      status = await fetchCurrentPlayback(teamId, channelId );
     }
-    const {altText, currentPanel} = await getCurrentTrackPanel(status, response);
+    const {altText, currentPanel} = await getCurrentTrackPanel(teamId, channelId, status, response);
 
     const controlPanel = [
       ...currentPanel,
@@ -72,17 +74,18 @@ async function updatePanel(timestamp, channelId, response, status) {
 
 /**
  * Hits Play on Spotify
- * @param {string} timestamp
+ * @param {string} teamId
  * @param {string} channelId
+ * @param {string} timestamp
  */
-async function play(timestamp, channelId) {
+async function play(teamId, channelId, timestamp) {
   try {
-    const {success, response, status} = await setPlay();
+    const {success, response, status} = await setPlay(teamId, channelId);
     if (!success) {
-      await updatePanel(timestamp, channelId, response, status);
+      await updatePanel(teamId, channelId, timestamp, response, status);
     } else {
       await Promise.all([
-        updatePanel(timestamp, channelId, null, status),
+        updatePanel(teamId, channelId, timestamp, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -95,18 +98,19 @@ async function play(timestamp, channelId) {
 
 /**
  * Hits pause on Spotify
- * @param {string} timestamp
+ * @param {string} teamId
  * @param {string} channelId
+ * @param {string} timestamp
  * @param {string} userId
  */
-async function pause(timestamp, channelId, userId) {
+async function pause(teamId, channelId, timestamp, userId) {
   try {
-    const {success, response, status} = await setPause(userId);
+    const {success, response, status} = await setPause(teamId, channelId, userId);
     if (!success) {
-      await updatePanel(timestamp, channelId, response, status);
+      await updatePanel(teamId, channelId, timestamp, response, status);
     } else {
       await Promise.all([
-        updatePanel(timestamp, channelId, null, status),
+        updatePanel(teamId, channelId, timestamp, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -119,14 +123,15 @@ async function pause(timestamp, channelId, userId) {
 
 /**
  * Hits pause on Spotify
- * @param {string} timestamp
+ * @param {string} teamId
  * @param {string} channelId
+ * @param {string} timestamp
  * @param {string} userId
  */
-async function skip(timestamp, channelId, userId) {
+async function skip(teamId, channelId, timestamp, userId) {
   try {
-    const {response, status} = await startSkipVote(channelId, userId);
-    await updatePanel(timestamp, channelId, response, status);
+    const {response, status} = await startSkipVote(teamId, channelId, userId);
+    await updatePanel(teamId, channelId, timestamp, response, status);
   } catch (error) {
     logger.error(error);
   }
@@ -134,14 +139,15 @@ async function skip(timestamp, channelId, userId) {
 
 /**
  * Add vote to skip
+ * @param {string} teamId
  * @param {string} channelId
  * @param {string} userId
  * @param {string} value
  * @param {string} responseUrl
  */
-async function voteToSkip(channelId, userId, value, responseUrl) {
+async function voteToSkip(teamId, channelId, userId, value, responseUrl) {
   try {
-    await addVoteFromPost(channelId, userId, value, responseUrl);
+    await addVoteFromPost(teamId, channelId, userId, value, responseUrl);
   } catch (error) {
     logger.error('Vote failed');
   }
@@ -149,18 +155,19 @@ async function voteToSkip(channelId, userId, value, responseUrl) {
 
 /**
  * Toggles shuffle on Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {String} timestamp
- * @param {String} channelId
  * @param {String} userId
  */
-async function toggleShuffle(timestamp, channelId, userId) {
+async function toggleShuffle(teamId, channelId, timestamp, userId) {
   try {
-    const {success, response, status} = await setShuffle(userId);
+    const {success, response, status} = await setShuffle(teamId, channelId, userId);
     if (!success) {
-      await updatePanel(timestamp, channelId, response, status);
+      await updatePanel(teamId, channelId, timestamp, response, status);
     } else {
       await Promise.all([
-        updatePanel(timestamp, channelId, null, status),
+        updatePanel(teamId, channelId, timestamp, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -173,18 +180,19 @@ async function toggleShuffle(timestamp, channelId, userId) {
 
 /**
  * Toggles repeat on Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {String} timestamp
- * @param {String} channelId
  * @param {String} userId
  */
-async function toggleRepeat(timestamp, channelId, userId) {
+async function toggleRepeat(teamId, channelId, timestamp, userId) {
   try {
-    const {success, response, status} = await setRepeat(userId);
+    const {success, response, status} = await setRepeat(teamId, channelId, userId);
     if (!success) {
-      await updatePanel(timestamp, channelId, response, status);
+      await updatePanel(teamId, channelId, timestamp, response, status);
     } else {
       await Promise.all([
-        updatePanel(timestamp, channelId, null, status),
+        updatePanel(teamId, channelId, timestamp, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -198,18 +206,19 @@ async function toggleRepeat(timestamp, channelId, userId) {
 
 /**
  * Jumps to start of playlist on Spotify
- * @param {String} timestamp
+ * @param {String} teamId
  * @param {String} channelId
+ * @param {String} timestamp
  * @param {String} userId
  */
-async function jumpToStart(timestamp, channelId, userId) {
+async function jumpToStart(teamId, channelId, timestamp, userId) {
   try {
-    const {success, response, status} = await setJumpToStart(userId);
+    const {success, response, status} = await setJumpToStart(teamId, channelId, userId);
     if (!success) {
-      await updatePanel(timestamp, channelId, response, status);
+      await updatePanel(teamId, channelId, timestamp, response, status);
     } else {
       await Promise.all([
-        updatePanel(timestamp, channelId, null, status),
+        updatePanel(teamId, channelId, timestamp, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -222,19 +231,20 @@ async function jumpToStart(timestamp, channelId, userId) {
 
 /**
  * Reset a playlist on Spotify
- * @param {String} timestamp
+ * @param {String} teamId
  * @param {String} channelId
+ * @param {String} timestamp
  * @param {String} userId
  * @param {String} triggerId
  */
-async function reset(timestamp, channelId, userId, triggerId) {
+async function reset(teamId, channelId, timestamp, userId, triggerId) {
   try {
-    const {success, response, status} = await startReset(timestamp, channelId, userId, triggerId);
+    const {success, response, status} = await startReset(teamId, channelId, timestamp, userId, triggerId);
     if (!success) {
-      await updatePanel(timestamp, channelId, response, status);
+      await updatePanel(teamId, channelId, timestamp, response, status);
     } else {
       await Promise.all([
-        updatePanel(timestamp, channelId, null, status),
+        updatePanel(teamId, channelId, timestamp, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -254,13 +264,13 @@ async function reset(timestamp, channelId, userId, triggerId) {
 async function verifyResetReview(isClose, view, userId) {
   try {
     const metadata = view.private_metadata;
-    const {channelId, timestamp, playlistId} = JSON.parse(metadata);
-    const {success, response, status} = await resetReview(isClose, view, playlistId, userId);
+    const {teamId, channelId, timestamp, playlistId} = JSON.parse(metadata);
+    const {success, response, status} = await resetReview(teamId, channelId, isClose, view, playlistId, userId);
     if (!success) {
-      await updatePanel(timestamp, channelId, response, status);
+      await updatePanel(teamId, channelId, timestamp, response, status);
     } else {
       await Promise.all([
-        updatePanel(timestamp, channelId, null, status),
+        updatePanel(teamId, channelId, timestamp, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -272,18 +282,19 @@ async function verifyResetReview(isClose, view, userId) {
 }
 /**
  * Clear Songs older than one day
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {String} timestamp
- * @param {String} channelId
  * @param {String} userId
  */
-async function clearOneDay(timestamp, channelId, userId) {
+async function clearOneDay(teamId, channelId, timestamp, userId) {
   try {
-    const {success, response, status} = await setClearOneDay(userId);
+    const {success, response, status} = await setClearOneDay(teamId, channelId, userId);
     if (!success) {
-      await updatePanel(timestamp, channelId, response, status);
+      await updatePanel(teamId, channelId, timestamp, response, status);
     } else {
       await Promise.all([
-        updatePanel(timestamp, channelId, null, status),
+        updatePanel(teamId, channelId, timestamp, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),

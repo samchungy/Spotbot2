@@ -31,15 +31,15 @@ const CHANNEL = config.get('dynamodb.settings.slack_channel');
 
 /**
  * Resets the authentication
- * @param {string} viewId
- * @param {string} triggerId
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function changeAuthentication() {
+async function changeAuthentication(teamId, channelId ) {
   try {
-    await resetAuthentication();
+    await resetAuthentication(teamId, channelId );
     await Promise.all([
-      storeDeviceSetting(null),
-      storePlaylistSetting(null),
+      storeDeviceSetting(teamId, channelId, null),
+      storePlaylistSetting(teamId, channelId, null),
     ]);
   } catch (error) {
     logger.error(error);
@@ -49,19 +49,21 @@ async function changeAuthentication() {
 
 /**
  * Open the Spotbot Settings Panel via Slack Modal.
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} triggerId
  */
-async function openSettings(triggerId) {
+async function openSettings(teamId, channelId, triggerId) {
   try {
-    const {authBlock, authError} = await getAuthBlock(triggerId);
+    const {authBlock, authError} = await getAuthBlock(teamId, channelId, triggerId);
 
     // Do not load settings blocks if Spotify is not authenticated
     const blocks = [
       ...authBlock,
-      ...!authError ? await getSettingsBlocks() : [],
+      ...!authError ? await getSettingsBlocks(teamId, channelId ) : [],
     ];
 
-    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, null);
+    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, channelId);
     await sendModal(triggerId, modal);
   } catch (error) {
     logger.error('Open Settings Failed');
@@ -71,10 +73,12 @@ async function openSettings(triggerId) {
 
 /**
  * Loads old config and returns setting blocks
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function getSettingsBlocks() {
+async function getSettingsBlocks(teamId, channelId ) {
   try {
-    const settings = await loadSettings();
+    const settings = await loadSettings(teamId, channelId );
     return [
       selectChannels(DB.slack_channel, LABELS.slack_channel, HINTS.slack_channel, settings.slack_channel),
       selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist, PLACE.playlist),
@@ -93,10 +97,12 @@ async function getSettingsBlocks() {
 
 /**
  * Save Settings Slack Modal submission
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {object} view Slack Modal View Object
  * @param {string} userId Slack User Id
  */
-async function saveSettings(view, userId) {
+async function saveSettings(teamId, channelId, view, userId) {
   try {
     // Channel for Status Reporting
     let channel;
@@ -115,13 +121,13 @@ async function saveSettings(view, userId) {
       }
 
       // No Errors - proceed with saving the settings
-      const settings = await loadSettings();
+      const settings = await loadSettings(teamId, channelId );
       for (const key in settings) {
         if ({}.hasOwnProperty.call(settings, key)) {
           const oldValue = settings[key];
           let newValue = submissions[key];
           // Some settings need extra values saved alongside the Slack submission payload.
-          newValue = await transformValue(key, newValue, oldValue);
+          newValue = await transformValue(teamId, channelId, key, newValue, oldValue);
           // Save on unecessary Read/Writes
           if (isEqual(oldValue, newValue)) {
             delete settings[key];
@@ -133,7 +139,7 @@ async function saveSettings(view, userId) {
 
       // Only save if we have something to update.
       if (!isEmpty(settings)) {
-        await storeSettings(settings);
+        await storeSettings(teamId, channelId, settings);
       }
 
       // Report back to Slack
@@ -156,27 +162,28 @@ async function saveSettings(view, userId) {
 
 /**
  * Updates our currently open Slack Modal.
- * @param {string} failReason
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} viewId
  * @param {string} triggerId
  */
-async function updateView(failReason, viewId, triggerId) {
+async function updateView(teamId, channelId, viewId, triggerId) {
   try {
     // If View ID is supplied, this is an authentication request
     // else it is a reauthentication request
     if (!viewId) {
-      const view = await loadView();
+      const view = await loadView(teamId, channelId );
       viewId = view.viewId;
       triggerId = view.triggerId;
     }
-    const {authBlock, authError} = await getAuthBlock(triggerId, failReason);
+    const {authBlock, authError} = await getAuthBlock(teamId, channelId, triggerId);
     // Do not load settings blocks if Spotify is not authenticated
     const blocks = [
       ...authBlock,
-      ...!authError ? await getSettingsBlocks() : [],
+      ...!authError ? await getSettingsBlocks(teamId, channelId ) : [],
     ];
 
-    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, null);
+    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, channelId);
     await updateModal(viewId, modal);
   } catch (error) {
     logger.error(error);
@@ -185,12 +192,14 @@ async function updateView(failReason, viewId, triggerId) {
 
 /**
  * Save the ViewId from our Authentication attempt
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} viewId
  * @param {string} triggerId
  */
-async function saveView(viewId, triggerId) {
+async function saveView(teamId, channelId, viewId, triggerId) {
   const store = modelView(viewId, triggerId);
-  storeView(store);
+  storeView(teamId, channelId, store);
 }
 
 /**

@@ -15,17 +15,18 @@ const settingInfo = (item) => {
       });
 };
 
-const settingModel = (name, value) => {
+const settingModel = (team, channel, name, value) => {
   return {
     name: name,
+    team_channel: team+channel,
     ...value ? {value: value} : {},
   };
 };
 
-const putRequest = (name, value) => {
+const putRequest = (team, channel, name, value) => {
   return {
     PutRequest: {
-      Item: settingModel(name, value),
+      Item: settingModel(team, channel, name, value),
     },
   };
 };

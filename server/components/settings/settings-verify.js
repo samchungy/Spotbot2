@@ -1,8 +1,8 @@
 const config = require('config');
 const {isPositiveInteger} = require('../../util/util-objects');
 const DB = config.get('dynamodb.settings');
-const AUTH_URL = config.get('dynamodb.settings_helper.auth_url');
-const AUTH_CONFIRMATION = config.get('dynamodb.settings_helper.auth_confirmation');
+const AUTH_URL = config.get('dynamodb.settings_auth.auth_url');
+const AUTH_CONFIRMATION = config.get('dynamodb.settings_auth.auth_confirmation');
 const ERRORS = config.get('settings.errors');
 
 

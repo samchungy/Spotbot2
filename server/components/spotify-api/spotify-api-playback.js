@@ -3,14 +3,16 @@ const requester = require('./spotify-api-requester');
 
 /**
  * Hits play on Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} deviceId
  * @param {string} context
  * @param {String} offset
  * @param {String} ms
  */
-async function play(deviceId, context, offset, ms) {
-  const spotifyApi = await spotifyWebApi();
-  return await requester('Play', async () => {
+async function play(teamId, channelId, deviceId, context, offset, ms) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId);
+  return await requester(teamId, channelId, 'Play', async () => {
     await spotifyApi.play({
       device_id: deviceId,
       ...context ? {context_uri: context} : {},
@@ -22,43 +24,51 @@ async function play(deviceId, context, offset, ms) {
 
 /**
  * Hits pause on Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} deviceId
  */
-async function pause(deviceId) {
-  const spotifyApi = await spotifyWebApi();
-  return await requester('Pause', async () => {
+async function pause(teamId, channelId, deviceId) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId);
+  return await requester(teamId, channelId, 'Pause', async () => {
     await spotifyApi.pause({device_id: deviceId});
   });
 }
 
 /**
  * Hits skip on Spotify
+ * @param {string} teamId
+ * @param {string} channelId
  */
-async function skip() {
-  const spotifyApi = await spotifyWebApi();
-  return await requester('Skip', async () => {
+async function skip(teamId, channelId ) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId);
+  return await requester(teamId, channelId, 'Skip', async () => {
     await spotifyApi.skipToNext();
   });
 }
 
 /**
  * Shuffle Toggle
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} state
  */
-async function shuffle(state) {
-  const spotifyApi = await spotifyWebApi();
-  return await requester('Shuffle', async () =>{
+async function shuffle(teamId, channelId, state) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId);
+  return await requester(teamId, channelId, 'Shuffle', async () =>{
     await spotifyApi.setShuffle({state: state});
   });
 }
 
 /**
  * Repeat Toggle
+ * @param {string} teamId
+ * @param {string} channelId
  * @param {string} state
  */
-async function repeat(state) {
-  const spotifyApi = await spotifyWebApi();
-  return await requester('Repeat', async () =>{
+async function repeat(teamId, channelId, state) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId );
+  return await requester(teamId, channelId, 'Repeat', async () =>{
     await spotifyApi.setRepeat({state: state});
   });
 }

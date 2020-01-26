@@ -94,9 +94,13 @@ resources:
         AttributeDefinitions:
           - AttributeName: name
             AttributeType: S
+          - AttributeName: team_channel
+            AttributeType: S
         KeySchema:
           - AttributeName: name
             KeyType: HASH
+          - AttributeName: team_channel
+            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

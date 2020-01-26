@@ -1,17 +1,13 @@
-const {inChannelReply} = require('../slack/format/slack-format-reply');
-const {reply} = require('../slack/slack-api');
+const {find} = require('../tracks/tracks-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
     prefix: prefix,
   });
-  router.post('/', (ctx, next) => {
+  router.post('/find', (ctx, next) => {
     const payload = ctx.request.body;
+    find(payload.team_id, payload.channel_id, payload.user_id, payload.text);
     ctx.body = '';
-    reply(
-        inChannelReply('Hello World'),
-        payload.response_url,
-    );
   });
   return router;
 };
