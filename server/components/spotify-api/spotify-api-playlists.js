@@ -6,6 +6,20 @@ const PUBLIC = config.get('spotify_api.playlists.public');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 
 /**
+ * Add tracks to a playlist in Spotify
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {string} playlistId
+ * @param {Array} trackUris
+ */
+async function addTracksToPlaylist(teamId, channelId, playlistId, trackUris) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId);
+  return (await requester(teamId, channelId, 'Add tracks to playlists', async () => {
+    return await spotifyApi.addTracksToPlaylist(playlistId, trackUris);
+  }));
+}
+
+/**
  * Fetches user playlists from Spotify
  * @param {string} teamId
  * @param {string} channelId
@@ -55,7 +69,7 @@ async function fetchTracks(teamId, channelId, playlistId, market, offset) {
     limit: LIMIT,
     ...market ? {market: market} : {},
     offset: offset,
-    fields: 'items(track(uri,name,artists,explicit,is_playable),added_by.id,added_at)',
+    fields: 'items(track(id,uri,name,artists,explicit,is_playable),added_by.id,added_at)',
   }))).body;
 }
 
@@ -80,12 +94,12 @@ async function fetchPlaylistTotal(teamId, channelId, playlistId) {
  * @param {Array} trackUris
  */
 async function deleteTracks(teamId, channelId, playlistId, trackUris) {
-  console.log(playlistId, trackUris);
   const spotifyApi = await spotifyWebApi(teamId, channelId );
   return (await requester(teamId, channelId, 'Delete playlist tracks', async () => await spotifyApi.removeTracksFromPlaylist(playlistId, trackUris))).body;
 }
 
 module.exports = {
+  addTracksToPlaylist,
   createPlaylist,
   deleteTracks,
   fetchPlaylists,

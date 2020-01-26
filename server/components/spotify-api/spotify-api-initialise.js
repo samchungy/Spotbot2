@@ -19,7 +19,6 @@ const spotifyApi = new SpotifyWebApi({
  * @param {string} channelId
  */
 async function setTokens(teamId, channelId ) {
-  console.log(teamId, channelId);
   const {accessToken, refreshToken} = await loadTokens(teamId, channelId );
   spotifyApi.setAccessToken(accessToken);
   spotifyApi.setRefreshToken(refreshToken);

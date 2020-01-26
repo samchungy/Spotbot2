@@ -30,7 +30,6 @@ async function apiCall(teamId, channelId, name, api) {
           if (attempts == 0) {
             throw error;
           }
-          logger.info('Getting new access token');
           try {
             await refreshAccessToken(teamId, channelId);
           } catch (error) {
