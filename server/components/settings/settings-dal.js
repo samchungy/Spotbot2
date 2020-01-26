@@ -13,6 +13,23 @@ const TIMEZONE = config.get('dynamodb.settings.timezone');
 // Load Functions
 
 /**
+ * Loads the back to playlist setting from the db
+ * @param {string} teamId
+ * @param {string} channelId
+ */
+async function loadBackToPlaylist(teamId, channelId) {
+  try {
+    const setting = settingModel(teamId, channelId, SETTINGS.back_to_playlist, null);
+    const item = await getSetting(setting);
+    return item.Item ? item.Item.value : null;
+  } catch (error) {
+    logger.error('Loading Back To Playlist from Dynamodb failed');
+    throw error;
+  }
+}
+
+
+/**
  * Loads the default device from the db
  * @param {string} teamId
  * @param {string} channelId
@@ -85,6 +102,22 @@ async function loadProfile(teamId, channelId ) {
     return (await getSetting(setting)).Item.value;
   } catch (error) {
     logger.error('Getting Spotify profile from dynamodb failed');
+    throw error;
+  }
+}
+
+/**
+ * Loads the repeat setting from the db
+ * @param {string} teamId
+ * @param {string} channelId
+ */
+async function loadRepeat(teamId, channelId) {
+  try {
+    const setting = settingModel(teamId, channelId, SETTINGS.disable_repeats_duration, null);
+    const item = await getSetting(setting);
+    return item.Item ? item.Item.value : null;
+  } catch (error) {
+    logger.error('Loading Repeat setting from Dynamodb failed');
     throw error;
   }
 }
@@ -282,11 +315,13 @@ async function storeView(teamId, channelId, view) {
 }
 
 module.exports = {
+  loadBackToPlaylist,
   loadDefaultDevice,
   loadDevices,
   loadPlaylistSetting,
   loadPlaylists,
   loadProfile,
+  loadRepeat,
   loadSettings,
   loadSkipVotes,
   loadSkipVotesAfterHours,

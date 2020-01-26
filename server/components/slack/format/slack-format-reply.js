@@ -17,6 +17,14 @@ const updateReply = (text, blocks) => {
   };
 };
 
+const deleteReply = (text, blocks) => {
+  return {
+    text: text,
+    delete_original: 'true',
+    ...blocks ? {blocks: blocks} : {},
+  };
+};
+
 const messageUpdate = (channel, timestamp, text, blocks) => {
   return {
     channel: channel,
@@ -84,6 +92,7 @@ const ack = (text)=> {
 module.exports = {
   ack,
   deleteMessage,
+  deleteReply,
   publicAck,
   ephemeralPost,
   ephemeralReply,

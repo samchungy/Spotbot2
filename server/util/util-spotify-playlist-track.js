@@ -1,5 +1,3 @@
-const moment = require('moment-timezone');
-
 /**
  * Playlist Track for Spotify
  */
@@ -15,8 +13,9 @@ class PlaylistTrack {
     this.uri = track.uri;
     this.artists = track.artists.map((artist) => artist.name).join(', ');
     this.title = track.explicit ? `${this.artists} - ${this.name} (Explicit)` : `${this.artists} - ${this.name}`;
-    this.addedAt = moment(playlistTrackObject.added_at);
+    this.addedAt = playlistTrackObject.added_at;
     this.addedBy = playlistTrackObject.added_by;
+    this.is_playable = track.is_playable;
   }
 }
 

@@ -39,7 +39,8 @@ provider:
   runtime: nodejs12.x
   # you can define service wide environment variables here
   environment:
-    SETTINGS_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    SETTINGS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-settings
+    SEARCH_TABLE: ${self:service}-${opt:stage, self:provider.stage}-search
   iamRoleStatements:
   - Effect: Allow
     Action:
@@ -105,6 +106,28 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.SETTINGS_TABLE}
+    SpotbotSearchTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: triggerId
+            AttributeType: S
+          - AttributeName: team_channel
+            AttributeType: S
+        KeySchema:
+          - AttributeName: triggerId
+            KeyType: HASH
+          - AttributeName: team_channel
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.SEARCH_TABLE}
+        TimeToLiveSpecification:
+            AttributeName: ttl
+            Enabled: true
+    
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details

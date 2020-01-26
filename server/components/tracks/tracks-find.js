@@ -1,43 +1,125 @@
-const {fetchSearchTracks} = require('../spotify-api/spotify-api-search');
-const {loadProfile} = require('../settings/settings-dal');
 const logger = require('pino')();
 const config = require('config');
+const {fetchSearchTracks} = require('../spotify-api/spotify-api-search');
+const {loadTrackSearch, storeTrackSearch} = require('./tracks-dal');
+const {loadProfile} = require('../settings/settings-dal');
+const {actionSection, buttonActionElement, contextSection, divider, imageSection, textSection} = require('../slack/format/slack-format-blocks');
+const {postEphemeral, reply} = require('../slack/slack-api');
+const {ephemeralPost, updateReply} = require('../slack/format/slack-format-reply');
 const Track = require('../../util/util-spotify-track');
-const TRACK = config.get('slack.responses.tracks');
+const Search = require('../../util/util-spotify-search');
+const EXPIRY = Math.floor(Date.now() / 1000) + 86400; // Current Time in Epoch + 84600 (A day)
+const TRACKS = config.get('slack.responses.tracks');
 const LIMIT = config.get('spotify_api.tracks.limit'); // 24 Search results = 8 pages.
-
+const TRACK_ACTIONS = config.get('slack.actions.tracks');
+const DISPLAY_LIMIT = config.get('slack.limits.max_options');
+const BUTTON = config.get('slack.buttons');
+const trackPanel = (title, url, artist, album, time) => `<${url}|*${title}*>\n:clock1: *Duration*: ${time}\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`;
 
 /**
  * Find tracks from Spotify and store them in our database.
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} query
+ * @param {triggerId} triggerId
  */
-async function findAndStore(teamId, channelId, query) {
+async function findAndStore(teamId, channelId, query, triggerId) {
   try {
-    if (!isValidQuery(query)) {
-      return {success: false, response: TRACK.query.error};
+    if (query === '') {
+      return {success: false, response: TRACKS.query.empty};
+    }
+    if (isInvalidQuery(query)) {
+      return {success: false, response: TRACKS.query.error};
     }
     const profile = await loadProfile(teamId, channelId);
-    const tracks = await fetchSearchTracks(teamId, channelId, query, profile.country, LIMIT);
-    if (tracks.items.length == 0) {
-      return {success: false, response: TRACK.no_tracks};
+    const searchResults = await fetchSearchTracks(teamId, channelId, query, profile.country, LIMIT);
+    const numTracks = searchResults.tracks.items.length;
+    if (!numTracks) {
+      return {success: false, response: TRACKS.no_tracks + `"${query}".`};
     }
-    await storeTracks(teamId, channelId, tracks.items.map((track) => new Track(track)));
+    const search = new Search(searchResults.tracks.items.map((track) => new Track(track)), query);
+    await storeTrackSearch(teamId, channelId, triggerId, search, EXPIRY);
+    return {success: true, response: null};
   } catch (error) {
-    return {success: false, response: TRACK.error};
+    logger.error(error);
+    return {success: false, response: TRACKS.error};
   }
 };
 
 /**
+ * Get Three Tracks from db
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {string} userId
+ * @param {string} triggerId
+ * @param {string} responseUrl
+ */
+async function getThreeTracks(teamId, channelId, userId, triggerId, responseUrl) {
+  try {
+    const trackSearch = await loadTrackSearch(teamId, channelId, triggerId);
+    if (!trackSearch) {
+      await reply(
+          updateReply(TRACKS.expired, null),
+          responseUrl,
+      );
+    }
+    trackSearch.currentSearch += 1;
+    const currentTracks = trackSearch.items.splice(0, DISPLAY_LIMIT);
+    const trackBlocks = currentTracks.map((track) => {
+      return [
+        imageSection(
+            trackPanel(track.name, track.url, track.artists, track.album, track.duration),
+            track.art,
+            `Album Art`,
+        ),
+        actionSection(
+            null,
+            [buttonActionElement(TRACK_ACTIONS.add_to_playlist, `+ Add to playlist`, track.uri, false, BUTTON.primary)],
+        ),
+      ];
+    }).flat();
+
+    const blocks = [
+      textSection(TRACKS.found),
+      ...trackBlocks,
+      contextSection(null, `Page ${trackSearch.currentSearch}/${trackSearch.numSearches}`),
+      actionSection(
+          null,
+          [
+            ...trackSearch.items.length ? [buttonActionElement(TRACK_ACTIONS.see_more_results, `Next 3 Tracks`, triggerId, false)] : [],
+            buttonActionElement(TRACK_ACTIONS.cancel_search, `Cancel Search`, triggerId, false, BUTTON.danger),
+          ],
+      ),
+    ];
+    await storeTrackSearch(teamId, channelId, triggerId, trackSearch, EXPIRY);
+
+    // This is an update request
+    if (responseUrl) {
+      await reply(
+          updateReply(TRACKS.found, blocks),
+          responseUrl,
+      );
+    } else {
+      await postEphemeral(
+          ephemeralPost(channelId, userId, TRACKS.found, blocks),
+      );
+    }
+  } catch (error) {
+    logger.error(error);
+  }
+}
+
+/**
  * Checks if the query is valid
  * @param {string} query
+ * @return {Boolean}
  */
-async function isValidQuery(query) {
+function isInvalidQuery(query) {
   // Query's are not allowed to contain more than 1 wildcard, as we append a wildcard at the end
   return ((query.match(/\*/g)||[]).length > 1 || query.match(/".*."/gs));
 }
 
 module.exports = {
+  getThreeTracks,
   findAndStore,
 };

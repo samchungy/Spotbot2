@@ -1,7 +1,8 @@
 const config = require('config');
 const logger = require('../../../util/util-logger');
 const {AuthError, PremiumError} = require('../../../errors/errors-auth');
-const {fetchAuthorizeURL, fetchTokens, fetchProfile} = require('../../spotify-api/spotify-api-auth');
+const {fetchAuthorizeURL, fetchTokens} = require('../../spotify-api/spotify-api-auth');
+const {fetchProfile} = require('../../spotify-api/spotify-api-profile');
 const {loadState, storeState, storeTokens, storeProfile} = require('./spotifyauth-dal');
 const {modelProfile, modelState} = require('../settings-model');
 const {buttonSection} = require('../../slack/format/slack-format-modal');

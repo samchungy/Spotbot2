@@ -1,12 +1,12 @@
 const actionSection = (blockId, elements) => {
   return {
-    'block_id': blockId,
+    ...blockId ? {'block_id': blockId} : {},
     'type': 'actions',
     'elements': elements,
   };
 };
 
-const buttonActionElement = (actionId, text, value, confirm) => {
+const buttonActionElement = (actionId, text, value, confirm, style) => {
   return {
     'value': value,
     'action_id': actionId,
@@ -17,6 +17,7 @@ const buttonActionElement = (actionId, text, value, confirm) => {
       'text': text,
     },
     ...confirm ? {'confirm': confirm} : {},
+    ...style ? {'style': style} : {},
   };
 };
 

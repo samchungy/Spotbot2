@@ -4,16 +4,6 @@ const requester = require('./spotify-api-requester');
 const SCOPES = config.get('spotify_api.scopes');
 
 /**
- * Fetches the current user's profile from Spotify
- * @param {string} teamId
- * @param {string} channelId
- */
-async function fetchProfile(teamId, channelId ) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId );
-  return (await requester(teamId, channelId, 'Get Spotify Profile', async () => await spotifyApi.getMe())).body;
-}
-
-/**
  * Fetches an authorize URL from Spotify
  * @param {string} teamId
  * @param {string} channelId
@@ -37,6 +27,5 @@ async function fetchTokens(teamId, channelId, code) {
 
 module.exports = {
   fetchAuthorizeURL,
-  fetchProfile,
   fetchTokens,
 };
