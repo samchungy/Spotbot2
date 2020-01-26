@@ -1,5 +1,3 @@
-const moment = require('moment-timezone');
-
 /**
  * Playlist Track for Spotify
  */
