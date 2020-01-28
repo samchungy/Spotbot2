@@ -1,22 +1,22 @@
 const dynamoDb = require('./db');
-const SETTINGS_TABLE = process.env.SEARCH_TABLE;
+const SEARCH_TABLE = process.env.SEARCH_TABLE;
 
-const searchSet = (item) => {
+const searchTable = (item) => {
   return {
-    TableName: SETTINGS_TABLE,
+    TableName: SEARCH_TABLE,
     ...item,
   };
 };
 
 const getSearchInfo = (key) => {
-  return searchSet({
+  return searchTable({
     Key: key,
   });
 };
 
 
 const searchInfo = (item) => {
-  return searchSet(
+  return searchTable(
       {
         Item: item,
       });
@@ -44,5 +44,4 @@ module.exports = {
   getSearch,
   putSearch,
   searchModel,
-  searchInfo,
 };
