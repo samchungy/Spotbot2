@@ -77,6 +77,18 @@ const multiSelectStaticGroups = (actionId, title, hint, initial, options, option
   };
 };
 
+const multiSelectStatic = (actionId, title, hint, initial, options, optional) => {
+  return {
+    ...input(title, hint, actionId, optional),
+    element: {
+      action_id: actionId,
+      type: 'multi_static_select',
+      options: options,
+      ...initial ? {initial_options: initial} : {},
+    },
+  };
+};
+
 const selectStatic = (actionId, title, hint, initial, options, optional) => {
   return {
     ...input(title, hint, actionId, optional),
@@ -85,6 +97,17 @@ const selectStatic = (actionId, title, hint, initial, options, optional) => {
       type: 'static_select',
       options: options,
       ...initial ? {initial_option: initial} : {}, // Cool little trick to remove field if it is not there
+    },
+  };
+};
+
+const multiSelectUsers = (actionId, title, hint, initial) => {
+  return {
+    ...input(title, hint, actionId),
+    element: {
+      action_id: actionId,
+      type: 'multi_users_select',
+      ...initial ? {initial_users: initial} : {},
     },
   };
 };
@@ -132,7 +155,7 @@ const textInput = (actionId, title, hint, initial, max, place) => {
   };
 };
 
-const buttonSection = (actionId, text, buttonText, style, url, value) => {
+const buttonSection = (actionId, text, buttonText, style, url, value, confirm) => {
   return {
     block_id: actionId,
     type: 'section',
@@ -151,6 +174,7 @@ const buttonSection = (actionId, text, buttonText, style, url, value) => {
       ...style ? {style: style}: {},
       ...url ? {url: url} : {},
       ...value ? {value: value} : {},
+      ...confirm ? {confirm: confirm} : {},
     },
   };
 };
@@ -170,7 +194,9 @@ module.exports = {
   buttonSection,
   option,
   optionGroup,
+  multiSelectStatic,
   multiSelectStaticGroups,
+  multiSelectUsers,
   slackModal,
   selectStatic,
   selectChannels,
