@@ -1,5 +1,9 @@
+const config = require('config');
 const {openSettings, updateView} = require('./settings-controller');
+const {checkIsAdmin, checkSettings, isSetup} = require('../settings/settings-middleware');
+const {openBlacklistModal} = require('./blacklist/blacklist-controller');
 const {validateAuthCode} = require('./spotifyauth/spotifyauth-controller');
+const HELP = config.get('settings.help');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
@@ -14,8 +18,19 @@ module.exports = ( prefix, Router ) => {
         } else {
           switch (textSplit[0]) {
             case 'settings':
+              if (!await isSetup(payload.team_id, payload.channel_id) || await checkIsAdmin(payload.team_id, payload.channel_id, payload.user_id, payload.response_url)) {
+                openSettings(payload.team_id, payload.channel_id, payload.trigger_id);
+              }
               ctx.body = '';
-              openSettings(payload.team_id, payload.channel_id, payload.trigger_id);
+              break;
+            case 'blacklist':
+              if (await checkSettings(payload.team_id, payload.channel_id, payload.response_url) && await checkIsAdmin(payload.team_id, payload.channel_id, payload.user_id, payload.response_url)) {
+                openBlacklistModal(payload.team_id, payload.channel_id, payload.trigger_id);
+              }
+              ctx.body = '';
+              break;
+            case 'help':
+              ctx.body = HELP;
               break;
           }
         }
