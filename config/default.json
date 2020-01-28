@@ -27,7 +27,8 @@
         "africa": "spotify:track:2374M0fQpWi3dLnB54qaLX",
         "tracks": {
           "limit": 30
-        }
+        },
+        "recent_limit": 5
       },
       "dynamodb": {
         "auth": {
@@ -40,7 +41,7 @@
           "view_id": "view_id"
         },
         "settings": {
-          "slack_channel": "slack_channel",
+          "channel_admin": "channel_admin",
           "playlist": "playlist",
           "default_device": "default_device",
           "disable_repeats_duration": "disable_repeats_duration",
@@ -63,7 +64,14 @@
           "no_devices_label": "None",
           "create_new_playlist": "create_new_playlist."
         },
-        "skip": "skip"
+        "skip": "skip",
+        "blacklist": {
+          "database": "blacklist",
+          "label": "Blacklisted Tracks",
+          "hint": "Songs which are blacklisted cannot be added through Spotbot. They can also be skipped instantly.",
+          "currently_blacklisted": "Currently on the blacklist:",
+          "recently_played": "Recently played:"
+        }
       },
       "events": {
         "update_tokens": "update_tokens"
@@ -71,7 +79,7 @@
       "settings": {
         "hints": {
           "auth_urL_fail": "Try again",
-          "slack_channel": "The channel Slackbot will restrict usage of commands to.",
+          "channel_admin": "Admins can use Spotbot admin commands within this channel and modify it's settings.",
           "playlist": "The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.",
           "default_device": "This helps Spotbot with playing. Turn on your Spotify device now.",
           "disable_repeats_duration": "The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.",
@@ -80,6 +88,7 @@
           "skip_votes_ah": "The number of additional votes needed to skip a song. Integers only",
           "auth_url_button": ":link: Authenticate with Spotify",
           "reauth_url_button": ":gear: Re-authenticate with Spotify",
+          "reauth_confirm": "This will disable this channel's Spotbot functionality until Spotbot is reauthenticated.",
           "auth_verify": "Click to verify Spotify authentication.",
           "auth_verify_button": "Verify",
           "timezone": "This is to configure the time based skip votes. Type in a location."
@@ -88,7 +97,8 @@
           "auth_urL_fail": ":warning: Authentication attempt failed.",
           "auth_url": "Click to authenticate with Spotify.",
           "reauth": "Click to re-authenticate with Spotify.",
-          "slack_channel": "Slack Channel Restriction",
+          "reauth_confirm": "Are you sure?",
+          "channel_admin": "Channel Admins",
           "playlist": "Spotbot Playlist",
           "default_device": "Default Spotify Device",
           "disable_repeats_duration": "Disable Repeats Duration (Hours)",
@@ -101,9 +111,9 @@
           "disable_repeats_duration": "Enter a number eg. 4",
           "skip_votes": "Enter a number eg. 2",
           "skip_votes_ah": "Enter a number eg. 0",
-          "playlist": "Enter a playlist name",
+          "playlist": "Type a playlist name",
           "default_device": "Pick an option",
-          "timezone": "Find your timezone"
+          "timezone": "Type to find your timezone"
         },
         "limits": {
           "disable_repeats_duration": 5,
@@ -113,20 +123,25 @@
           "integer": "Please enter a valid integer",
           "premium": ":x: The Spotify account used is not a Premium account",
           "fail": ":x: Authentication failed with the Spotify. Please try again.",
-          "not_authenticated": "Please authenticate an account with Spotify"
+          "not_authenticated": "Please authenticate an account with Spotify",
+          "settings": ":information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.",
+          "not_admin": ":information_source: You must be a Spotbot admin for this channel to use this command."
         },
         "query_lengths": {
           "default_device": 0,
           "playlist": 3,
           "timezone": 3
-        }
+        },
+        "help": "*Find Tracks*\n\n`/find [track name]` - Find a track on Spotify\n`/artist [artist name]` - Find a track by an artist on Spotify\n`/removetrack` - Lists tracks to remove from the playlist\n\n*Playback Status*\n\n`/current` - Show the current playing track and it’s position in the playlist\n`/whom` - Show who requested the current track\n\n*Control*\n\n`/control` - Opens a Spotbot control panel\n`/play` - Hits play on Spotify\n`/pause`- Hits pause on Spotify\n`/skip` - Starts a vote to skip a track\n`/reset` - Nuke the playlist\n\n*Admin Commands*\n\n`/spotbot settings` - Opens the Spotbot Settings panel.\n`/spotbot blacklist` - Opens the Spotbot Blacklist panel.\n"
       },
       "slack": {
         "limits": {
           "max_options": 3
         },
         "actions": {
+          "blacklist_modal": "blacklist_modal",
           "settings_modal": "settings_modal",
+          "remove_modal": "remove_modal",
           "playlist": "playlist",
           "block_actions": "block_actions",
           "view_submission": "view_submission",
@@ -150,6 +165,10 @@
             "add_to_playlist": "add_to_playlist",
             "see_more_results": "see_more_results",
             "cancel_search": "cancel_search"
+          },
+          "artists" : {
+            "view_artist_tracks": "view_artist_tracks",
+            "see_more_artists": "see_more_artists"
           }
         },
         "buttons": {
@@ -171,6 +190,10 @@
             "found": ":mag: Are these the tracks you were looking for?",
             "expired": ":information_source: Search has expired.",
             "cancelled": ":information_source: Search cancelled."
+          },
+          "artists": {
+            "no_artists":":information_source: No tracks found for the query ",
+            "found": ":mag: Are these the artists you were looking for?"
           },
           "settings": {
             "success": ":white_check_mark: Settings successfully saved.",
