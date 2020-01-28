@@ -3,8 +3,9 @@ const logger = require('pino')();
 const moment = require('moment-timezone');
 const {skip} = require('../spotify-api/spotify-api-playback');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
+const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
 const {loadSkip, storeSkip} = require('./control-dal');
-const {loadSkipVotes, loadSkipVotesAfterHours, loadTimezone} = require('../settings/settings-dal');
+const {loadProfile, loadSkipVotes, loadSkipVotesAfterHours, loadTimezone} = require('../settings/settings-dal');
 const {modelSkip} = require('./control-skip-model');
 const {actionSection, buttonActionElement, contextSection, textSection} = require('../slack/format/slack-format-blocks');
 const {deleteChat, postEphemeral, post, reply, updateChat} = require('../slack/slack-api');
@@ -29,7 +30,8 @@ async function startSkipVote(teamId, channelId, userId) {
   try {
     // Get current playback status
     let skipVotes;
-    const status = await fetchCurrentPlayback(teamId, channelId );
+    const {country} = loadProfile(teamId, channelId);
+    const status = await fetchCurrentPlayback(teamId, channelId, country);
 
     // Spotify is not playing anything so we cannot skip
     if (!status.device || !status.item) {
@@ -37,6 +39,17 @@ async function startSkipVote(teamId, channelId, userId) {
     }
 
     const statusTrack = new Track(status.item);
+
+    const blacklist = await loadBlacklist(teamId, channelId);
+    if (blacklist.find((track) => statusTrack.uri === track.uri)) {
+      await setSkip(teamId, channelId );
+      await post(
+          inChannelPost(channelId, skipConfirmation(`${statusTrack.title} is on the blacklist and`, [userId])),
+      );
+      return {success: true, response: null, status: null};
+    }
+
+
     // See if there is an existing skip request
     const currentSkip = await loadSkip(teamId, channelId);
     if (currentSkip && currentSkip.track.id == statusTrack.id) {
@@ -54,7 +67,6 @@ async function startSkipVote(teamId, channelId, userId) {
     } else {
       skipVotes = parseInt(await loadSkipVotes(teamId, channelId ));
     }
-
     // Skip threshold is 0
     if (!skipVotes) {
       await setSkip(teamId, channelId );
