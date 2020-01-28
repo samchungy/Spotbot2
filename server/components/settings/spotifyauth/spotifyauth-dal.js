@@ -1,6 +1,6 @@
 const config = require('config');
 const logger = require('../../../util/util-logger');
-const {getSetting, putSetting, settingModel} = require('../../../db/settings');
+const {getAuth, putAuth, authModel} = require('../../../db/auth');
 
 const AUTH = config.get('dynamodb.auth');
 
@@ -13,8 +13,8 @@ const AUTH = config.get('dynamodb.auth');
  */
 async function loadState(teamId, channelId ) {
   try {
-    const setting = settingModel(teamId, channelId, AUTH.state, null);
-    const result = await getSetting(setting);
+    const setting = authModel(teamId, channelId, AUTH.state, null);
+    const result = await getAuth(setting);
     return result.Item ? result.Item.value : null;
   } catch (error) {
     logger.error('Get State failed');
@@ -30,8 +30,8 @@ async function loadState(teamId, channelId ) {
 async function loadTokens(teamId, channelId ) {
   try {
     let access; let refresh;
-    const authentication = settingModel(teamId, channelId, AUTH.object, null);
-    const result = await getSetting(authentication);
+    const authentication = authModel(teamId, channelId, AUTH.object, null);
+    const result = await getAuth(authentication);
     if (result.Item) {
       access = result.Item.value[AUTH.access];
       refresh = result.Item.value[AUTH.refresh];
@@ -49,25 +49,14 @@ async function loadTokens(teamId, channelId ) {
 // Storing Functions
 
 /**
- * Store Spotify Profile in db
- * @param {string} teamId
- * @param {string} channelId
- * @param {Object} profileObject
- */
-async function storeProfile(teamId, channelId, profileObject) {
-  const setting = settingModel(teamId, channelId, AUTH.spotify_id, profileObject);
-  return putSetting(setting);
-}
-
-/**
  * Store Spotify Auth State in db
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} state
  */
 async function storeState(teamId, channelId, state) {
-  const setting = settingModel(teamId, channelId, AUTH.state, state);
-  return putSetting(setting);
+  const setting = authModel(teamId, channelId, AUTH.state, state);
+  return putAuth(setting);
 }
 
 /**
@@ -78,18 +67,17 @@ async function storeState(teamId, channelId, state) {
  * @param {string} refreshToken
  */
 async function storeTokens(teamId, channelId, accessToken, refreshToken) {
-  const authentication = settingModel(teamId, channelId, AUTH.object, {
+  const authentication = authModel(teamId, channelId, AUTH.object, {
     [AUTH.access]: accessToken,
     [AUTH.refresh]: refreshToken,
     [AUTH.expires]: new Date(),
   });
-  return putSetting(authentication);
+  return putAuth(authentication);
 }
 
 module.exports = {
   loadState,
   loadTokens,
-  storeProfile,
   storeState,
   storeTokens,
 };

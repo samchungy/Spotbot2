@@ -9,8 +9,26 @@ const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 const SKIP_VOTES = config.get('dynamodb.settings.skip_votes');
 const SKIP_VOTES_AH = config.get('dynamodb.settings.skip_votes_ah');
 const TIMEZONE = config.get('dynamodb.settings.timezone');
+const AUTH = config.get('dynamodb.auth');
+
 
 // Load Functions
+
+/**
+ * Loads the channel admins from the db
+ * @param {string} teamId
+ * @param {string} channelId
+ */
+async function loadAdmins(teamId, channelId) {
+  try {
+    const setting = settingModel(teamId, channelId, SETTINGS.channel_admin, null);
+    const item = await getSetting(setting);
+    return item.Item ? item.Item.value : null;
+  } catch (error) {
+    logger.error('Loading Admins from Dynamodb failed');
+    throw error;
+  }
+}
 
 /**
  * Loads the back to playlist setting from the db
@@ -314,7 +332,20 @@ async function storeView(teamId, channelId, view) {
   }
 }
 
+/**
+ * Store Spotify Profile in db
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {Object} profileObject
+ */
+async function storeProfile(teamId, channelId, profileObject) {
+  const setting = settingModel(teamId, channelId, AUTH.spotify_id, profileObject);
+  return putSetting(setting);
+}
+
+
 module.exports = {
+  loadAdmins,
   loadBackToPlaylist,
   loadDefaultDevice,
   loadDevices,
@@ -331,6 +362,7 @@ module.exports = {
   storeDeviceSetting,
   storePlaylists,
   storePlaylistSetting,
+  storeProfile,
   storeSettings,
   storeView,
 };

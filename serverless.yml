@@ -39,6 +39,7 @@ provider:
   runtime: nodejs12.x
   # you can define service wide environment variables here
   environment:
+    AUTH_TABLE: ${self:service}-${opt:stage, self:provider.stage}-auth
     SETTINGS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-settings
     SEARCH_TABLE: ${self:service}-${opt:stage, self:provider.stage}-search
   iamRoleStatements:
@@ -88,7 +89,27 @@ functions:
 
 resources:
   Resources:
-    SpotbotDynamoDbTable:
+    SpotbotAuthTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: name
+            AttributeType: S
+          - AttributeName: team_channel
+            AttributeType: S
+        KeySchema:
+          - AttributeName: name
+            KeyType: HASH
+          - AttributeName: team_channel
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        SSESpecification:
+          SSEEnabled: false
+        TableName: ${self:provider.environment.AUTH_TABLE}
+    SpotbotSettingsTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
       Properties:

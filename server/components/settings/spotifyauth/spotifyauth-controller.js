@@ -3,10 +3,11 @@ const logger = require('../../../util/util-logger');
 const {AuthError, PremiumError} = require('../../../errors/errors-auth');
 const {fetchAuthorizeURL, fetchTokens} = require('../../spotify-api/spotify-api-auth');
 const {fetchProfile} = require('../../spotify-api/spotify-api-profile');
-const {loadState, storeState, storeTokens, storeProfile} = require('./spotifyauth-dal');
+const {loadState, storeState, storeTokens} = require('./spotifyauth-dal');
+const {storeProfile} = require('../settings-dal');
 const {modelProfile, modelState} = require('../settings-model');
 const {buttonSection} = require('../../slack/format/slack-format-modal');
-const {contextSection} = require('../../slack/format/slack-format-blocks');
+const {contextSection, confirmObject} = require('../../slack/format/slack-format-blocks');
 const {isEqual} = require('../../../util/util-objects');
 
 const SETTINGS_AUTH = config.get('dynamodb.settings_auth');
@@ -114,7 +115,7 @@ async function getAuthBlock(teamId, channelId, triggerId) {
     } else {
       // Place authenticated blocks
       authBlock.push(
-          buttonSection(SETTINGS_AUTH.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_AUTH.reauth),
+          buttonSection(SETTINGS_AUTH.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_AUTH.reauth, confirmObject(LABELS.reauth_confirm, HINTS.reauth_confirm, 'Reset Authentication', 'Cancel')),
           contextSection(SETTINGS_AUTH.auth_confirmation, authStatement(profile.display_name ? profile.display_name : profile.id)),
       );
     }
