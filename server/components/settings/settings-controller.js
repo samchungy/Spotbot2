@@ -1,7 +1,7 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
 const moment = require('moment-timezone');
-const {option, slackModal, selectChannels, selectExternal, selectStatic, textInput, yesOrNo} = require('../slack/format/slack-format-modal');
+const {multiSelectUsers, option, slackModal, selectExternal, selectStatic, textInput, yesOrNo} = require('../slack/format/slack-format-modal');
 const {sendModal, updateModal} = require('../slack/slack-api');
 
 const {getAuthBlock, resetAuthentication} = require('./spotifyauth/spotifyauth-controller');
@@ -27,7 +27,6 @@ const PLACE = config.get('settings.placeholders');
 const SETTINGS_MODAL = config.get('slack.actions.settings_modal');
 const DB = config.get('dynamodb.settings');
 const RESPONSES = config.get('slack.responses');
-const CHANNEL = config.get('dynamodb.settings.slack_channel');
 
 /**
  * Resets the authentication
@@ -80,7 +79,7 @@ async function getSettingsBlocks(teamId, channelId ) {
   try {
     const settings = await loadSettings(teamId, channelId );
     return [
-      selectChannels(DB.slack_channel, LABELS.slack_channel, HINTS.slack_channel, settings.slack_channel),
+      multiSelectUsers(DB.channel_admin, LABELS.channel_admin, HINTS.channel_admin, settings.channel_admin),
       selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist, PLACE.playlist),
       selectExternal(DB.default_device, LABELS.default_device, HINTS.default_device, settings.default_device ? option(settings.default_device.name, settings.default_device.id) : null, QUERY.default_device, PLACE.default_device),
       textInput(DB.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, settings.disable_repeats_duration, LIMITS.disable_repeats_duration, PLACE.disable_repeats_duration),
@@ -104,11 +103,8 @@ async function getSettingsBlocks(teamId, channelId ) {
  */
 async function saveSettings(teamId, channelId, view, userId) {
   try {
-    // Channel for Status Reporting
-    let channel;
     try {
       const submissions = extractSubmissions(view);
-      channel = submissions[CHANNEL];
       const blocks = extractBlocks(view);
       const errors = verifySettings(submissions, blocks);
 
@@ -144,14 +140,14 @@ async function saveSettings(teamId, channelId, view, userId) {
 
       // Report back to Slack
       await postEphemeral(
-          ephemeralPost(channel, userId, RESPONSES.settings.success, null),
+          ephemeralPost(channelId, userId, RESPONSES.settings.success, null),
       );
     } catch (error) {
       logger.error(error);
       // Something in our Save Settings function failed.
-      if (channel) {
+      if (channelId) {
         await postEphemeral(
-            ephemeralPost(channel, userId, RESPONSES.settings.fail, null),
+            ephemeralPost(channelId, userId, RESPONSES.settings.fail, null),
         );
       }
     }
