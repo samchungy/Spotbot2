@@ -17,8 +17,8 @@ function extractSubmissions(view) {
   for (const setting in values) {
     if ({}.hasOwnProperty.call(values, setting)) {
       switch (setting) {
-        case DB.slack_channel:
-          submissions[setting] = values[setting][setting].selected_channel;
+        case DB.channel_admin:
+          submissions[setting] = values[setting][setting].selected_users;
           break;
         case DB.playlist:
         case DB.default_device:

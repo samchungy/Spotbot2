@@ -133,7 +133,8 @@ async function startReset(teamId, channelId, timestamp, userId, triggerId) {
       return await setReset(teamId, channelId, playlist.id, null, userId);
     }
   } catch (error) {
-    logger.error('Set reset failed', error);
+    logger.error('Set reset failed');
+    logger.error(error);
   }
 }
 
@@ -150,7 +151,7 @@ async function getReviewBlocks(playlistTracks) {
     const twentyMinutes = moment().subtract(20, 'minutes');
     playlistTracks.forEach((track) => {
       const op = option(track.title, track.uri);
-      if (track.addedAt.isSameOrAfter(tenMinutes)) {
+      if (moment(track.addedAt).isSameOrAfter(tenMinutes)) {
         initialOptions.push(op);
         buckets.ten.push(op);
       } else if (track.addedAt.isSameOrAfter(twentyMinutes)) {
@@ -205,7 +206,7 @@ async function getReviewTracks(teamId, channelId, playlist, total) {
     const playlistTracks = spotifyTracks.items.map((track) => new PlaylistTrack(track)).reverse();
     for (track of playlistTracks) {
     // If it was added within the past half an hour
-      if (track.addedAt.isAfter(hourBefore)) {
+      if (moment(track.addedAt).isAfter(hourBefore)) {
         reviewTracks.push(track);
       } else {
         break;
