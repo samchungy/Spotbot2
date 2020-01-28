@@ -3,7 +3,7 @@ const config = require('config');
 const {fetchSearchTracks} = require('../spotify-api/spotify-api-search');
 const {loadTrackSearch, storeTrackSearch} = require('./tracks-dal');
 const {loadProfile} = require('../settings/settings-dal');
-const {actionSection, buttonActionElement, contextSection, divider, imageSection, textSection} = require('../slack/format/slack-format-blocks');
+const {actionSection, buttonActionElement, contextSection, imageSection, textSection} = require('../slack/format/slack-format-blocks');
 const {postEphemeral, reply} = require('../slack/slack-api');
 const {ephemeralPost, updateReply} = require('../slack/format/slack-format-reply');
 const Track = require('../../util/util-spotify-track');
@@ -35,7 +35,7 @@ async function findAndStore(teamId, channelId, query, triggerId) {
     const searchResults = await fetchSearchTracks(teamId, channelId, query, profile.country, LIMIT);
     const numTracks = searchResults.tracks.items.length;
     if (!numTracks) {
-      return {success: false, response: TRACKS.no_tracks + `"${query}".`};
+      return {success: false, response: ARTISTS.no_artists + `"${query}".`};
     }
     const search = new Search(searchResults.tracks.items.map((track) => new Track(track)), query);
     await storeTrackSearch(teamId, channelId, triggerId, search, EXPIRY);
@@ -122,4 +122,5 @@ function isInvalidQuery(query) {
 module.exports = {
   getThreeTracks,
   findAndStore,
+  isInvalidQuery,
 };

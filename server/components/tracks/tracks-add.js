@@ -13,13 +13,14 @@ const {loadTrackSearch, storeTrackSearch} = require('../tracks/tracks-dal');
 const {modelHistory} = require('../tracks/tracks-model');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
 const Track = require('../../util/util-spotify-track');
+const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
 const TRACKS = config.get('slack.responses.tracks');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const EXPIRY = Math.floor(Date.now() / 1000) + (30 * 24 * 60); // Current Time in Epoch + a month in seconds
 const repeatMessage = (title, timeAgo, repeatDuration) => `:no_entry_sign: ${title} was already added ${timeAgo}. Repeats are disabled for ${repeatDuration} hours in this channel's settings.`;
 const successMessage = (title) => `:tada: ${title} was added to the playlist.`;
 const successBackMessage = (title) => `:tada: ${title} was added to the playlist. Spotify will return back to the playlist after this song.`;
-
+const blacklistMessage = (title) => `:no_entry_sign: ${title} is blacklisted and cannot be added.`;
 
 /**
  * Add a track to the Spotbot playlist
@@ -34,16 +35,23 @@ async function addTrack(teamId, channelId, userId, trackUri) {
     const spotifyTrack = await fetchTrackInfo(teamId, channelId, country, trackUri.replace('spotify:track:', ''));
     const track = new Track(spotifyTrack);
 
+    // Handle Blacklist
+    const blacklist = await loadBlacklist(teamId, channelId);
+    if (blacklist.find((track) => trackUri === track.uri)) {
+      return blacklistMessage(track.title);
+    }
+
     // Handle Repeats
-    if (history && history.uri === trackUri) {
-      if (moment(history.time).add(repeatDuration, 'hours').isAfter(moment())) {
-        return repeatMessage(track.title, moment(history.time).fromNow(), repeatDuration);
+    {
+      if (history && history.uri === trackUri) {
+        if (moment(history.time).add(repeatDuration, 'hours').isAfter(moment())) {
+          return repeatMessage(track.title, moment(history.time).fromNow(), repeatDuration);
+        }
       }
     }
 
-    // Add to our playlist
     const [backToPlaylist, playlist] = await Promise.all([loadBackToPlaylist(teamId, channelId), loadPlaylistSetting(teamId, channelId)]);
-
+    // Add to our playlist
     if (backToPlaylist === `true`) {
       const status = await fetchCurrentPlayback(teamId, channelId);
       if (status.is_playing && status.item && (!status.context || !status.context.uri.includes(playlist.id))) {

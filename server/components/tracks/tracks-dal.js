@@ -1,4 +1,3 @@
-const config = require('config');
 const logger = require('../../util/util-logger');
 const {getSearch, putSearch, searchModel} = require('../../db/search');
 
