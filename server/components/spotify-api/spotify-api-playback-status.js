@@ -16,6 +16,22 @@ async function fetchCurrentPlayback(teamId, channelId, market) {
   })).body;
 }
 
+/**
+ * Fetches user current playback in Spotify
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {Number} limit
+ */
+async function fetchRecent(teamId, channelId, limit) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId );
+  return (await requester(teamId, channelId, 'Get Recent Tracks', async () => {
+    return spotifyApi.getMyRecentlyPlayedTracks({
+      limit: limit,
+    });
+  })).body;
+}
+
 module.exports = {
   fetchCurrentPlayback,
+  fetchRecent,
 };
