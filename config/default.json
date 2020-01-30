@@ -65,12 +65,15 @@
           "create_new_playlist": "create_new_playlist."
         },
         "skip": "skip",
+        "back_to_playlist_state": "back_to_playlist_state",
         "blacklist": {
           "database": "blacklist",
           "label": "Blacklisted Tracks",
           "hint": "Songs which are blacklisted cannot be added through Spotbot. They can also be skipped instantly.",
           "currently_blacklisted": "Currently on the blacklist:",
-          "recently_played": "Recently played:"
+          "recently_played": "Recently played:",
+          "currently": "Currently playing:",
+          "skipped": "Skipped Recently:"
         }
       },
       "events": {
@@ -204,7 +207,7 @@
               "success": ":double_vertical_bar: Spotify was paused by"
             },
             "play": {
-              "success": ":arrow_forward: Spotify is now playing.",
+              "success": ":arrow_forward: Spotify is now playing. Started by",
               "not_playing": ":information_source: Spotify is currently not playing.",
               "currently": ":sound: Currently Playing..."
             },
