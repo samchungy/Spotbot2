@@ -8,9 +8,10 @@ const {addTracksToPlaylist, deleteTracks, fetchPlaylistTotal, fetchTracks} = req
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {play} = require('../spotify-api/spotify-api-playback');
 const {fetchTrackInfo} = require('../spotify-api/spotify-api-tracks');
-const {loadBackToPlaylist, loadPlaylistSetting, loadProfile, loadRepeat} = require('../settings/settings-dal');
+const {loadBackToPlaylist, loadPlaylistSetting, loadProfile, loadRepeat, loadStateBackToPlaylist, storeStateBackToPlaylist} = require('../settings/settings-dal');
 const {loadTrackSearch, storeTrackSearch} = require('../tracks/tracks-dal');
 const {modelHistory} = require('../tracks/tracks-model');
+const {sleep} = require('../../util/util-timeout');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
 const Track = require('../../util/util-spotify-track');
 const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
@@ -31,7 +32,7 @@ const blacklistMessage = (title) => `:no_entry_sign: ${title} is blacklisted and
  */
 async function addTrack(teamId, channelId, userId, trackUri) {
   try {
-    const [{country}, repeatDuration, history] = await Promise.all([loadProfile(teamId, channelId), loadRepeat(teamId, channelId), loadTrackSearch(teamId, channelId, trackUri)]);
+    const {country} = await loadProfile(teamId, channelId);
     const spotifyTrack = await fetchTrackInfo(teamId, channelId, country, trackUri.replace('spotify:track:', ''));
     const track = new Track(spotifyTrack);
 
@@ -41,12 +42,11 @@ async function addTrack(teamId, channelId, userId, trackUri) {
       return blacklistMessage(track.title);
     }
 
+    const [history, repeatDuration] = await Promise.all([loadTrackSearch(teamId, channelId, trackUri), loadRepeat(teamId, channelId)]);
     // Handle Repeats
-    {
-      if (history && history.uri === trackUri) {
-        if (moment(history.time).add(repeatDuration, 'hours').isAfter(moment())) {
-          return repeatMessage(track.title, moment(history.time).fromNow(), repeatDuration);
-        }
+    if (history && history.uri === trackUri) {
+      if (moment(history.time).add(repeatDuration, 'hours').isAfter(moment())) {
+        return repeatMessage(track.title, moment(history.time).fromNow(), repeatDuration);
       }
     }
 
@@ -55,16 +55,22 @@ async function addTrack(teamId, channelId, userId, trackUri) {
     if (backToPlaylist === `true`) {
       const status = await fetchCurrentPlayback(teamId, channelId);
       if (status.is_playing && status.item && (!status.context || !status.context.uri.includes(playlist.id))) {
-        // Add current playing song + new track to playlist
-        await removeInvalidTracks(teamId, channelId, playlist.id, country);
-        await addTracksToPlaylist(teamId, channelId, playlist.id, [status.item.uri, trackUri]);
-        await setBackToPlaylist(teamId, channelId, playlist, status.item.uri);
-        await storeTrackSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY);
-        return successBackMessage(track.title);
+        // If Back to Playlist was not already called within the past 3 seconds
+        const state = await loadStateBackToPlaylist(teamId, channelId);
+        if (!state || moment(state).add('2', 'seconds').isBefore(moment())) {
+          // Tell Spotbot we are currently getting back to playlist, Remove any invalid tracks, Add current playing song + new track to playlist
+          await Promise.all([storeStateBackToPlaylist(teamId, channelId, Date.now()), removeInvalidTracks(teamId, channelId, playlist.id, country), addTracksToPlaylist(teamId, channelId, playlist.id, [status.item.uri, trackUri])]);
+          // Save our history
+          await Promise.all([storeTrackSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), setBackToPlaylist(teamId, channelId, playlist, status.item.uri, country)]);
+          return successBackMessage(track.title);
+        } else {
+          await sleep(2000); // Wait 2 seconds and then try again
+          return await addTrack(teamId, channelId, userId, trackUri);
+        }
       }
     }
-    await addTracksToPlaylist(teamId, channelId, playlist.id, [trackUri]);
-    await storeTrackSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY);
+    // Save history + add to playlist
+    await Promise.all([storeTrackSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), addTracksToPlaylist(teamId, channelId, playlist.id, [trackUri])]);
     return successMessage(track.title);
   } catch (error) {
     logger.error(error);
@@ -90,11 +96,10 @@ async function removeInvalidTracks(teamId, channelId, playlistId, country) {
         const tracksToDelete = [];
         spotifyTracks.items
             .map((track) => new PlaylistTrack(track))
-            .forEach((track, index) => {
+            .forEach((track) => {
               if (!track.is_playable) {
                 tracksToDelete.push({
                   uri: track.uri,
-                  positions: [index+(LIMIT*offset)],
                 });
               }
             });
@@ -116,19 +121,26 @@ async function removeInvalidTracks(teamId, channelId, playlistId, country) {
  * @param {string} channelId
  * @param {Object} playlist
  * @param {string} currentPlaying
+ * @param {string} country
  */
-async function setBackToPlaylist(teamId, channelId, playlist, currentPlaying) {
+async function setBackToPlaylist(teamId, channelId, playlist, currentPlaying, country) {
   try {
     // Find position of tracks we just added by searching from the end of playlist
     const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
-    const tracks = await fetchTracks(teamId, channelId, playlist.id, null, Math.max(0, total-LIMIT));
-    const trackNumber = tracks.items.length-(1 + tracks.items.reverse().findIndex((track) => {
+    const startIndex = Math.max(0, total-LIMIT);
+    const tracks = await fetchTracks(teamId, channelId, playlist.id, null, startIndex);
+    const trackNumber = (startIndex + tracks.items.length)-(1 + tracks.items.reverse().findIndex((track) => {
       return track.track.uri === currentPlaying;
     }));
 
     // Make another call to reduce the lag
-    const status = await fetchCurrentPlayback(teamId, channelId);
-    await play(teamId, channelId, status.device.id, playlist.uri, {position: trackNumber}, status.progress_ms);
+    const status = await fetchCurrentPlayback(teamId, channelId, country);
+    if (status && status.item && status.item.uri != currentPlaying) {
+      // Just in case the track ends as we are trying to get back to playlist
+      await play(teamId, channelId, status.device.id, playlist.uri, {position: trackNumber+1});
+    } else {
+      await play(teamId, channelId, status.device.id, playlist.uri, {position: trackNumber}, status.progress_ms);
+    }
     await deleteTracks(teamId, channelId, playlist.id, [{
       uri: currentPlaying,
       positions: [trackNumber],
