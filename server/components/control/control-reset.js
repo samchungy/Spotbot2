@@ -37,6 +37,7 @@ async function resetReview(teamId, channelId, isClose, view, playlistId, userId)
     } else {
       // Slack Modal was submitted. Keep whatever tracks were selected
       const {[REVIEW]: trackUris, [REVIEW_JUMP]: jump} = extractSubmissions(view);
+      console.log(trackUris);
       return {success, response, status} = await setReset(teamId, channelId, playlistId, trackUris, userId, (jump == 'true'));
     }
   } catch (error) {
@@ -57,33 +58,24 @@ async function resetReview(teamId, channelId, isClose, view, playlistId, userId)
 async function setReset(teamId, channelId, playlistId, trackUris, userId, jump) {
   try {
     let res = `${RESET.success} <@${userId}>.`;
+    await reduceTracks(teamId, channelId, playlistId);
     if (trackUris) {
       res = res + ` ${trackUris.length} ${trackUris.length > 1 ? `tracks` : `track`} from the past 30 minutes ${trackUris.length > 1 ? `were` : `was`} kept.`;
-      const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlistId);
-      // Delete selected tracks. We use this method to preserve the order and time added of the previous tracks.
-      const promises = [];
-      const attempts = Math.ceil(total/LIMIT);
-      for (let offset=0; offset<attempts; offset++) {
-        promises.push(new Promise(async (resolve) =>{
-          const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, null, offset*LIMIT);
-          const tracksToDelete = [];
-          spotifyTracks.items
-              .map((track) => new PlaylistTrack(track))
-              .forEach((track, index) => {
-                if (!trackUris.includes(track.uri)) {
-                  tracksToDelete.push({
-                    uri: track.uri,
-                    positions: [index+(LIMIT*offset)],
-                  });
-                }
+      const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, null, 0);
+      const allTracks = [];
+      spotifyTracks.items
+          .map((track) => new PlaylistTrack(track))
+          .forEach((track, index) => {
+            if (!trackUris.includes(track.uri)) {
+              allTracks.push({
+                uri: track.uri,
+                positions: [index],
               });
-          resolve(tracksToDelete);
-        }));
-      }
-      const allTracksPromises = await Promise.all(promises);
-      const allTracks = allTracksPromises.flat();
+            }
+          });
       await deleteTracks(teamId, channelId, playlistId, allTracks);
     } else {
+      jump = false;
       await replaceTracks(teamId, channelId, playlistId, [AFRICA]);
       await deleteTracks(teamId, channelId, playlistId, [apiTrack(AFRICA)]);
     }
@@ -124,7 +116,7 @@ async function startReset(teamId, channelId, timestamp, userId, triggerId) {
     if (reviewTracks.length) {
       // We have tracks to review, send a modal
       const blocks = await getReviewBlocks(reviewTracks);
-      const metadata = JSON.stringify({teamId: teamId, playlistId: playlist.id, channelId, timestamp});
+      const metadata = JSON.stringify({teamId: teamId, playlistId: playlist.id, channelId, timestamp, offset: total-LIMIT});
       const view = slackModal(REVIEW, `Reset: Review Tracks`, `Confirm`, `Close`, blocks, true, metadata);
       await sendModal(triggerId, view);
       return {success: false, response: null, status: null};
@@ -154,7 +146,7 @@ async function getReviewBlocks(playlistTracks) {
       if (moment(track.addedAt).isSameOrAfter(tenMinutes)) {
         initialOptions.push(op);
         buckets.ten.push(op);
-      } else if (track.addedAt.isSameOrAfter(twentyMinutes)) {
+      } else if (moment(track.addedAt).isSameOrAfter(twentyMinutes)) {
         buckets.twenty.push(op);
       } else {
         buckets.thirty.push(op);
@@ -216,6 +208,44 @@ async function getReviewTracks(teamId, channelId, playlist, total) {
     return reviewTracks;
   } catch (error) {
     logger.error('Getting Review Tracks failed.');
+    throw error;
+  }
+}
+
+/**
+ * Reduce the tracks to 100, the maximum we can keep in the reset review
+ * @param {stringId} teamId
+ * @param {stringId} channelId
+ * @param {stringId} playlistId
+ */
+async function reduceTracks(teamId, channelId, playlistId) {
+  try {
+    // If total is > 100, we can delete up until the last 100 songs as we can only show 100 to keep in slack.
+    let {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlistId);
+    while (total > LIMIT) {
+      let spotifyTracks;
+      const offset=0;
+      const tracksToDelete = [];
+      if (total-LIMIT >= LIMIT) {
+        spotifyTracks = await fetchTracks(teamId, channelId, playlistId, null, offset, LIMIT);
+      } else {
+        spotifyTracks = await fetchTracks(teamId, channelId, playlistId, null, offset, total-LIMIT);
+      }
+      spotifyTracks.items
+          .map((track) => new PlaylistTrack(track))
+          .forEach((track, index) => {
+            tracksToDelete.push({
+              uri: track.uri,
+              positions: [offset+index],
+            });
+          });
+      await deleteTracks(teamId, channelId, playlistId, tracksToDelete);
+      console.log(tracksToDelete);
+      const {tracks: {total: newTotal}} = await fetchPlaylistTotal(teamId, channelId, playlistId);
+      console.log(newTotal);
+      total = newTotal;
+    }
+  } catch (error) {
     throw error;
   }
 }
