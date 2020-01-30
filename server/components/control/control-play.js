@@ -15,8 +15,9 @@ const noSongs = (status, playlist) => status.is_playing && !status.item && statu
  * Try to play Spotify
  * @param {string} teamId
  * @param {string} channelId
+ * @param {string} userId
  */
-async function setPlay(teamId, channelId) {
+async function setPlay(teamId, channelId, userId) {
   try {
     const status = await fetchCurrentPlayback(teamId, channelId );
 
@@ -33,7 +34,7 @@ async function setPlay(teamId, channelId) {
 
     // If we are playing from a spotify device already, just keep using it
     if (status.device) {
-      return await attemptPlay(teamId, channelId, status.device.id, status, playlist, 0);
+      return await attemptPlay(teamId, channelId, status.device.id, status, playlist, 0, userId);
     }
 
     // Load our default Device and fetch all available Spotify devices
@@ -47,7 +48,7 @@ async function setPlay(teamId, channelId) {
         return {success: false, response: PLAY_FAIL_RESPONSES.no_device, status: status};
       }
       // Use our selected devices.
-      return await attemptPlay(teamId, channelId, device.id, status, playlist, 0);
+      return await attemptPlay(teamId, channelId, device.id, status, playlist, 0), userId;
     } else {
       // No default device selected -- Choose any available
       if (spotifyDevices.devices.length == 0) {
@@ -55,7 +56,7 @@ async function setPlay(teamId, channelId) {
         return {success: false, response: PLAY_FAIL_RESPONSES.no_devices, status: status};
       } else {
         // Use the first available device
-        return await attemptPlay(teamId, channelId, spotifyDevices.devices[0].id, status, playlist, 0);
+        return await attemptPlay(teamId, channelId, spotifyDevices.devices[0].id, status, playlist, 0, userId);
       }
     }
   } catch (error) {
@@ -72,12 +73,13 @@ async function setPlay(teamId, channelId) {
  * @param {Object} status
  * @param {Object} playlist
  * @param {Number} attempt
+ * @param {string} userId
  */
-async function attemptPlay(teamId, channelId, deviceId, status, playlist, attempt) {
+async function attemptPlay(teamId, channelId, deviceId, status, playlist, attempt, userId) {
   if (attempt) {
     // Base Cases
     if (status.is_playing && status.item) {
-      return {success: true, response: PLAY_RESPONSES.success, status: status};
+      return {success: true, response: `${PLAY_RESPONSES.success} <@${userId}>.`, status: status};
     }
     // We have an empty playlist and status is IsPlaying
     if (noSongs(status, playlist)) {
@@ -97,7 +99,7 @@ async function attemptPlay(teamId, channelId, deviceId, status, playlist, attemp
   // Wait before verifying that Spotify is playing
   await sleep(100);
   const newStatus = await fetchCurrentPlayback(teamId, channelId );
-  return await attemptPlay(teamId, channelId, deviceId, newStatus, playlist, attempt+1);
+  return await attemptPlay(teamId, channelId, deviceId, newStatus, playlist, attempt+1, userId);
 }
 
 module.exports = {
