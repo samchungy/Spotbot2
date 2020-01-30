@@ -37,7 +37,6 @@ async function resetReview(teamId, channelId, isClose, view, playlistId, userId)
     } else {
       // Slack Modal was submitted. Keep whatever tracks were selected
       const {[REVIEW]: trackUris, [REVIEW_JUMP]: jump} = extractSubmissions(view);
-      console.log(trackUris);
       return {success, response, status} = await setReset(teamId, channelId, playlistId, trackUris, userId, (jump == 'true'));
     }
   } catch (error) {
@@ -240,9 +239,7 @@ async function reduceTracks(teamId, channelId, playlistId) {
             });
           });
       await deleteTracks(teamId, channelId, playlistId, tracksToDelete);
-      console.log(tracksToDelete);
       const {tracks: {total: newTotal}} = await fetchPlaylistTotal(teamId, channelId, playlistId);
-      console.log(newTotal);
       total = newTotal;
     }
   } catch (error) {

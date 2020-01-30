@@ -26,7 +26,6 @@ async function getAuthorizationURL(teamId, channelId, triggerId) {
     // TODO Store triggerId as Spotify Auth state.
     const state = modelState(teamId, channelId, triggerId);
     const [, authUrl] = await Promise.all([storeState(teamId, channelId, state), fetchAuthorizeURL(teamId, channelId, encodeURI(JSON.stringify(state)))]);
-    console.log(authUrl);
     return authUrl;
   } catch (error) {
     logger.error(error);

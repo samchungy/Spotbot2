@@ -100,9 +100,7 @@ async function removeTracks(teamId, channelId, userId, view) {
     }
     const allTracksPromises = await Promise.all(promises);
     const allTracks = allTracksPromises.flat();
-    console.log(allTracks);
     const tracksToDelete = allTracks.filter((track)=>submissions.includes(track.uri));
-    console.log(tracksToDelete);
     if (tracksToDelete.length) {
       await deleteTracks(teamId, channelId, playlist.id, tracksToDelete);
       await postEphemeral(
