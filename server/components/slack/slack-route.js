@@ -71,7 +71,7 @@ module.exports = ( prefix, Router ) => {
 
                       // CONTROLS
                     case CONTROLS.play:
-                      play(payload.team.id, payload.channel.id, payload.message.ts);
+                      play(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
                       ctx.body = '';
                       break;
                     case CONTROLS.pause:
