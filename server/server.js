@@ -11,7 +11,9 @@ const app = new Koa();
 app
     .use(logger({level: process.env.LOG_LEVEL}))
     .use(errorHandler)
-    .use(bodyParser())
+    .use(bodyParser({
+      formLimit: '10mb',
+    }))
     .use(router.routes())
     .use(router.allowedMethods());
 
