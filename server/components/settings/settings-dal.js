@@ -3,6 +3,7 @@ const logger = require('../../util/util-logger');
 const {batchGetSettings, batchPutSettings, getSetting, putSetting, putRequest, settingModel} = require('../../db/settings');
 
 const SETTINGS = config.get('dynamodb.settings');
+const BACKTOPLAYLISTSTATE = config.get('dynamodb.back_to_playlist_state');
 const PROFILE = config.get('dynamodb.auth.spotify_id');
 const VIEW = config.get('dynamodb.auth.view_id');
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
@@ -203,6 +204,22 @@ async function loadSkipVotesAfterHours(teamId, channelId ) {
 }
 
 /**
+ * Load state for getting back to playlist
+ * @param {string} teamId
+ * @param {string} channelId
+ */
+async function loadStateBackToPlaylist(teamId, channelId) {
+  try {
+    const setting = settingModel(teamId, channelId, BACKTOPLAYLISTSTATE, null);
+    const item = await getSetting(setting);
+    return item.Item ? item.Item.value : null;
+  } catch (error) {
+    logger.error('Loading state back to playlist from Dynamodb failed');
+    throw error;
+  }
+}
+
+/**
  * Load Timezone from db
  * @param {string} teamId
  * @param {string} channelId
@@ -339,8 +356,29 @@ async function storeView(teamId, channelId, view) {
  * @param {Object} profileObject
  */
 async function storeProfile(teamId, channelId, profileObject) {
-  const setting = settingModel(teamId, channelId, AUTH.spotify_id, profileObject);
-  return putSetting(setting);
+  try {
+    const setting = settingModel(teamId, channelId, AUTH.spotify_id, profileObject);
+    return await putSetting(setting);
+  } catch (error) {
+    logger.error('Storing profile to Dynamodb failed');
+    throw error;
+  }
+}
+
+/**
+ * Store state for getting back to playlist
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {Object} backToPlaylist
+ */
+async function storeStateBackToPlaylist(teamId, channelId, backToPlaylist) {
+  try {
+    const setting = settingModel(teamId, channelId, BACKTOPLAYLISTSTATE, backToPlaylist);
+    return await putSetting(setting);
+  } catch (error) {
+    logger.error('Storing state back to playlist to Dynamodb failed');
+    throw error;
+  }
 }
 
 
@@ -356,6 +394,7 @@ module.exports = {
   loadSettings,
   loadSkipVotes,
   loadSkipVotesAfterHours,
+  loadStateBackToPlaylist,
   loadTimezone,
   loadView,
   storeDevices,
@@ -364,5 +403,6 @@ module.exports = {
   storePlaylistSetting,
   storeProfile,
   storeSettings,
+  storeStateBackToPlaylist,
   storeView,
 };
