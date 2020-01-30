@@ -2,7 +2,8 @@ const config = require('config');
 const logger = require('../../../util/util-logger');
 const {loadBlacklist, storeBlacklist} = require('./blacklist-dal');
 const {loadProfile} = require('../settings-dal');
-const {fetchRecent} = require('../../spotify-api/spotify-api-playback-status');
+const {loadSkip} = require('../../control/control-dal');
+const {fetchCurrentPlayback, fetchRecent} = require('../../spotify-api/spotify-api-playback-status');
 const {fetchTracksInfo} = require('../../spotify-api/spotify-api-tracks');
 const {sendModal, postEphemeral} = require('../../slack/slack-api');
 const {ephemeralPost} = require('../../slack/format/slack-format-reply');
@@ -24,11 +25,27 @@ async function openBlacklistModal(teamId, channelId, triggerId) {
     const blacklistTracks = await loadBlacklist(teamId, channelId);
     const blacklistOptions = blacklistTracks.map((track) => option(track.title, track.id));
     const spotifyRecent = await fetchRecent(teamId, channelId, LIMIT);
+    const status = await fetchCurrentPlayback(teamId, channelId);
+    const currentOptions = [];
+    const skipOptions = [];
+    const skip = await loadSkip(teamId, channelId);
+    console.log(skip);
+    if (skip.history) {
+      skip.history.forEach((track) => {
+        skipOptions.push(option(track.title, track.id));
+      });
+    }
+    if (status && status.item) {
+      const currentTrack = new Track(status.item);
+      currentOptions.push(option(currentTrack.title, currentTrack.id));
+    }
     const recentOptions = spotifyRecent.items.map((item) => {
       const track = new Track(item.track);
       return option(track.title, track.id);
     });
     const allOptions = [
+      ...skipOptions.length ? [optionGroup(BLACKLIST.skipped, skipOptions)] : [],
+      ...currentOptions.length ? [optionGroup(BLACKLIST.currently, currentOptions)] : [],
       ...recentOptions.length ? [optionGroup(BLACKLIST.recently_played, recentOptions)] : [],
       ...blacklistOptions.length ? [optionGroup(BLACKLIST.currently_blacklisted, blacklistOptions)] : [],
     ];

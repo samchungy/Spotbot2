@@ -14,7 +14,7 @@ const Track = require('../../util/util-spotify-track');
 
 const SKIP_RESPONSE = config.get('slack.responses.playback.skip');
 const SKIP_VOTE = config.get('slack.actions.skip_vote');
-const skipRequest = (userId, title) => `:black_right_pointing_double_triangle_with_vertical_bar: *Skip Request:*\n\n <@${userId}> has requested to skip ${title}`;
+const skipRequest = (userId, title) => `:black_right_pointing_double_triangle_with_vertical_bar: Skip Request:\n\n <@${userId}> has requested to skip ${title}`;
 const skipVoters = (users) => `*Votes*: ${userList(users)}.`;
 const userList = (users) => `${users.map((user) => `<@${user}>`).join(', ')}`;
 const skipVotesNeeded = (votes) => `*${votes}* more ${votes == 1 ? 'vote' : 'votes'} needed.`;
@@ -52,7 +52,7 @@ async function startSkipVote(teamId, channelId, userId) {
 
     // See if there is an existing skip request
     const currentSkip = await loadSkip(teamId, channelId);
-    if (currentSkip && currentSkip.track.id == statusTrack.id) {
+    if (currentSkip && currentSkip.track && currentSkip.track.id == statusTrack.id) {
       // If so - Add Vote to Skip
       await addVote(teamId, channelId, userId, currentSkip, status);
       return {success: true, response: null, status: null};
@@ -69,6 +69,14 @@ async function startSkipVote(teamId, channelId, userId) {
     }
     // Skip threshold is 0
     if (!skipVotes) {
+      // Store skip for blacklist
+      if (currentSkip.history) {
+        currentSkip.history.unshift(statusTrack);
+        await storeSkip(teamId, channelId, modelSkip(null, null, null, null, currentSkip.history));
+      } else {
+        console.log(statusTrack);
+        await storeSkip(teamId, channelId, modelSkip(null, null, null, null, [statusTrack]));
+      }
       await setSkip(teamId, channelId );
       await post(
           inChannelPost(channelId, skipConfirmation(statusTrack.title, [userId])),
@@ -83,7 +91,7 @@ async function startSkipVote(teamId, channelId, userId) {
     );
 
     // Store skip with the message timestamp so that we can update the message later
-    const model = modelSkip(slackPost.message.ts, statusTrack, [userId], skipVotes);
+    const model = modelSkip(slackPost.message.ts, statusTrack, [userId], skipVotes, currentSkip.history);
     await storeSkip(teamId, channelId, model);
     return {success: true, response: null, status: null};
   } catch (error) {
@@ -111,7 +119,7 @@ async function addVoteFromPost(teamId, channelId, userId, value, responseUrl) {
     );
     return;
   }
-  await addVote(channelId, userId, currentSkip, status);
+  await addVote(teamId, channelId, userId, currentSkip, status);
 }
 
 /**
@@ -151,11 +159,18 @@ async function addVote(teamId, channelId, userId, currentSkip, status) {
         await deleteChat(
             deleteMessage(channelId, currentSkip.timestamp),
         ),
-        await skip(teamId, channelId );
-        // Skip Vote threshold reached
-        await post(
-            inChannelPost(channelId, skipConfirmation(statusTrack.title, currentSkip.users), null),
-        );
+        await Promise.all([
+          skip(teamId, channelId),
+          post(
+              inChannelPost(channelId, skipConfirmation(statusTrack.title, currentSkip.users), null),
+          ),
+        ]);
+        if (currentSkip.history) {
+          currentSkip.history.unshift(statusTrack);
+          await storeSkip(teamId, channelId, modelSkip(null, null, null, null, currentSkip.history));
+        } else {
+          await storeSkip(teamId, channelId, modelSkip(null, null, null, null, [statusTrack]));
+        }
       } catch (error) {
         // Expected behaviour, we have 2 competing skip clicks. Just allow the first to succeed.
         if (error.data && error.data.error && error.data.error.includes('message_not_found')) {
