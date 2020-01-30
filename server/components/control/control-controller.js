@@ -62,8 +62,6 @@ async function updatePanel(teamId, channelId, timestamp, response, status) {
       ...getShuffleRepeatPanel(status) ? [getShuffleRepeatPanel(status)] : [],
       getControlsPanel(),
     ];
-
-
     if (timestamp) {
       await updateChat(
           messageUpdate(channelId, timestamp, altText, controlPanel),
@@ -138,8 +136,8 @@ async function pause(teamId, channelId, timestamp, userId) {
  */
 async function skip(teamId, channelId, timestamp, userId) {
   try {
-    const {response, status} = await startSkipVote(teamId, channelId, userId);
-    if (timestamp) {
+    const {success, response, status} = await startSkipVote(teamId, channelId, userId);
+    if ((!success && !timestamp) || timestamp) {
       await updatePanel(teamId, channelId, timestamp, response, status);
     }
   } catch (error) {
