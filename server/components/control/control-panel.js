@@ -1,5 +1,5 @@
 const config = require('config');
-const {loadPlaylistSetting} = require('../settings/settings-dal');
+const {loadBackToPlaylist, loadPlaylistSetting} = require('../settings/settings-dal');
 const Track = require('../../util/util-spotify-track');
 const CONTEXT_RESPONSES = config.get('slack.responses.playback.context');
 const {actionSection, buttonActionElement, confirmObject, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('../slack/format/slack-format-blocks');
@@ -9,7 +9,7 @@ const CONTROLS = config.get('slack.actions.controls');
 const PLAY_RESPONSES = config.get('slack.responses.playback.play');
 const currentlyPlayingTextMrkdwn = (title, url, artist, album) => `:sound: *Currently Playing...*\n\n<${url}|*${title}*>\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`;
 const currentlyPlayingText = (title, artist, album) => `:sound: Currently Playing... ${title}\n\n:studio_microphone: Artists: ${artist}\nAlbum: ${album}\n`;
-
+const contextOff = (playlist, back) => `:information_source: Not playing from the Spotbot playlist: ${playlist}. ${back ? ` Spotbot will return when you add songs to the playlist.`: ``}`;
 
 /**
  * Get Current Track Panel
@@ -44,15 +44,15 @@ async function getCurrentTrackPanel(teamId, channelId, status, response) {
     context = response;
   } else {
   // Check if we are playing from the playlist
+    const [backToPlaylist, playlist] = await Promise.all([loadBackToPlaylist(teamId, channelId), loadPlaylistSetting(teamId, channelId )]);
     if (status.context) {
-      const playlist = await loadPlaylistSetting(teamId, channelId );
       if (status.context.uri.includes(playlist.id)) {
         context = CONTEXT_RESPONSES.on_playlist;
       } else {
-        context = CONTEXT_RESPONSES.not_on_playlist;
+        context = contextOff(`<${playlist.url}|${playlist.name}>`, backToPlaylist === 'true');
       }
     } else {
-      context = CONTEXT_RESPONSES.not_on_playlist;
+      context = contextOff(`<${playlist.url}|${playlist.name}>`, backToPlaylist === 'true');
     }
 
     if (!status.is_playing) {
