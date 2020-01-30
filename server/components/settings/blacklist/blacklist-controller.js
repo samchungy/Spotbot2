@@ -29,8 +29,7 @@ async function openBlacklistModal(teamId, channelId, triggerId) {
     const currentOptions = [];
     const skipOptions = [];
     const skip = await loadSkip(teamId, channelId);
-    console.log(skip);
-    if (skip.history) {
+    if (skip && skip.history) {
       skip.history.forEach((track) => {
         skipOptions.push(option(track.title, track.id));
       });
@@ -69,23 +68,27 @@ async function saveBlacklist(view, userId) {
     const teamId = view.team_id;
     const channelId = view.private_metadata;
     const submissions = extractSubmissions(view);
+    let currentList;
     const [{country}, blacklistTracks]= await Promise.all([loadProfile(teamId, channelId), loadBlacklist(teamId, channelId)]);
-
+    if (submissions) {
     // See which tracks are still on the blacklist
-    let currentList = blacklistTracks.filter((track) => {
-      return submissions.find((submission) => track.id === submission.value);
-    });
+      currentList = blacklistTracks.filter((track) => {
+        return submissions.find((submission) => track.id === submission.value);
+      });
 
-    // See which tracks we need to get info for
-    const tracksToAdd = submissions
-        .filter((submission) => {
-          return !currentList.find((track) => track.id === submission.value);
-        })
-        .map((submission) => submission.value);
+      // See which tracks we need to get info for
+      const tracksToAdd = submissions
+          .filter((submission) => {
+            return !currentList.find((track) => track.id === submission.value);
+          })
+          .map((submission) => submission.value);
 
-    if (tracksToAdd.length) {
-      const spotifyTracks = await fetchTracksInfo(teamId, channelId, country, tracksToAdd);
-      currentList = [...currentList, ...spotifyTracks.tracks.map((track) => new Track(track))];
+      if (tracksToAdd.length) {
+        const spotifyTracks = await fetchTracksInfo(teamId, channelId, country, tracksToAdd);
+        currentList = [...currentList, ...spotifyTracks.tracks.map((track) => new Track(track))];
+      }
+    } else {
+      currentList = [];
     }
 
     await storeBlacklist(teamId, channelId, currentList);

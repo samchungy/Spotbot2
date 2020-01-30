@@ -70,11 +70,10 @@ async function startSkipVote(teamId, channelId, userId) {
     // Skip threshold is 0
     if (!skipVotes) {
       // Store skip for blacklist
-      if (currentSkip.history) {
+      if (currentSkip && currentSkip.history) {
         currentSkip.history.unshift(statusTrack);
         await storeSkip(teamId, channelId, modelSkip(null, null, null, null, currentSkip.history));
       } else {
-        console.log(statusTrack);
         await storeSkip(teamId, channelId, modelSkip(null, null, null, null, [statusTrack]));
       }
       await setSkip(teamId, channelId );
@@ -165,7 +164,7 @@ async function addVote(teamId, channelId, userId, currentSkip, status) {
               inChannelPost(channelId, skipConfirmation(statusTrack.title, currentSkip.users), null),
           ),
         ]);
-        if (currentSkip.history) {
+        if (currentSkip && currentSkip.history) {
           currentSkip.history.unshift(statusTrack);
           await storeSkip(teamId, channelId, modelSkip(null, null, null, null, currentSkip.history));
         } else {
