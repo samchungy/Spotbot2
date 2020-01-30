@@ -6,8 +6,8 @@ const {findAndStoreArtists, getArtistTracks, getThreeArtists} = require('./track
 const {getCurrentInfo} = require('./tracks-current');
 const {getWhom} = require('./tracks-whom');
 const {addTrack} = require('./tracks-add');
-const {postEphemeral, reply} = require('../slack/slack-api');
-const {deleteReply, ephemeralPost, updateReply} = require('../slack/format/slack-format-reply');
+const {post, postEphemeral, reply} = require('../slack/slack-api');
+const {inChannelPost, deleteReply, ephemeralPost, updateReply} = require('../slack/format/slack-format-reply');
 const {removeTrackReview, removeTracks} = require('./tracks-remove');
 
 /**
@@ -113,11 +113,15 @@ async function getMoreArtists(teamId, channelId, triggerId, responseUrl) {
  */
 async function setTrack(teamId, channelId, userId, trackUri, responseUrl) {
   try {
-    const response = await addTrack(teamId, channelId, userId, trackUri, responseUrl);
-    reply(
-        deleteReply(response, null),
-        responseUrl,
+    const [, response] = await Promise.all(
+        [reply(deleteReply('', null), responseUrl),
+          addTrack(teamId, channelId, userId, trackUri, responseUrl)],
     );
+    if (response) {
+      await post(
+          inChannelPost(channelId, response, null),
+      );
+    }
   } catch (error) {
     logger.error(error);
   }
