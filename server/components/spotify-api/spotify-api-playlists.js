@@ -63,10 +63,10 @@ async function replaceTracks(teamId, channelId, playlistId, uris) {
  * @param {String} market
  * @param {Number} offset
  */
-async function fetchTracks(teamId, channelId, playlistId, market, offset) {
+async function fetchTracks(teamId, channelId, playlistId, market, offset, limit) {
   const spotifyApi = await spotifyWebApi(teamId, channelId);
   return (await requester(teamId, channelId, 'Fetch Tracks', async () => await spotifyApi.getPlaylistTracks(playlistId, {
-    limit: LIMIT,
+    ...limit ? {limit: limit} : {limit: LIMIT},
     ...market ? {market: market} : {},
     offset: offset,
     fields: 'items(track(id,uri,name,artists,explicit,is_playable),added_by.id,added_at)',
