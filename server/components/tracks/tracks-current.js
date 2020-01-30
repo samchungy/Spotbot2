@@ -34,6 +34,8 @@ async function getCurrentInfo(teamId, channelId) {
         const {positions, total} = await getTrackPositions(teamId, channelId, playlist.id, track.uri);
         if (positions.length == 1) {
           blocks.push(contextSection(null, contextOn(`<${playlist.url}|${playlist.name}>`, positions[0]+1, total)));
+        } else if (positions.length== 0) {
+          blocks.push(contextSection(null, `:information_source: Spotbot is returning to the Spotbot playlist: <${playlist.url}|${playlist.name}>. The next song will be back on the playlist.`));
         } else {
           blocks.push(contextSection(null, contextOn(`<${playlist.url}|${playlist.name}>`)));
         }

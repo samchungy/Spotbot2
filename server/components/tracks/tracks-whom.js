@@ -31,17 +31,21 @@ async function getWhom(teamId, channelId) {
       const playlist = await loadPlaylistSetting(teamId, channelId);
       if (status.context && status.context.uri.includes(playlist.id)) {
         const playlistTrack = await getTrack(teamId, channelId, playlist.id, profile.country, track.uri);
-        const userProfile = await fetchUserProfile(teamId, channelId, playlistTrack.addedBy.id);
-        if (playlistTrack.addedBy.id === profile.id) {
-          // This track was added through Spotbot
-          const history = await loadTrackSearch(teamId, channelId, track.uri);
-          if (!history) {
-            text = nowPlayingDirect(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
+        if (playlistTrack) {
+          const userProfile = await fetchUserProfile(teamId, channelId, playlistTrack.addedBy.id);
+          if (playlistTrack.addedBy.id === profile.id) {
+            // This track was added through Spotbot
+            const history = await loadTrackSearch(teamId, channelId, track.uri);
+            if (!history) {
+              text = nowPlayingDirect(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
+            } else {
+              text = nowPlaying(track.title, `<@${history.userId}>`, moment(history.time).fromNow());
+            }
           } else {
-            text = nowPlaying(track.title, `<@${history.userId}>`, moment(history.time).fromNow());
+            text = nowPlayingDirect(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
           }
         } else {
-          text = nowPlayingDirect(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
+          text = `:microphone: ${track.title} is playing because Spotbot is returning to the playlist. The next song will be back on the playlist.`;
         }
       } else {
         return await getCurrentInfo(teamId, channelId);
