@@ -20,7 +20,7 @@ const NEW_PLAYLIST_REGEX = new RegExp(`^${NEW_PLAYLIST}`);
 async function getAllPlaylists(teamId, channelId, query) {
   try {
     const currentPlaylist = await loadPlaylistSetting(teamId, channelId );
-    const playlists = await fetchAllPlaylists(teamId, channelId, currentPlaylist);
+    const playlists = await allPlaylists(teamId, channelId, currentPlaylist);
     await storePlaylists(teamId, channelId, playlists);
 
     // Converts into Slack Option if it matches the search query
@@ -41,7 +41,7 @@ async function getAllPlaylists(teamId, channelId, query) {
 
     return {
       option_groups: [
-        optionGroup('Search Results:', searchPlaylists),
+        optionGroup('Search Results:', searchPlaylists.splice(0, LIMIT)),
         optionGroup('Other:', other),
       ],
     };
@@ -57,7 +57,7 @@ async function getAllPlaylists(teamId, channelId, query) {
  * @param {string} channelId
  * @param {modelPlaylist} currentPlaylist
  */
-async function fetchAllPlaylists(teamId, channelId, currentPlaylist) {
+async function allPlaylists(teamId, channelId, currentPlaylist) {
   try {
     const compatiblePlaylists = [...currentPlaylist ? [currentPlaylist] : []];
     let count = 0;
@@ -115,6 +115,6 @@ async function getPlaylistValue(teamId, channelId, newValue) {
 
 module.exports = {
   getAllPlaylists,
-  fetchAllPlaylists,
+  fetchAllPlaylists: allPlaylists,
   getPlaylistValue,
 };
