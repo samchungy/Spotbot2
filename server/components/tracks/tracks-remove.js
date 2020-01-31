@@ -22,7 +22,6 @@ async function removeTrackReview(teamId, channelId, userId, triggerId) {
   try {
     const [playlist, {country}] = await Promise.all([loadPlaylistSetting(teamId, channelId), loadProfile(teamId, channelId)]);
     const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
-    // Delete selected tracks. We use this method to preserve the order and time added of the previous tracks.
     const promises = [];
     const attempts = Math.ceil(total/LIMIT);
     for (let offset=0; offset<attempts; offset++) {
@@ -49,7 +48,7 @@ async function removeTrackReview(teamId, channelId, userId, triggerId) {
     if (allTracks.length) {
       // We have tracks to review, send a modal
       const blocks = [
-        multiSelectStatic(REMOVE_MODAL, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, allOptions),
+        multiSelectStatic(REMOVE_MODAL, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, allOptions.splice(0, LIMIT)),
       ];
       const view = slackModal(REMOVE_MODAL, `Remove Tracks`, `Confirm`, `Close`, blocks, true, channelId);
       await sendModal(triggerId, view);
