@@ -48,7 +48,7 @@ async function removeTrackReview(teamId, channelId, userId, triggerId) {
     if (allTracks.length) {
       // We have tracks to review, send a modal
       const blocks = [
-        multiSelectStatic(REMOVE_MODAL, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, allOptions.splice(0, LIMIT)),
+        multiSelectStatic(REMOVE_MODAL, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, allOptions.slice(0, LIMIT)),
       ];
       const view = slackModal(REMOVE_MODAL, `Remove Tracks`, `Confirm`, `Close`, blocks, true, channelId);
       await sendModal(triggerId, view);

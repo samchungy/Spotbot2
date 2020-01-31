@@ -41,7 +41,7 @@ async function getAllPlaylists(teamId, channelId, query) {
 
     return {
       option_groups: [
-        optionGroup('Search Results:', searchPlaylists.splice(0, LIMIT)),
+        optionGroup('Search Results:', searchPlaylists.slice(0, 100)),
         optionGroup('Other:', other),
       ],
     };
@@ -64,7 +64,6 @@ async function allPlaylists(teamId, channelId, currentPlaylist) {
     const profile = await loadProfile(teamId, channelId );
     while (true) {
       const playlists = await fetchPlaylists(teamId, channelId, count, LIMIT);
-
       // Only if it is a collaborative playlist or the owner is ourselves - a playlist compatible.
       // and current playlist is not in the list
       compatiblePlaylists.push(
@@ -81,7 +80,7 @@ async function allPlaylists(teamId, channelId, currentPlaylist) {
         break;
       }
     }
-    return compatiblePlaylists.slice(0, 100);
+    return compatiblePlaylists;
   } catch (error) {
     logger.error('Fetching all Spotify Playlists failed');
     throw error;
@@ -115,6 +114,6 @@ async function getPlaylistValue(teamId, channelId, newValue) {
 
 module.exports = {
   getAllPlaylists,
-  fetchAllPlaylists: allPlaylists,
+  allPlaylists,
   getPlaylistValue,
 };
