@@ -12,7 +12,7 @@ const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
  * @param {string} teamId
  * @param {string} channelId
  */
-async function fetchAllDevices(teamId, channelId) {
+async function allDevices(teamId, channelId) {
   try {
     const [defaultDevice, spotifyDevices] = await Promise.all([loadDefaultDevice(teamId, channelId), fetchDevices(teamId, channelId )]);
     const devices = [
@@ -24,7 +24,7 @@ async function fetchAllDevices(teamId, channelId) {
 
     return devices;
   } catch (error) {
-    logger.error('Fetching all Spotify spotifyDevices failed');
+    logger.error('all devices from Spotify failed');
     throw error;
   }
 }
@@ -36,7 +36,7 @@ async function fetchAllDevices(teamId, channelId) {
  */
 async function getAllDevices(teamId, channelId) {
   try {
-    const spotifyDevices = await fetchAllDevices(teamId, channelId);
+    const spotifyDevices = await allDevices(teamId, channelId);
     await storeDevices(teamId, channelId, spotifyDevices);
     const devices = [
       option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices), // Add a none option
@@ -81,5 +81,5 @@ async function getDeviceValue(teamId, channelId, newValue, oldValue) {
 module.exports = {
   getDeviceValue,
   getAllDevices,
-  fetchAllDevices,
+  allDevices,
 };
