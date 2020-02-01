@@ -1,4 +1,5 @@
 const config = require('config');
+const logger = require('../../util/util-logger');
 const SLACK_ACTIONS = config.get('slack.actions');
 const PLAYLIST = config.get('dynamodb.settings.playlist');
 const DEFAULT_DEVICE = config.get('dynamodb.settings.default_device');
@@ -14,7 +15,8 @@ const ADD_TRACK = config.get('slack.actions.tracks.add_to_playlist');
 const VIEW_ARTIST = config.get('slack.actions.artists.view_artist_tracks');
 
 const {checkSettings} = require('../settings/settings-middleware');
-const {changeAuthentication, getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, saveView, updateView} = require('../settings/settings-controller');
+const {changeAuthentication, getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, updateView} = require('../settings/settings-controller');
+const {saveView} = require('../settings/spotifyauth/spotifyauth-controller');
 const {clearOneDay, jumpToStart, pause, play, reset, skip, toggleRepeat, toggleShuffle, verifyResetReview, voteToSkip} = require('../control/control-controller');
 const {getMoreArtists, getMoreTracks, cancelSearch, removeTracks, setTrack, viewArtist} = require('../tracks/tracks-controller');
 const {saveBlacklist} = require('../settings/blacklist/blacklist-controller');
@@ -158,21 +160,23 @@ module.exports = ( prefix, Router ) => {
         }
       })
       .post('/options', async (ctx, next) =>{
-        const payload = JSON.parse(ctx.request.body.payload);
-        let options;
-        switch (payload.action_id) {
-          case PLAYLIST:
-            options = await getAllPlaylists(payload.team.id, payload.view.private_metadata, payload.value);
-            ctx.body = options;
-            break;
-          case DEFAULT_DEVICE:
-            options = await getAllDevices(payload.team.id, payload.view.private_metadata);
-            ctx.body = options;
-            break;
-          case TIMEZONE:
-            options = await getAllTimezones(payload.value);
-            ctx.body = options;
-            break;
+        if (ctx.request.body && ctx.request.body.payload) {
+          const payload = JSON.parse(ctx.request.body.payload);
+          let options;
+          switch (payload.action_id) {
+            case PLAYLIST:
+              options = await getAllPlaylists(payload.team.id, payload.view.private_metadata, payload.value);
+              ctx.body = options;
+              break;
+            case DEFAULT_DEVICE:
+              options = await getAllDevices(payload.team.id, payload.view.private_metadata);
+              ctx.body = options;
+              break;
+            case TIMEZONE:
+              options = await getAllTimezones(payload.value);
+              ctx.body = options;
+              break;
+          }
         }
       });
 
