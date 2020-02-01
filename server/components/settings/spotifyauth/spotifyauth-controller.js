@@ -170,7 +170,6 @@ module.exports = {
   changeAuthentication,
   getAuthBlock,
   getAuthorizationURL,
-  resetAuthentication,
   saveView,
   validateAuthCode,
 };
