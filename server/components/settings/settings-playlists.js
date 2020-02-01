@@ -98,8 +98,8 @@ async function getPlaylistValue(teamId, channelId, newValue) {
     if (newValue.includes(NEW_PLAYLIST)) {
       newValue = newValue.replace(NEW_PLAYLIST_REGEX, '');
       // Create a new playlist using Spotify API
-      const spotifyId = await loadProfile(teamId, channelId );
-      const newPlaylist = await createPlaylist(teamId, channelId, spotifyId, newValue);
+      const {id} = await loadProfile(teamId, channelId );
+      const newPlaylist = await createPlaylist(teamId, channelId, id, newValue);
       return modelPlaylist(newValue, newPlaylist.id, newPlaylist.uri, newPlaylist.external_urls.spotify);
     } else {
       // Grab the playlist object from our earlier Database playlist fetch
