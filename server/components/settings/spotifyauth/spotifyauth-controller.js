@@ -3,9 +3,9 @@ const logger = require('../../../util/util-logger');
 const {AuthError, PremiumError} = require('../../../errors/errors-auth');
 const {fetchAuthorizeURL, fetchTokens} = require('../../spotify-api/spotify-api-auth');
 const {fetchProfile} = require('../../spotify-api/spotify-api-profile');
-const {loadState, storeState, storeTokens} = require('./spotifyauth-dal');
+const {loadState, storeState, storeView, storeTokens} = require('./spotifyauth-dal');
 const {storeProfile} = require('../settings-dal');
-const {modelProfile, modelState} = require('../settings-model');
+const {modelProfile, modelState, modelView} = require('../settings-model');
 const {buttonSection} = require('../../slack/format/slack-format-modal');
 const {contextSection, confirmObject} = require('../../slack/format/slack-format-blocks');
 const {isEqual} = require('../../../util/util-objects');
@@ -141,9 +141,26 @@ async function getAuthBlock(teamId, channelId, triggerId) {
   };
 }
 
+/**
+ * Save the ViewId from our Authentication attempt
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {string} viewId
+ * @param {string} triggerId
+ */
+async function saveView(teamId, channelId, viewId, triggerId) {
+  try {
+    const store = modelView(viewId, triggerId);
+    await storeView(teamId, channelId, store);
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   getAuthBlock,
   getAuthorizationURL,
   resetAuthentication,
+  saveView,
   validateAuthCode,
 };

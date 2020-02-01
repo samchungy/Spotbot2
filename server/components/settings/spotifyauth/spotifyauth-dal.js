@@ -3,6 +3,7 @@ const logger = require('../../../util/util-logger');
 const {getAuth, putAuth, authModel} = require('../../../db/auth');
 
 const AUTH = config.get('dynamodb.auth');
+const VIEW = config.get('dynamodb.auth.view_id');
 
 // Loading Functions
 
@@ -46,6 +47,22 @@ async function loadTokens(teamId, channelId ) {
   }
 }
 
+/**
+ * Load stored View from db
+ * @param {string} teamId
+ * @param {string} channelId
+ */
+async function loadView(teamId, channelId ) {
+  try {
+    const setting = authModel(teamId, channelId, VIEW, null);
+    const item = await getAuth(setting);
+    return item.Item ? item.Item.value : null;
+  } catch (error) {
+    logger.error('Loading view from Dynamodb failed');
+    throw error;
+  }
+}
+
 // Storing Functions
 
 /**
@@ -75,9 +92,27 @@ async function storeTokens(teamId, channelId, accessToken, refreshToken) {
   return putAuth(authentication);
 }
 
+/**
+ * Stores a model object in db
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {modelView} view
+ */
+async function storeView(teamId, channelId, view) {
+  try {
+    const setting = authModel(teamId, channelId, VIEW, view);
+    return await putAuth(setting);
+  } catch (error) {
+    logger.error('Storing view to Dynamodb failed');
+    throw error;
+  }
+}
+
 module.exports = {
   loadState,
   loadTokens,
+  loadView,
   storeState,
   storeTokens,
+  storeView,
 };

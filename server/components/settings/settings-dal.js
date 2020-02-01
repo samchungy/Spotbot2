@@ -5,7 +5,6 @@ const {batchGetSettings, batchPutSettings, getSetting, putSetting, putRequest, s
 const SETTINGS = config.get('dynamodb.settings');
 const BACKTOPLAYLISTSTATE = config.get('dynamodb.back_to_playlist_state');
 const PROFILE = config.get('dynamodb.auth.spotify_id');
-const VIEW = config.get('dynamodb.auth.view_id');
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 const SKIP_VOTES = config.get('dynamodb.settings.skip_votes');
 const SKIP_VOTES_AH = config.get('dynamodb.settings.skip_votes_ah');
@@ -235,22 +234,6 @@ async function loadTimezone(teamId, channelId ) {
   }
 }
 
-/**
- * Load stored View from db
- * @param {string} teamId
- * @param {string} channelId
- */
-async function loadView(teamId, channelId ) {
-  try {
-    const setting = settingModel(teamId, channelId, VIEW, null);
-    const item = await getSetting(setting);
-    return item.Item ? item.Item.value : null;
-  } catch (error) {
-    logger.error('Loading view from Dynamodb failed');
-    throw error;
-  }
-}
-
 // Store Functions
 
 /**
@@ -334,22 +317,6 @@ async function storeDevices(teamId, channelId, devices) {
 }
 
 /**
- * Stores a model object in db
- * @param {string} teamId
- * @param {string} channelId
- * @param {modelView} view
- */
-async function storeView(teamId, channelId, view) {
-  try {
-    const setting = settingModel(teamId, channelId, VIEW, view);
-    return await putSetting(setting);
-  } catch (error) {
-    logger.error('Storing view to Dynamodb failed');
-    throw error;
-  }
-}
-
-/**
  * Store Spotify Profile in db
  * @param {string} teamId
  * @param {string} channelId
@@ -396,7 +363,6 @@ module.exports = {
   loadSkipVotesAfterHours,
   loadStateBackToPlaylist,
   loadTimezone,
-  loadView,
   storeDevices,
   storeDeviceSetting,
   storePlaylists,
@@ -404,5 +370,4 @@ module.exports = {
   storeProfile,
   storeSettings,
   storeStateBackToPlaylist,
-  storeView,
 };
