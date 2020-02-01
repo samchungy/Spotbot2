@@ -15,8 +15,8 @@ const ADD_TRACK = config.get('slack.actions.tracks.add_to_playlist');
 const VIEW_ARTIST = config.get('slack.actions.artists.view_artist_tracks');
 
 const {checkSettings} = require('../settings/settings-middleware');
-const {changeAuthentication, getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, updateView} = require('../settings/settings-controller');
-const {saveView} = require('../settings/spotifyauth/spotifyauth-controller');
+const {getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, updateView} = require('../settings/settings-controller');
+const {changeAuthentication, saveView} = require('../settings/spotifyauth/spotifyauth-controller');
 const {clearOneDay, jumpToStart, pause, play, reset, skip, toggleRepeat, toggleShuffle, verifyResetReview, voteToSkip} = require('../control/control-controller');
 const {getMoreArtists, getMoreTracks, cancelSearch, removeTracks, setTrack, viewArtist} = require('../tracks/tracks-controller');
 const {saveBlacklist} = require('../settings/blacklist/blacklist-controller');

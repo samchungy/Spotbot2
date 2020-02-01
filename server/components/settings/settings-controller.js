@@ -28,24 +28,6 @@ const DB = config.get('dynamodb.settings');
 const RESPONSES = config.get('slack.responses');
 
 /**
- * Resets the authentication
- * @param {string} teamId
- * @param {string} channelId
- */
-async function changeAuthentication(teamId, channelId ) {
-  try {
-    await resetAuthentication(teamId, channelId );
-    await Promise.all([
-      storeDeviceSetting(teamId, channelId, null),
-      storePlaylistSetting(teamId, channelId, null),
-    ]);
-  } catch (error) {
-    logger.error(error);
-    throw error;
-  }
-}
-
-/**
  * Open the Spotbot Settings Panel via Slack Modal.
  * @param {string} teamId
  * @param {string} channelId
@@ -200,7 +182,6 @@ function setYesOrNo(value) {
 
 
 module.exports = {
-  changeAuthentication,
   getAllDevices,
   getAllPlaylists,
   getAllTimezones,

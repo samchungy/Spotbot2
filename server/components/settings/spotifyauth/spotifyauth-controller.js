@@ -3,8 +3,8 @@ const logger = require('../../../util/util-logger');
 const {AuthError, PremiumError} = require('../../../errors/errors-auth');
 const {fetchAuthorizeURL, fetchTokens} = require('../../spotify-api/spotify-api-auth');
 const {fetchProfile} = require('../../spotify-api/spotify-api-profile');
-const {loadState, storeState, storeView, storeTokens} = require('./spotifyauth-dal');
-const {storeProfile} = require('../settings-dal');
+const {loadState, storeState, storeTokens, storeView} = require('./spotifyauth-dal');
+const {storeDeviceSetting, storePlaylistSetting, storeProfile} = require('../settings-dal');
 const {modelProfile, modelState, modelView} = require('../settings-model');
 const {buttonSection} = require('../../slack/format/slack-format-modal');
 const {contextSection, confirmObject} = require('../../slack/format/slack-format-blocks');
@@ -14,6 +14,24 @@ const SETTINGS_AUTH = config.get('dynamodb.settings_auth');
 const HINTS = config.get('settings.hints');
 const LABELS = config.get('settings.labels');
 const PREMIUM_ERROR = config.get('settings.errors.premium');
+
+/**
+ * Resets the authentication
+ * @param {string} teamId
+ * @param {string} channelId
+ */
+async function changeAuthentication(teamId, channelId ) {
+  try {
+    await storeTokens(teamId, channelId, null, null);
+    await Promise.all([
+      storeDeviceSetting(teamId, channelId, null),
+      storePlaylistSetting(teamId, channelId, null),
+    ]);
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
 
 /**
  * Generates a Spotify Authorization URL and stores a state in our db
@@ -32,16 +50,6 @@ async function getAuthorizationURL(teamId, channelId, triggerId) {
     throw error;
     // TODO Handle status report to Slack
   }
-}
-
-/**
- * New Authentication Attempt, reset current auth
- * @param {string} teamId
- * @param {string} channelId
- */
-async function resetAuthentication(teamId, channelId) {
-  // Invalidate any previous auth we had
-  await storeTokens(teamId, channelId, null, null);
 }
 
 /**
@@ -141,6 +149,7 @@ async function getAuthBlock(teamId, channelId, triggerId) {
   };
 }
 
+
 /**
  * Save the ViewId from our Authentication attempt
  * @param {string} teamId
@@ -158,6 +167,7 @@ async function saveView(teamId, channelId, viewId, triggerId) {
 }
 
 module.exports = {
+  changeAuthentication,
   getAuthBlock,
   getAuthorizationURL,
   resetAuthentication,
