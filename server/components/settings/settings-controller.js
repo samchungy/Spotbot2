@@ -3,7 +3,7 @@ const logger = require('../../util/util-logger');
 const moment = require('moment-timezone');
 const {multiSelectUsers, option, slackModal, selectExternal, selectStatic, textInput, yesOrNo} = require('../slack/format/slack-format-modal');
 const {sendModal, updateModal} = require('../slack/slack-api');
-const {getAuthBlock, resetAuthentication} = require('./spotifyauth/spotifyauth-controller');
+const {getAuthBlock} = require('./spotifyauth/spotifyauth-controller');
 const {loadView} = require('./spotifyauth/spotifyauth-dal');
 const {getAllPlaylists} = require('./settings-playlists');
 const {getAllDevices} = require('./settings-device');
@@ -11,7 +11,7 @@ const {getAllTimezones} = require('./settings-timezones');
 const {transformValue} = require('./settings-transform');
 const {extractBlocks, extractSubmissions, verifySettings} = require('./settings-verify');
 
-const {loadSettings, storeDeviceSetting, storePlaylistSetting, storeSettings} = require('./settings-dal');
+const {loadSettings, storeSettings} = require('./settings-dal');
 
 const {ephemeralPost} = require('../slack/format/slack-format-reply');
 const {postEphemeral} = require('../slack/slack-api');
