@@ -3,16 +3,15 @@ const logger = require('../../util/util-logger');
 const moment = require('moment-timezone');
 const {multiSelectUsers, option, slackModal, selectExternal, selectStatic, textInput, yesOrNo} = require('../slack/format/slack-format-modal');
 const {sendModal, updateModal} = require('../slack/slack-api');
-
 const {getAuthBlock, resetAuthentication} = require('./spotifyauth/spotifyauth-controller');
+const {loadView} = require('./spotifyauth/spotifyauth-dal');
 const {getAllPlaylists} = require('./settings-playlists');
 const {getAllDevices} = require('./settings-device');
 const {getAllTimezones} = require('./settings-timezones');
 const {transformValue} = require('./settings-transform');
 const {extractBlocks, extractSubmissions, verifySettings} = require('./settings-verify');
 
-const {loadSettings, loadView, storeDeviceSetting, storePlaylistSetting, storeSettings, storeView} = require('./settings-dal');
-const {modelView} = require('./settings-model');
+const {loadSettings, storeDeviceSetting, storePlaylistSetting, storeSettings} = require('./settings-dal');
 
 const {ephemeralPost} = require('../slack/format/slack-format-reply');
 const {postEphemeral} = require('../slack/slack-api');
@@ -187,18 +186,6 @@ async function updateView(teamId, channelId, viewId, triggerId) {
 }
 
 /**
- * Save the ViewId from our Authentication attempt
- * @param {string} teamId
- * @param {string} channelId
- * @param {string} viewId
- * @param {string} triggerId
- */
-async function saveView(teamId, channelId, viewId, triggerId) {
-  const store = modelView(viewId, triggerId);
-  storeView(teamId, channelId, store);
-}
-
-/**
  * Returns a Yes or No option based on a value
  * @param {string} value
  * @return {option} Yes or No option
@@ -219,6 +206,5 @@ module.exports = {
   getAllTimezones,
   openSettings,
   saveSettings,
-  saveView,
   updateView,
 };
