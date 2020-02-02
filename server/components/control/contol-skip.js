@@ -12,7 +12,6 @@ const {deleteChat, postEphemeral, post, reply, updateChat} = require('../slack/s
 const {deleteMessage, ephemeralPost, inChannelPost, messageUpdate, updateReply} = require('../slack/format/slack-format-reply');
 const Track = require('../../util/util-spotify-track');
 
-const SKIP_RESPONSE = config.get('slack.responses.playback.skip');
 const SKIP_VOTE = config.get('slack.actions.skip_vote');
 const SKIP_RESPONSE = {
   already: ':information_source: You have already voted on this.',
