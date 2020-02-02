@@ -11,10 +11,23 @@ const {contextSection, confirmObject} = require('../../slack/format/slack-format
 const {isEqual} = require('../../../util/util-objects');
 
 const SETTINGS_AUTH = config.get('dynamodb.settings_auth');
-const HINTS = config.get('settings.hints');
-const LABELS = config.get('settings.labels');
-const PREMIUM_ERROR = config.get('settings.errors.premium');
+const HINTS = {
+  auth_verify: 'Click to verify Spotify authentication.',
+  auth_verify_button: 'Verify',
+  auth_urL_fail: 'Try again',
+  auth_url_button: ':link: Authenticate with Spotify',
+  reauth_confirm: `This will disable this channel's Spotbot functionality until Spotbot is reauthenticated.`,
+  reauth_url_button: ':gear: Re-authenticate with Spotify',
+};
 
+const LABELS = {
+  auth_url: 'Click to authenticate with Spotify.',
+  auth_urL_fail: ':warning: Authentication attempt failed.',
+  reauth_confirm: 'Are you sure?',
+  reauth: 'Click to re-authenticate with Spotify.',
+};
+
+const PREMIUM_ERROR = `:x: The Spotify account used is not a Premium account`;
 /**
  * Resets the authentication
  * @param {string} teamId

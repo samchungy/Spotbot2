@@ -84,7 +84,7 @@ async function getThreeArtists(teamId, channelId, userId, triggerId, responseUrl
     const artistBlocks = currentArtists.map((artist) => {
       return [
         imageSection(
-            ARTIST_RESPONSES.artist_panel(artist.name, artist.url, artist.genres, artist.followers),
+            ARTISTS_RESPONSES.artist_panel(artist.name, artist.url, artist.genres, artist.followers),
             artist.art,
             `Artist Art`,
         ),

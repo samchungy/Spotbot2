@@ -18,6 +18,6 @@ app
     .use(router.allowedMethods());
 
 if (process.env.NODE_ENV == 'test') {
-  module.exports.mockapp = app.listen(3000);
+  module.exports = ({port}) => app.listen(port);
 }
 module.exports.handler = serverless(app);

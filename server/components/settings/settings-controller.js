@@ -1,10 +1,10 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
-const moment = require('moment-timezone');
-const {multiSelectUsers, option, slackModal, selectExternal, selectStatic, textInput, yesOrNo} = require('../slack/format/slack-format-modal');
+const {slackModal} = require('../slack/format/slack-format-modal');
 const {sendModal, updateModal} = require('../slack/slack-api');
 const {getAuthBlock} = require('./spotifyauth/spotifyauth-controller');
 const {loadView} = require('./spotifyauth/spotifyauth-dal');
+const {getSettingsBlocks} = require('./settings-block');
 const {getAllPlaylists} = require('./settings-playlists');
 const {getAllDevices} = require('./settings-device');
 const {getAllTimezones} = require('./settings-timezones');
@@ -18,14 +18,12 @@ const {postEphemeral} = require('../slack/slack-api');
 
 const {isEqual, isEmpty} = require('../../util/util-objects');
 
-const HINTS = config.get('settings.hints');
-const LABELS = config.get('settings.labels');
-const QUERY = config.get('settings.query_lengths');
-const LIMITS = config.get('settings.limits');
-const PLACE = config.get('settings.placeholders');
 const SETTINGS_MODAL = config.get('slack.actions.settings_modal');
-const DB = config.get('dynamodb.settings');
-const RESPONSES = config.get('slack.responses');
+
+const SETTINGS_RESPONSE = {
+  success: ':white_check_mark: Settings successfully saved.',
+  fail: ':x: Something went wrong! Settings were not saved.',
+};
 
 /**
  * Open the Spotbot Settings Panel via Slack Modal.
@@ -48,30 +46,6 @@ async function openSettings(teamId, channelId, triggerId) {
   } catch (error) {
     logger.error('Open Settings Failed');
     logger.error(error);
-  }
-}
-
-/**
- * Loads old config and returns setting blocks
- * @param {string} teamId
- * @param {string} channelId
- */
-async function getSettingsBlocks(teamId, channelId ) {
-  try {
-    const settings = await loadSettings(teamId, channelId );
-    return [
-      multiSelectUsers(DB.channel_admins, LABELS.channel_admins, HINTS.channel_admins, settings.channel_admins),
-      selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist, PLACE.playlist),
-      selectExternal(DB.default_device, LABELS.default_device, HINTS.default_device, settings.default_device ? option(settings.default_device.name, settings.default_device.id) : null, QUERY.default_device, PLACE.default_device),
-      textInput(DB.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, settings.disable_repeats_duration, LIMITS.disable_repeats_duration, PLACE.disable_repeats_duration),
-      selectStatic(DB.back_to_playlist, LABELS.back_to_playlist, HINTS.back_to_playlist, settings.back_to_playlist ? setYesOrNo(settings.back_to_playlist) : null, yesOrNo()),
-      selectExternal(DB.timezone, LABELS.timezone, HINTS.timezone, settings.timezone ? option(`${settings.timezone} (${moment().tz(settings.timezone).format('Z')})`, settings.timezone) : null, QUERY.timezone, PLACE.timezone),
-      textInput(DB.skip_votes, LABELS.skip_votes, HINTS.skip_votes_ah, settings.skip_votes, LIMITS.skip_votes, PLACE.skip_votes),
-      textInput(DB.skip_votes_ah, LABELS.skip_votes_ah, HINTS.skip_votes_ah, settings.skip_votes_ah, LIMITS.skip_votes, PLACE.skip_votes_ah),
-    ];
-  } catch (error) {
-    logger.error('Getting Settings Blocks Failed');
-    throw error;
   }
 }
 
@@ -121,14 +95,14 @@ async function saveSettings(teamId, channelId, view, userId) {
 
       // Report back to Slack
       await postEphemeral(
-          ephemeralPost(channelId, userId, RESPONSES.settings.success, null),
+          ephemeralPost(channelId, userId, SETTINGS_RESPONSE.success, null),
       );
     } catch (error) {
       logger.error(error);
       // Something in our Save Settings function failed.
       if (channelId) {
         await postEphemeral(
-            ephemeralPost(channelId, userId, RESPONSES.settings.fail, null),
+            ephemeralPost(channelId, userId, SETTINGS_RESPONSE.fail, null),
         );
       }
     }
@@ -164,19 +138,6 @@ async function updateView(teamId, channelId, viewId, triggerId) {
     await updateModal(viewId, modal);
   } catch (error) {
     logger.error(error);
-  }
-}
-
-/**
- * Returns a Yes or No option based on a value
- * @param {string} value
- * @return {option} Yes or No option
- */
-function setYesOrNo(value) {
-  if (value == `true`) {
-    return option(`Yes`, `true`);
-  } else {
-    return option(`No`, `false`);
   }
 }
 

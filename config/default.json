@@ -37,11 +37,10 @@
           "access": "access_token",
           "refresh": "refresh_token",
           "expires": "expires",
-          "spotify_id": "spotify_id",
           "view_id": "view_id"
         },
         "settings": {
-          "channel_admin": "channel_admin",
+          "channel_admins": "channel_admins",
           "playlist": "playlist",
           "default_device": "default_device",
           "disable_repeats_duration": "disable_repeats_duration",
@@ -49,6 +48,13 @@
           "skip_votes": "skip_votes",
           "skip_votes_ah": "skip_votes_ah",
           "timezone": "timezone"
+        },
+        "settings_extra": {
+          "back_to_playlist_state": "back_to_playlist_state",
+          "profile": "profile",
+          "spotify_playlists": "spotify_playlists",
+          "spotify_devices": "spotify_devices",
+          "skip": "skip"
         },
         "settings_auth": {
           "reauth": "reauth",
@@ -58,14 +64,10 @@
           "auth_error": "auth_error"
         },
         "settings_helper": {
-          "spotify_playlists": "spotify_playlists",
-          "spotify_devices": "spotify_devices",
           "no_devices": "no_devices",
           "no_devices_label": "None",
           "create_new_playlist": "create_new_playlist."
         },
-        "skip": "skip",
-        "back_to_playlist_state": "back_to_playlist_state",
         "blacklist": {
           "database": "blacklist",
           "label": "Blacklisted Tracks",
@@ -76,59 +78,10 @@
           "skipped": "Skipped Recently:"
         }
       },
-      "events": {
-        "update_tokens": "update_tokens"
-      },
       "settings": {
-        "hints": {
-          "auth_urL_fail": "Try again",
-          "channel_admin": "Admins can use Spotbot admin commands within this channel and modify it's settings.",
-          "playlist": "The name of the playlist Spotbot will add to. You can use an existing playlist or create a new collaborative playlist.",
-          "default_device": "This helps Spotbot with playing. Turn on your Spotify device now.",
-          "disable_repeats_duration": "The duration where no one can add the same song. Set it to 0 to allow repeats all the time. Integers only.",
-          "back_to_playlist": "Enables Spotify to return to the playlist when a new song is added if the playlist has runs out of songs. (Does not work if repeat is enabled).",
-          "skip_votes": "The number of additional votes needed to skip a song. Integers only",
-          "skip_votes_ah": "The number of additional votes needed to skip a song. Integers only",
-          "auth_url_button": ":link: Authenticate with Spotify",
-          "reauth_url_button": ":gear: Re-authenticate with Spotify",
-          "reauth_confirm": "This will disable this channel's Spotbot functionality until Spotbot is reauthenticated.",
-          "auth_verify": "Click to verify Spotify authentication.",
-          "auth_verify_button": "Verify",
-          "timezone": "This is to configure the time based skip votes. Type in a location."
-        },
-        "labels": {
-          "auth_urL_fail": ":warning: Authentication attempt failed.",
-          "auth_url": "Click to authenticate with Spotify.",
-          "reauth": "Click to re-authenticate with Spotify.",
-          "reauth_confirm": "Are you sure?",
-          "channel_admin": "Channel Admins",
-          "playlist": "Spotbot Playlist",
-          "default_device": "Default Spotify Device",
-          "disable_repeats_duration": "Disable Repeats Duration (Hours)",
-          "back_to_playlist": "Jump Back to Playlist",
-          "skip_votes": "Skip Votes",
-          "skip_votes_ah": "Skip Votes - After Hours (6pm-6am)",
-          "timezone": "Timezone"
-        },
-        "placeholders": {
-          "disable_repeats_duration": "Enter a number eg. 4",
-          "skip_votes": "Enter a number eg. 2",
-          "skip_votes_ah": "Enter a number eg. 0",
-          "playlist": "Type a playlist name",
-          "default_device": "Pick an option",
-          "timezone": "Type to find your timezone"
-        },
         "limits": {
           "disable_repeats_duration": 5,
           "skip_votes": 2
-        },
-        "errors": {
-          "integer": "Please enter a valid integer",
-          "premium": ":x: The Spotify account used is not a Premium account",
-          "fail": ":x: Authentication failed with the Spotify. Please try again.",
-          "not_authenticated": "Please authenticate an account with Spotify",
-          "settings": ":information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.",
-          "not_admin": ":information_source: You must be a Spotbot admin for this channel to use this command."
         },
         "query_lengths": {
           "default_device": 0,
@@ -181,89 +134,6 @@
         "reply": {
           "in_channel": "in_channel",
           "ephemeral": null
-        },
-        "responses": {
-          "tracks": {
-            "query": {
-              "error": ":warning: Invalid query, please try again.",
-              "empty": ":information_source: No query entered. Please enter a query."
-            },
-            "no_tracks": ":information_source: No tracks found for the query ",
-            "error": ":warning: An error occured.",
-            "found": ":mag: Are these the tracks you were looking for?",
-            "expired": ":information_source: Search has expired.",
-            "cancelled": ":information_source: Search cancelled."
-          },
-          "artists": {
-            "no_artists":":information_source: No tracks found for the query ",
-            "found": ":mag: Are these the artists you were looking for?"
-          },
-          "settings": {
-            "success": ":white_check_mark: Settings successfully saved.",
-            "fail": ":x: Something went wrong! Settings were not saved."
-          },
-          "playback": {
-            "pause": {
-              "success": ":double_vertical_bar: Spotify was paused by"
-            },
-            "play": {
-              "success": ":arrow_forward: Spotify is now playing. Started by",
-              "not_playing": ":information_source: Spotify is currently not playing.",
-              "currently": ":sound: Currently Playing..."
-            },
-            "play_fail": {
-              "already": ":information_source: Spotify is already playing. Check if speaker is muted.",
-              "empty_playlist": ":information_source: Playlist is empty. Please add songs to the playlist.",
-              "no_devices": ":warning: Spotify is not open on any device.",
-              "no_device": ":warning: Spotify is not open on your selected device.",
-              "error": ":warning: An error occured."
-            },
-            "pause_fail": {
-              "no_devices": ":warning: Spotify is not open on any device.",
-              "already": ":information_source: Spotify is already paused.",
-              "error": ":warning: An error occured."
-            },
-            "context": {
-              "paused": ":double_vertical_bar: Spotify is currently paused.",
-              "on_playlist": ":information_source: Currently playing from the Spotbot playlist.",
-              "not_on_playlist": ":information_source: Not currently playing from the Spotbot playlist.",
-              "shuffle": " Shuffle is *enabled*.",
-              "repeat": " Repeat is *enabled*."
-            },
-            "skip": {
-              "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
-              "already": ":information_source: You have already voted on this.",
-              "expired": ":information_source: Skip vote has expired.",
-              "failed": ":warning: Skip Failed."
-            },
-            "shuffle": {
-              "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
-              "cannot": ":information_source: Spotify cannot toggle shuffling right now.",
-              "on": ":information_source: Shuffle was enabled by",
-              "off": ":information_source: Shuffle was disabled by"
-            },
-            "repeat": {
-              "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
-              "cannot": ":information_source: Spotify cannot toggle repeating right now.",
-              "on": ":information_source: Repeat was enabled by",
-              "off": ":information_source: Repeat was disabled by"
-            },
-            "jump": {
-              "not_playing": ":information_source: Spotify is currently not playing. Please play Spotify first.",
-              "success": ":arrow_forward: Spotify is now playing from the start of the playlist. Set by",
-              "fail": ":warning: Spotify failed to jump to the start of the playlist.",
-              "empty": ":information_source: The Spotbot playlist is empty. Please add tracks before trying to jumping back to the playlist."
-            },
-            "reset": {
-              "success": ":put_litter_in_its_place: The Spotbot playlist was reset by",
-              "empty": ":information_source: Playlist is already empty.",
-              "error": ":warning: An error occured."
-            },
-            "clear_one": {
-              "success": ":put_litter_in_its_place: Tracks older than one day were removed from the playlist by",
-              "error": ":warning: An error occured."
-            }
-          }
         }
       }
     }

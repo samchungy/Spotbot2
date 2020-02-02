@@ -1,10 +1,11 @@
-const config = require('config');
 const logger = require('../../util/util-logger');
 const {loadAdmins, loadPlaylist} = require('./settings-interface');
 const {post, reply} = require('../slack/slack-api');
 const {ephemeralReply, ephemeralPost} = require('../slack/format/slack-format-reply');
-const SETTINGS_ERROR = config.get('settings.errors.settings');
-const ADMIN_ERROR = config.get('settings.errors.not_admin');
+const MIDDLEWARE_RESPONSE = {
+  admin_error: ':information_source: You must be a Spotbot admin for this channel to use this command.',
+  settings_error: ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.',
+};
 
 /**
  * Determine if Spotbot settings are set
@@ -32,11 +33,11 @@ async function checkSettings(teamId, channelId, responseUrl, userId) {
     if (!await isSetup(teamId, channelId)) {
       if (userId) {
         post(
-            ephemeralPost(channelId, userId, SETTINGS_ERROR, null),
+            ephemeralPost(channelId, userId, MIDDLEWARE_RESPONSE.settings_error, null),
         );
       } else {
         await reply(
-            ephemeralReply(SETTINGS_ERROR, null),
+            ephemeralReply(MIDDLEWARE_RESPONSE.settings_error, null),
             responseUrl,
         );
       }
@@ -63,7 +64,7 @@ async function checkIsAdmin(teamId, channelId, userId, responseUrl) {
       return true;
     };
     await reply(
-        ephemeralReply(ADMIN_ERROR, null),
+        ephemeralReply(MIDDLEWARE_RESPONSE.admin_error, null),
         responseUrl,
     );
     return false;
