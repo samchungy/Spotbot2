@@ -6,7 +6,7 @@ const {loadPlaylist} = require('../settings/settings-interface');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const CLEAR_RESPONSE = {
-  success: ':put_litter_in_its_place: Tracks older than one day were removed from the playlist by',
+  success: (userId) => `:put_litter_in_its_place: Tracks older than one day were removed from the playlist by @<${userId}>`,
   error: ':warning: An error occured.',
 };
 
@@ -44,7 +44,7 @@ async function setClearOneDay(teamId, channelId, userId) {
       }));
     }
     await Promise.all(promises);
-    return {success: true, response: `${CLEAR_RESPONSE.success} <@${userId}>.`, status: null};
+    return {success: true, response: CLEAR_RESPONSE.success(userId), status: null};
   } catch (error) {
     logger.error(error);
     return {success: false, response: CLEAR_RESPONSE.error, status: null};
@@ -53,5 +53,6 @@ async function setClearOneDay(teamId, channelId, userId) {
 
 
 module.exports = {
+  CLEAR_RESPONSE,
   setClearOneDay,
 };
