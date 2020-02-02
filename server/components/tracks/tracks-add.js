@@ -9,7 +9,7 @@ const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-stat
 const {play} = require('../spotify-api/spotify-api-playback');
 const {fetchTrackInfo} = require('../spotify-api/spotify-api-tracks');
 const {loadBackToPlaylist, loadPlaylist, loadProfile, loadRepeat, loadBackToPlaylistState, storeBackToPlaylistState} = require('../settings/settings-interface');
-const {loadTrackSearch, storeTrackSearch} = require('../tracks/tracks-dal');
+const {loadSearch, storeSearch} = require('../tracks/tracks-dal');
 const {modelHistory} = require('../tracks/tracks-model');
 const {sleep} = require('../../util/util-timeout');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
@@ -47,7 +47,7 @@ async function addTrack(teamId, channelId, userId, trackUri) {
       return TRACKS_RESPONSES.blacklist(track.title);
     }
 
-    const [history, repeatDuration] = await Promise.all([loadTrackSearch(teamId, channelId, trackUri), loadRepeat(teamId, channelId)]);
+    const [history, repeatDuration] = await Promise.all([loadSearch(teamId, channelId, trackUri), loadRepeat(teamId, channelId)]);
     // Handle Repeats
     if (history && history.uri === trackUri) {
       if (moment(history.time).add(repeatDuration, 'hours').isAfter(moment())) {
@@ -66,7 +66,7 @@ async function addTrack(teamId, channelId, userId, trackUri) {
           // Tell Spotbot we are currently getting back to playlist, Remove any invalid tracks, Add current playing song + new track to playlist
           await Promise.all([storeBackToPlaylistState(teamId, channelId, Date.now()), removeInvalidTracks(teamId, channelId, playlist.id, country), addTracksToPlaylist(teamId, channelId, playlist.id, [status.item.uri, trackUri])]);
           // Save our history
-          await Promise.all([storeTrackSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), setBackToPlaylist(teamId, channelId, playlist, status.item.uri, country)]);
+          await Promise.all([storeSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), setBackToPlaylist(teamId, channelId, playlist, status.item.uri, country)]);
           return TRACKS_RESPONSES.success_back(track.title);
         } else {
           await sleep(2000); // Wait 2 seconds and then try again
@@ -75,7 +75,7 @@ async function addTrack(teamId, channelId, userId, trackUri) {
       }
     }
     // Save history + add to playlist
-    await Promise.all([storeTrackSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), addTracksToPlaylist(teamId, channelId, playlist.id, [trackUri])]);
+    await Promise.all([storeSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), addTracksToPlaylist(teamId, channelId, playlist.id, [trackUri])]);
     return TRACKS_RESPONSES.success(track.title);
   } catch (error) {
     logger.error(error);

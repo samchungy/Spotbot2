@@ -10,7 +10,7 @@ const {getSearch, putSearch, searchModel} = require('../../db/search');
  * @param {Object} trackSearch
  * @param {Object} expiry
  */
-async function storeTrackSearch(teamId, channelId, triggerId, trackSearch, expiry) {
+async function storeSearch(teamId, channelId, triggerId, trackSearch, expiry) {
   try {
     const search = searchModel(teamId, channelId, triggerId, trackSearch, expiry);
     return await putSearch(search);
@@ -26,7 +26,7 @@ async function storeTrackSearch(teamId, channelId, triggerId, trackSearch, expir
  * @param {string} channelId
  * @param {string} triggerId
  */
-async function loadTrackSearch(teamId, channelId, triggerId) {
+async function loadSearch(teamId, channelId, triggerId) {
   try {
     const search = searchModel(teamId, channelId, triggerId, null);
     const item = await getSearch(search);
@@ -39,6 +39,6 @@ async function loadTrackSearch(teamId, channelId, triggerId) {
 
 
 module.exports = {
-  loadTrackSearch,
-  storeTrackSearch,
+  loadSearch,
+  storeSearch,
 };

@@ -4,7 +4,7 @@ const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const REMOVE_MODAL = config.get('slack.actions.remove_modal');
 const {loadPlaylist, loadProfile} = require('../settings/settings-interface');
 const {fetchPlaylistTotal, fetchTracks, deleteTracks} = require('../spotify-api/spotify-api-playlists');
-const {loadTrackSearch} = require('../tracks/tracks-dal');
+const {loadSearch} = require('../tracks/tracks-dal');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
 const {ephemeralPost} = require('../slack/format/slack-format-reply');
 const {sendModal, postEphemeral} = require('../slack/slack-api');
@@ -34,7 +34,7 @@ async function removeTrackReview(teamId, channelId, userId, triggerId) {
         const tracksToReview = [];
         const playlistTracks = spotifyTracks.items.map((track) => new PlaylistTrack(track));
         for (let i=0; i<playlistTracks.length; i++) {
-          const history = await loadTrackSearch(teamId, channelId, playlistTracks[i].uri);
+          const history = await loadSearch(teamId, channelId, playlistTracks[i].uri);
           if (history && history.userId === userId) {
             tracksToReview.push({
               title: playlistTracks[i].title,
@@ -90,7 +90,7 @@ async function removeTracks(teamId, channelId, userId, view) {
         const tracksToReview = [];
         const playlistTracks = spotifyTracks.items.map((track) => new PlaylistTrack(track));
         for (let i=0; i<playlistTracks.length; i++) {
-          const history = await loadTrackSearch(teamId, channelId, playlistTracks[i].uri);
+          const history = await loadSearch(teamId, channelId, playlistTracks[i].uri);
           if (history && history.userId === userId) {
             tracksToReview.push({
               uri: playlistTracks[i].uri,

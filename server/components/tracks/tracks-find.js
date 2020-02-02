@@ -1,7 +1,7 @@
 const logger = require('../../util/util-logger');
 const config = require('config');
 const {fetchSearchTracks} = require('../spotify-api/spotify-api-search');
-const {loadTrackSearch, storeTrackSearch} = require('./tracks-dal');
+const {loadSearch, storeSearch} = require('./tracks-dal');
 const {loadProfile} = require('../settings/settings-interface');
 const {actionSection, buttonActionElement, contextSection, imageSection, textSection} = require('../slack/format/slack-format-blocks');
 const {postEphemeral, reply} = require('../slack/slack-api');
@@ -46,7 +46,7 @@ async function findAndStore(teamId, channelId, query, triggerId) {
       return {success: false, response: TRACKS_RESPONSES.no_tracks + `"${query}".`};
     }
     const search = new Search(searchResults.tracks.items.map((track) => new Track(track)), query);
-    await storeTrackSearch(teamId, channelId, triggerId, search, EXPIRY);
+    await storeSearch(teamId, channelId, triggerId, search, EXPIRY);
     return {success: true, response: null};
   } catch (error) {
     logger.error(error);
@@ -64,7 +64,7 @@ async function findAndStore(teamId, channelId, query, triggerId) {
  */
 async function getThreeTracks(teamId, channelId, userId, triggerId, responseUrl) {
   try {
-    const trackSearch = await loadTrackSearch(teamId, channelId, triggerId);
+    const trackSearch = await loadSearch(teamId, channelId, triggerId);
     if (!trackSearch) {
       await reply(
           updateReply(TRACKS_RESPONSES.expired, null),
@@ -99,7 +99,7 @@ async function getThreeTracks(teamId, channelId, userId, triggerId, responseUrl)
           ],
       ),
     ];
-    await storeTrackSearch(teamId, channelId, triggerId, trackSearch, EXPIRY);
+    await storeSearch(teamId, channelId, triggerId, trackSearch, EXPIRY);
 
     // This is an update request
     if (responseUrl) {

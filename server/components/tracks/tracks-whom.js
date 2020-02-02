@@ -5,7 +5,7 @@ const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-stat
 const {fetchUserProfile} = require('../spotify-api/spotify-api-profile');
 const {fetchPlaylistTotal, fetchTracks} = require('../spotify-api/spotify-api-playlists');
 const {loadProfile, loadPlaylist} = require('../settings/settings-interface');
-const {loadTrackSearch} = require('../tracks/tracks-dal');
+const {loadSearch} = require('../tracks/tracks-dal');
 const {getCurrentInfo} = require('./tracks-current');
 const {inChannelPost} = require('../slack/format/slack-format-reply');
 const {post} = require('../slack/slack-api');
@@ -37,7 +37,7 @@ async function getWhom(teamId, channelId) {
           const userProfile = await fetchUserProfile(teamId, channelId, playlistTrack.addedBy.id);
           if (playlistTrack.addedBy.id === profile.id) {
             // This track was added through Spotbot
-            const history = await loadTrackSearch(teamId, channelId, track.uri);
+            const history = await loadSearch(teamId, channelId, track.uri);
             if (!history) {
               text = WHOM_RESPONSE.now_playing_direct(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
             } else {

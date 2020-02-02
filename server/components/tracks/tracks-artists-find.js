@@ -2,7 +2,7 @@ const logger = require('../../util/util-logger');
 const config = require('config');
 const {fetchArtists} = require('../spotify-api/spotify-api-search');
 const {fetchArtistTracks} = require('../spotify-api/spotify-api-tracks');
-const {loadTrackSearch, storeTrackSearch} = require('./tracks-dal');
+const {loadSearch, storeSearch} = require('./tracks-dal');
 const {loadProfile} = require('../settings/settings-interface');
 const {actionSection, buttonActionElement, contextSection, imageSection, textSection} = require('../slack/format/slack-format-blocks');
 const {postEphemeral, reply} = require('../slack/slack-api');
@@ -54,7 +54,7 @@ async function findAndStoreArtists(teamId, channelId, query, triggerId) {
       return {success: false, response: ARTISTS_RESPONSES.no_artists(query)};
     }
     const search = new Search(searchResults.artists.items.map((artist) => new Artist(artist)), query);
-    await storeTrackSearch(teamId, channelId, triggerId, search, EXPIRY);
+    await storeSearch(teamId, channelId, triggerId, search, EXPIRY);
     return {success: true, response: null};
   } catch (error) {
     logger.error(error);
@@ -72,7 +72,7 @@ async function findAndStoreArtists(teamId, channelId, query, triggerId) {
  */
 async function getThreeArtists(teamId, channelId, userId, triggerId, responseUrl) {
   try {
-    const artistSearch = await loadTrackSearch(teamId, channelId, triggerId);
+    const artistSearch = await loadSearch(teamId, channelId, triggerId);
     if (!artistSearch) {
       await reply(
           updateReply(ARTISTS_RESPONSES.expired, null),
@@ -107,7 +107,7 @@ async function getThreeArtists(teamId, channelId, userId, triggerId, responseUrl
           ],
       ),
     ];
-    await storeTrackSearch(teamId, channelId, triggerId, artistSearch, EXPIRY);
+    await storeSearch(teamId, channelId, triggerId, artistSearch, EXPIRY);
 
     // This is an update request
     if (responseUrl) {
@@ -137,7 +137,7 @@ async function getArtistTracks(teamId, channelId, artistId, triggerId) {
     const profile = await loadProfile(teamId, channelId);
     const spotifyTracks = await fetchArtistTracks(teamId, channelId, profile.country, artistId);
     const search = new Search(spotifyTracks.tracks.map((track) => new Track(track)), artistId);
-    await storeTrackSearch(teamId, channelId, triggerId, search, EXPIRY);
+    await storeSearch(teamId, channelId, triggerId, search, EXPIRY);
     return {success: true, response: null};
   } catch (error) {
     logger.error(error);
