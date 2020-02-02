@@ -52,7 +52,7 @@ describe('Slash Command: /skip', () => {
         .send(skipSlashPayload);
     expect(response.status).toEqual(200);
     expect(fetchCurrentPlayback).toBeCalled();
-    expect(updatePanel).toBeCalledWith('TRVUTD7DM', 'CRVUTDP47', null, SKIP_RESPONSE.not_playing, {});
+    expect(updatePanel).toBeCalledWith(skipSlashPayload.team_id, skipSlashPayload.channel_id, null, SKIP_RESPONSE.not_playing, {});
   });
 });
 
@@ -85,7 +85,7 @@ describe('Slash Command: /skip', () => {
     expect(fetchCurrentPlayback).toBeCalled();
     expect(loadBlacklist).toBeCalled();
     expect(loadSkip).toBeCalled();
-    expect(postEphemeral).toBeCalledWith({'blocks': null, 'channel': 'CRVUTDP47', 'text': SKIP_RESPONSE.already, 'user': 'URVUTD7UP'});
+    expect(postEphemeral).toBeCalledWith({'blocks': null, 'channel': skipSlashPayload.channel_id, 'text': SKIP_RESPONSE.already, 'user': 'URVUTD7UP'});
   });
 });
 
@@ -126,7 +126,7 @@ describe('Slash Command: /skip', () => {
     expect(loadSkipVotesAfterHours).toBeCalled();
     expect(storeSkip).toBeCalled();
     expect(post).toBeCalled();
-    expect(storeSkip).toBeCalledWith('TRVUTD7DM', 'CRVUTDP47', {'history': [], 'timestamp': '1580560608.006100', 'track': {'album': 'Langata', 'art': 'https://i.scdn.co/image/ab67616d00001e02d23e426be310ff7f761217b7', 'artists': 'Crooked Colours', 'duration': '3:10', 'id': '1sCgWGukswGPlym4ggdoav', 'name': 'Do It Like You', 'title': 'Crooked Colours - Do It Like You', 'uri': 'spotify:track:1sCgWGukswGPlym4ggdoav', 'url': 'https://open.spotify.com/track/1sCgWGukswGPlym4ggdoav'}, 'users': ['URVUTD7UP'], 'votesNeeded': 2});
+    expect(storeSkip).toBeCalledWith(skipSlashPayload.team_id, skipSlashPayload.channel_id, {'history': [], 'timestamp': '1580560608.006100', 'track': {'album': 'Langata', 'art': 'https://i.scdn.co/image/ab67616d00001e02d23e426be310ff7f761217b7', 'artists': 'Crooked Colours', 'duration': '3:10', 'id': '1sCgWGukswGPlym4ggdoav', 'name': 'Do It Like You', 'title': 'Crooked Colours - Do It Like You', 'uri': 'spotify:track:1sCgWGukswGPlym4ggdoav', 'url': 'https://open.spotify.com/track/1sCgWGukswGPlym4ggdoav'}, 'users': ['URVUTD7UP'], 'votesNeeded': 2});
   });
 });
 
