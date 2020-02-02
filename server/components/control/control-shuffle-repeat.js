@@ -6,15 +6,15 @@ const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-stat
 const SHUFFLE_RESPONSE = {
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   cannot: ':information_source: Spotify cannot toggle shuffling right now.',
-  on: ':information_source: Shuffle was enabled by',
-  off: ':information_source: Shuffle was disabled by',
+  on: (userId) => `:information_source: Shuffle was enabled by @<${userId}>.`,
+  off: (userId) => `:information_source: Shuffle was disabled by @<${userId}>.`,
 };
 
 const REPEAT_RESPONSE = {
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   cannot: ':information_source: Spotify cannot toggle repeating right now.',
-  on: ':information_source: Repeat was enabled by',
-  off: ':information_source: Repeat was disabled by',
+  on: (userId) => `:information_source: Repeat was enabled by @<${userId}>.`,
+  off: (userId) => `:information_source: Repeat was enabled by @<${userId}>.`,
 };
 
 /**
@@ -38,12 +38,12 @@ async function setShuffle(teamId, channelId, userId) {
       // Turn off shuffle
       await shuffle(teamId, channelId, false);
       await sleep(100);
-      return {success: true, response: `${SHUFFLE_RESPONSE.off} <@${userId}>.`, status: null};
+      return {success: true, response: SHUFFLE_RESPONSE.off(userId), status: null};
     } else {
       // Turn on Shuffle
       await shuffle(teamId, channelId, true);
       await sleep(100);
-      return {success: true, response: `${SHUFFLE_RESPONSE.on} <@${userId}>.`, status: null};
+      return {success: true, response: SHUFFLE_RESPONSE.on(userId), status: null};
     }
   } catch (error) {
     logger.error(error);
@@ -72,12 +72,12 @@ async function setRepeat(teamId, channelId, userId) {
       // Turn off repeat
       await repeat(teamId, channelId, 'off');
       await sleep(100);
-      return {success: true, response: `${REPEAT_RESPONSE.off} <@${userId}>.`, status: null};
+      return {success: true, response: REPEAT_RESPONSE.off(userId), status: null};
     } else {
       // Turn on repeat
       await repeat(teamId, channelId, 'context');
       await sleep(100);
-      return {success: true, response: `${REPEAT_RESPONSE.on} <@${userId}>.`, status: null};
+      return {success: true, response: REPEAT_RESPONSE.on(userId), status: null};
     }
   } catch (error) {
     logger.error(error);
@@ -88,4 +88,6 @@ async function setRepeat(teamId, channelId, userId) {
 module.exports = {
   setRepeat,
   setShuffle,
+  SHUFFLE_RESPONSE,
+  REPEAT_RESPONSE,
 };
