@@ -155,7 +155,7 @@ async function addVote(teamId, channelId, userId, currentSkip, status) {
       // Still have votes to go
       const skipBlock = getSkipBlock(userId, currentSkip.votesNeeded, statusTrack.title, statusTrack.id, currentSkip.users);
       await updateChat(
-          messageUpdate(channelId, currentSkip.timestamp, skipRequest(currentSkip.users[0], currentSkip.track.title), skipBlock),
+          messageUpdate(channelId, currentSkip.timestamp, SKIP_RESPONSE.request(currentSkip.users[0], currentSkip.track.title), skipBlock),
       );
       await storeSkip(teamId, channelId, currentSkip);
       return;
