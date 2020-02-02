@@ -43,5 +43,6 @@ async function setPause(teamId, channelId, userId) {
 }
 
 module.exports = {
+  PAUSE_RESPONSE,
   setPause,
 };
