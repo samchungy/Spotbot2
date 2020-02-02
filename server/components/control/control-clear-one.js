@@ -2,7 +2,7 @@ const moment = require('moment-timezone');
 const config = require('config');
 const logger = require('../../util/util-logger');
 const {deleteTracks, fetchTracks, fetchPlaylistTotal} = require('../spotify-api/spotify-api-playlists');
-const {loadPlaylistSetting} = require('../settings/settings-dal');
+const {loadPlaylist} = require('../settings/settings-interface');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const CLEAR_ONE_RESPONSE = config.get('slack.responses.playback.clear_one');
@@ -16,7 +16,7 @@ const CLEAR_ONE_RESPONSE = config.get('slack.responses.playback.clear_one');
 async function setClearOneDay(teamId, channelId, userId) {
   try {
     const promises = [];
-    const playlist = await loadPlaylistSetting(teamId, channelId );
+    const playlist = await loadPlaylist(teamId, channelId );
     const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
     const aDayAgo = moment().subtract('1', 'day');
     const attempts = Math.ceil(total/LIMIT);

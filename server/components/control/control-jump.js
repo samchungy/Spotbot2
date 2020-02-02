@@ -2,7 +2,7 @@ const config = require('config');
 const logger = require('../../util/util-logger');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {fetchPlaylistTotal} = require('../spotify-api/spotify-api-playlists');
-const {loadDefaultDevice, loadPlaylistSetting} = require('../settings/settings-dal');
+const {loadDefaultDevice, loadPlaylist} = require('../settings/settings-interface');
 const {play} = require('../spotify-api/spotify-api-playback');
 const {sleep} = require('../../util/util-timeout');
 const JUMP = config.get('slack.responses.playback.jump');
@@ -20,7 +20,7 @@ async function setJumpToStart(teamId, channelId, userId) {
     if (!status.device) {
       return {success: false, response: JUMP.not_playing, status: status};
     }
-    const playlist = await loadPlaylistSetting(teamId, channelId );
+    const playlist = await loadPlaylist(teamId, channelId );
     const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
     if (!total) {
       return {success: false, response: JUMP.empty, status: status};

@@ -60,7 +60,7 @@ async function getSettingsBlocks(teamId, channelId ) {
   try {
     const settings = await loadSettings(teamId, channelId );
     return [
-      multiSelectUsers(DB.channel_admin, LABELS.channel_admin, HINTS.channel_admin, settings.channel_admin),
+      multiSelectUsers(DB.channel_admins, LABELS.channel_admins, HINTS.channel_admins, settings.channel_admins),
       selectExternal(DB.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist, PLACE.playlist),
       selectExternal(DB.default_device, LABELS.default_device, HINTS.default_device, settings.default_device ? option(settings.default_device.name, settings.default_device.id) : null, QUERY.default_device, PLACE.default_device),
       textInput(DB.disable_repeats_duration, LABELS.disable_repeats_duration, HINTS.disable_repeats_duration, settings.disable_repeats_duration, LIMITS.disable_repeats_duration, PLACE.disable_repeats_duration),

@@ -17,7 +17,7 @@ function extractSubmissions(view) {
   for (const setting in values) {
     if ({}.hasOwnProperty.call(values, setting)) {
       switch (setting) {
-        case DB.channel_admin:
+        case DB.channel_admins:
           submissions[setting] = values[setting][setting].selected_users;
           break;
         case DB.playlist:

@@ -56,7 +56,7 @@ async function getCurrentTrackPanel(teamId, channelId, status, response) {
     context = response;
   } else {
   // Check if we are playing from the playlist
-    const [backToPlaylist, playlist] = await Promise.all([loadBackToPlaylist(teamId, channelId), loadPlaylistSetting(teamId, channelId )]);
+    const [backToPlaylist, playlist] = await Promise.all([loadBackToPlaylist(teamId, channelId), loadPlaylist(teamId, channelId )]);
     if (status.context) {
       if (status.context.uri.includes(playlist.id)) {
         context = PANEL_RESPONSE.on_playlist;
@@ -77,7 +77,7 @@ async function getCurrentTrackPanel(teamId, channelId, status, response) {
   }
 
   return {altText, currentPanel};
-}
+};
 
 
 /**

@@ -1,6 +1,6 @@
 const {spotifyWebApi} = require('./spotify-api-initialise');
 const {storeTokens} = require('../settings/spotifyauth/spotifyauth-dal');
-const {storeDeviceSetting, storePlaylistSetting} = require('../settings/settings-dal');
+const {storeDefaultDevice, storePlaylist} = require('../settings/settings-interface');
 
 /**
  * Refreshes the current Access Token
@@ -16,7 +16,7 @@ async function refreshAccessToken(teamId, channelId ) {
   } catch (error) {
     logger.error(error);
     // Invalidate our current Tokens and Spotify based Settings
-    await Promise.all([storeTokens(teamId, channelId, null, null), storeDeviceSetting(teamId, channelId, null), storePlaylistSetting(teamId, channelId, null)]);
+    await Promise.all([storePlaylist(teamId, channelId, null, null), storeDefaultDevice(teamId, channelId, null), storePlaylistSetting(teamId, channelId, null)]);
     throw error;
   }
 }

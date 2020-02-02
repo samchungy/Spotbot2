@@ -8,7 +8,7 @@ const {addTracksToPlaylist, deleteTracks, fetchPlaylistTotal, fetchTracks} = req
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {play} = require('../spotify-api/spotify-api-playback');
 const {fetchTrackInfo} = require('../spotify-api/spotify-api-tracks');
-const {loadBackToPlaylist, loadPlaylistSetting, loadProfile, loadRepeat, loadStateBackToPlaylist, storeStateBackToPlaylist} = require('../settings/settings-dal');
+const {loadBackToPlaylist, loadPlaylist, loadProfile, loadRepeat, loadBackToPlaylistState, storeBackToPlaylistState} = require('../settings/settings-interface');
 const {loadTrackSearch, storeTrackSearch} = require('../tracks/tracks-dal');
 const {modelHistory} = require('../tracks/tracks-model');
 const {sleep} = require('../../util/util-timeout');
@@ -50,16 +50,16 @@ async function addTrack(teamId, channelId, userId, trackUri) {
       }
     }
 
-    const [backToPlaylist, playlist] = await Promise.all([loadBackToPlaylist(teamId, channelId), loadPlaylistSetting(teamId, channelId)]);
+    const [backToPlaylist, playlist] = await Promise.all([loadBackToPlaylist(teamId, channelId), loadPlaylist(teamId, channelId)]);
     // Add to our playlist
     if (backToPlaylist === `true`) {
       const status = await fetchCurrentPlayback(teamId, channelId);
       if (status.is_playing && status.item && (!status.context || !status.context.uri.includes(playlist.id))) {
         // If Back to Playlist was not already called within the past 3 seconds
-        const state = await loadStateBackToPlaylist(teamId, channelId);
+        const state = await loadBackToPlaylistState(teamId, channelId);
         if (!state || moment(state).add('2', 'seconds').isBefore(moment())) {
           // Tell Spotbot we are currently getting back to playlist, Remove any invalid tracks, Add current playing song + new track to playlist
-          await Promise.all([storeStateBackToPlaylist(teamId, channelId, Date.now()), removeInvalidTracks(teamId, channelId, playlist.id, country), addTracksToPlaylist(teamId, channelId, playlist.id, [status.item.uri, trackUri])]);
+          await Promise.all([storeBackToPlaylistState(teamId, channelId, Date.now()), removeInvalidTracks(teamId, channelId, playlist.id, country), addTracksToPlaylist(teamId, channelId, playlist.id, [status.item.uri, trackUri])]);
           // Save our history
           await Promise.all([storeTrackSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), setBackToPlaylist(teamId, channelId, playlist, status.item.uri, country)]);
           return successBackMessage(track.title);

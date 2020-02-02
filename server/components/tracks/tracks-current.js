@@ -2,7 +2,7 @@ const logger = require('../../util/util-logger');
 const config = require('config');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {fetchTracks, fetchPlaylistTotal} = require('../spotify-api/spotify-api-playlists');
-const {loadBackToPlaylist, loadPlaylistSetting} = require('../settings/settings-dal');
+const {loadBackToPlaylist, loadPlaylist} = require('../settings/settings-interface');
 const {contextSection, textSection} = require('../slack/format/slack-format-blocks');
 const {inChannelPost} = require('../slack/format/slack-format-reply');
 const {post} = require('../slack/slack-api');
@@ -25,7 +25,7 @@ async function getCurrentInfo(teamId, channelId) {
     const blocks = [];
     const status = await fetchCurrentPlayback(teamId, channelId);
     if (status.item && status.is_playing) {
-      const playlist = await loadPlaylistSetting(teamId, channelId);
+      const playlist = await loadPlaylist(teamId, channelId);
       const track = new Track(status.item);
       text = currentlyPlayingText(track.title);
       blocks.push(textSection(text));

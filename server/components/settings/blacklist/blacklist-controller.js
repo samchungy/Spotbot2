@@ -1,7 +1,7 @@
 const config = require('config');
 const logger = require('../../../util/util-logger');
 const {loadBlacklist, storeBlacklist} = require('./blacklist-dal');
-const {loadProfile} = require('../settings-dal');
+const {loadProfile} = require('../settings-interface');
 const {loadSkip} = require('../../control/control-dal');
 const {fetchCurrentPlayback, fetchRecent} = require('../../spotify-api/spotify-api-playback-status');
 const {fetchTracksInfo} = require('../../spotify-api/spotify-api-tracks');

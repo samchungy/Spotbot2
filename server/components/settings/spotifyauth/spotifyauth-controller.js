@@ -4,7 +4,7 @@ const {AuthError, PremiumError} = require('../../../errors/errors-auth');
 const {fetchAuthorizeURL, fetchTokens} = require('../../spotify-api/spotify-api-auth');
 const {fetchProfile} = require('../../spotify-api/spotify-api-profile');
 const {loadState, storeState, storeTokens, storeView} = require('./spotifyauth-dal');
-const {storeDeviceSetting, storePlaylistSetting, storeProfile} = require('../settings-dal');
+const {storeDefaultDevice, storePlaylist, storeProfile} = require('../settings-interface');
 const {modelProfile, modelState, modelView} = require('../settings-model');
 const {buttonSection} = require('../../slack/format/slack-format-modal');
 const {contextSection, confirmObject} = require('../../slack/format/slack-format-blocks');
@@ -24,8 +24,8 @@ async function changeAuthentication(teamId, channelId ) {
   try {
     await storeTokens(teamId, channelId, null, null);
     await Promise.all([
-      storeDeviceSetting(teamId, channelId, null),
-      storePlaylistSetting(teamId, channelId, null),
+      storeDefaultDevice(teamId, channelId, null),
+      storePlaylist(teamId, channelId, null),
     ]);
   } catch (error) {
     logger.error(error);

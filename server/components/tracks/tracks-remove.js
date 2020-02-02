@@ -2,7 +2,7 @@ const config = require('config');
 const logger = require('../../util/util-logger');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const REMOVE_MODAL = config.get('slack.actions.remove_modal');
-const {loadPlaylistSetting, loadProfile} = require('../settings/settings-dal');
+const {loadPlaylist, loadProfile} = require('../settings/settings-interface');
 const {fetchPlaylistTotal, fetchTracks, deleteTracks} = require('../spotify-api/spotify-api-playlists');
 const {loadTrackSearch} = require('../tracks/tracks-dal');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
@@ -20,7 +20,7 @@ const {option, multiSelectStatic, slackModal} = require('../slack/format/slack-f
  */
 async function removeTrackReview(teamId, channelId, userId, triggerId) {
   try {
-    const [playlist, {country}] = await Promise.all([loadPlaylistSetting(teamId, channelId), loadProfile(teamId, channelId)]);
+    const [playlist, {country}] = await Promise.all([loadPlaylist(teamId, channelId), loadProfile(teamId, channelId)]);
     const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
     const promises = [];
     const attempts = Math.ceil(total/LIMIT);
@@ -75,7 +75,7 @@ async function removeTracks(teamId, channelId, userId, view) {
     if (!submissions.length) {
       return;
     }
-    const [playlist, {country}] = await Promise.all([loadPlaylistSetting(teamId, channelId), loadProfile(teamId, channelId)]);
+    const [playlist, {country}] = await Promise.all([loadPlaylist(teamId, channelId), loadProfile(teamId, channelId)]);
     const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
     // Delete selected tracks. We use this method to preserve the order and time added of the previous tracks.
     const promises = [];

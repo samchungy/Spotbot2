@@ -1,7 +1,8 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
 const {fetchDevices} = require('../spotify-api/spotify-api-devices');
-const {loadDevices, loadDefaultDevice, storeDevices} = require('./settings-dal');
+const {loadDevices, storeDevices} = require('./settings-dal');
+const {loadDefaultDevice} = require('./settings-interface');
 const {option} = require('../slack/format/slack-format-modal');
 const {modelDevice} = require('./settings-model');
 

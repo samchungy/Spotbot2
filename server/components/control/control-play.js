@@ -1,6 +1,7 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
-const {loadDefaultDevice, loadPlaylistSetting} = require('../settings/settings-dal');
+
+const {loadDefaultDevice, loadPlaylist} = require('../settings/settings-interface');
 const {play} = require('../spotify-api/spotify-api-playback');
 const {fetchDevices} = require('../spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
@@ -35,7 +36,7 @@ async function setPlay(teamId, channelId, userId) {
     if (status.is_playing && status.item) {
       return {success: false, response: PLAY_FAIL.already, status: status};
     }
-    const playlist = await loadPlaylistSetting(teamId, channelId );
+    const playlist = await loadPlaylist(teamId, channelId );
 
     // We have an empty playlist and status is IsPlaying
     if (noSongs(status, playlist)) {

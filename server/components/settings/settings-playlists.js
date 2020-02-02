@@ -1,9 +1,9 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
-const {loadPlaylistSetting, loadPlaylists, storePlaylists} = require('./settings-dal');
+const {loadPlaylists, storePlaylists} = require('./settings-dal');
 const {modelPlaylist} = require('./settings-model');
 const {createPlaylist, fetchPlaylists} = require('../spotify-api/spotify-api-playlists');
-const {loadProfile} = require('./settings-dal');
+const {loadPlaylist, loadProfile} = require('./settings-interface');
 const {option, optionGroup} = require('../slack/format/slack-format-modal');
 
 const LIMIT = config.get('spotify_api.playlists.limit');
@@ -19,7 +19,7 @@ const NEW_PLAYLIST_REGEX = new RegExp(`^${NEW_PLAYLIST}`);
  */
 async function getAllPlaylists(teamId, channelId, query) {
   try {
-    const currentPlaylist = await loadPlaylistSetting(teamId, channelId );
+    const currentPlaylist = await loadPlaylist(teamId, channelId );
     const playlists = await allPlaylists(teamId, channelId, currentPlaylist);
     await storePlaylists(teamId, channelId, playlists);
 

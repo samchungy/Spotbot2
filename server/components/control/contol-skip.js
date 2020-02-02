@@ -5,7 +5,7 @@ const {skip} = require('../spotify-api/spotify-api-playback');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
 const {loadSkip, storeSkip} = require('./control-dal');
-const {loadProfile, loadSkipVotes, loadSkipVotesAfterHours, loadTimezone} = require('../settings/settings-dal');
+const {loadProfile, loadSkipVotes, loadSkipVotesAfterHours, loadTimezone} = require('../settings/settings-interface');
 const {modelSkip} = require('./control-skip-model');
 const {actionSection, buttonActionElement, contextSection, textSection} = require('../slack/format/slack-format-blocks');
 const {deleteChat, postEphemeral, post, reply, updateChat} = require('../slack/slack-api');
@@ -37,7 +37,7 @@ async function startSkipVote(teamId, channelId, userId) {
   try {
     // Get current playback status
     let skipVotes;
-    const {country} = loadProfile(teamId, channelId);
+    const {country} = await loadProfile(teamId, channelId);
     const status = await fetchCurrentPlayback(teamId, channelId, country);
 
     // Spotify is not playing anything so we cannot skip
@@ -49,7 +49,7 @@ async function startSkipVote(teamId, channelId, userId) {
 
     const blacklist = await loadBlacklist(teamId, channelId);
     if (blacklist.find((track) => statusTrack.uri === track.uri)) {
-      await setSkip(teamId, channelId );
+      await skip(teamId, channelId );
       await post(
           inChannelPost(channelId, SKIP_RESPONSE.blacklist(statusTrack.title, [userId])),
       );
@@ -83,7 +83,7 @@ async function startSkipVote(teamId, channelId, userId) {
       } else {
         await storeSkip(teamId, channelId, modelSkip(null, null, null, null, [statusTrack]));
       }
-      await setSkip(teamId, channelId );
+      await skip(teamId, channelId);
       await post(
           inChannelPost(channelId, SKIP_RESPONSE.confirmation(statusTrack.title, [userId])),
       );
@@ -96,7 +96,7 @@ async function startSkipVote(teamId, channelId, userId) {
         inChannelPost(channelId, SKIP_RESPONSE.request(userId, statusTrack.title), skipBlock),
     );
     // Store skip with the message timestamp so that we can update the message later
-    const model = modelSkip(slackPost.message.ts, statusTrack, [userId], skipVotes, currentSkip.history);
+    const model = modelSkip(slackPost.message.ts, statusTrack, [userId], skipVotes, currentSkip ? currentSkip.history : []);
     await storeSkip(teamId, channelId, model);
     return {success: true, response: null, status: null};
   } catch (error) {

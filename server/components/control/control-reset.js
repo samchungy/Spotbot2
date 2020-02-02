@@ -3,7 +3,7 @@ const moment = require('moment-timezone');
 const logger = require('../../util/util-logger');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
 const {deleteTracks, fetchTracks, fetchPlaylistTotal, replaceTracks} = require('../spotify-api/spotify-api-playlists');
-const {loadPlaylistSetting} = require('../settings/settings-dal');
+const {loadPlaylist} = require('../settings/settings-interface');
 const {sendModal} = require('../slack/slack-api');
 const {option, optionGroup, multiSelectStaticGroups, slackModal, selectStatic, yesOrNo} = require('../slack/format/slack-format-modal');
 const {textSection} = require('../slack/format/slack-format-blocks');
@@ -105,7 +105,7 @@ async function setReset(teamId, channelId, playlistId, trackUris, userId, jump) 
 async function startReset(teamId, channelId, timestamp, userId, triggerId) {
   try {
     // Get Tracks Total
-    const playlist = await loadPlaylistSetting(teamId, channelId);
+    const playlist = await loadPlaylist(teamId, channelId);
     const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
 
     if (!total) {

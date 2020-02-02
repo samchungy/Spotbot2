@@ -4,7 +4,7 @@ const moment = require('moment-timezone');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {fetchUserProfile} = require('../spotify-api/spotify-api-profile');
 const {fetchPlaylistTotal, fetchTracks} = require('../spotify-api/spotify-api-playlists');
-const {loadProfile, loadPlaylistSetting} = require('../settings/settings-dal');
+const {loadProfile, loadPlaylist} = require('../settings/settings-interface');
 const {loadTrackSearch} = require('../tracks/tracks-dal');
 const {getCurrentInfo} = require('./tracks-current');
 const {inChannelPost} = require('../slack/format/slack-format-reply');
@@ -28,7 +28,7 @@ async function getWhom(teamId, channelId) {
     const status = await fetchCurrentPlayback(teamId, channelId, profile.country);
     if (status.item && status.is_playing) {
       const track = new Track(status.item);
-      const playlist = await loadPlaylistSetting(teamId, channelId);
+      const playlist = await loadPlaylist(teamId, channelId);
       if (status.context && status.context.uri.includes(playlist.id)) {
         const playlistTrack = await getTrack(teamId, channelId, playlist.id, profile.country, track.uri);
         if (playlistTrack) {

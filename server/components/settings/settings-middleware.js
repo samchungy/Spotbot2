@@ -1,6 +1,6 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
-const {loadAdmins, loadPlaylistSetting} = require('./settings-dal');
+const {loadAdmins, loadPlaylist} = require('./settings-interface');
 const {post, reply} = require('../slack/slack-api');
 const {ephemeralReply, ephemeralPost} = require('../slack/format/slack-format-reply');
 const SETTINGS_ERROR = config.get('settings.errors.settings');
@@ -13,7 +13,7 @@ const ADMIN_ERROR = config.get('settings.errors.not_admin');
  */
 async function isSetup(teamId, channelId) {
   try {
-    return await loadPlaylistSetting(teamId, channelId) ? true : false;
+    return await loadPlaylist(teamId, channelId) ? true : false;
   } catch (error) {
     logger.error(error);
     return false;
