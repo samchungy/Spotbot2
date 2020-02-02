@@ -2,6 +2,12 @@ const config = require('config');
 const logger = require('../../util/util-logger');
 const {loadBackToPlaylist, loadPlaylist} = require('../settings/settings-interface');
 const {actionSection, buttonActionElement, confirmObject, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('../slack/format/slack-format-blocks');
+const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
+const {inChannelPost, messageUpdate} = require('../slack/format/slack-format-reply');
+const {post, updateChat} = require('../slack/slack-api');
+
+const Track = require('../../util/util-spotify-track');
+
 const CONTROLLER = config.get('slack.actions.controller');
 const CONTROLLER_OVERFLOW = config.get('slack.actions.controller_overflow');
 const CONTROLS = config.get('slack.actions.controls');
@@ -115,9 +121,45 @@ function getShuffleRepeatPanel(status) {
   return null;
 }
 
+/**
+ * Update the control panel
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {string} timestamp
+ * @param {string} response
+ * @param {Object} status
+ */
+async function updatePanel(teamId, channelId, timestamp, response, status) {
+  try {
+    if (!status) {
+      status = await fetchCurrentPlayback(teamId, channelId );
+    }
+    const {altText, currentPanel} = await getCurrentTrackPanel(teamId, channelId, status, response);
+
+    const controlPanel = [
+      ...currentPanel,
+      ...getShuffleRepeatPanel(status) ? [getShuffleRepeatPanel(status)] : [],
+      getControlsPanel(),
+    ];
+    if (timestamp) {
+      await updateChat(
+          messageUpdate(channelId, timestamp, altText, controlPanel),
+      );
+    } else {
+      await post(
+          inChannelPost(channelId, altText, controlPanel),
+      );
+    }
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
+
 
 module.exports = {
   getCurrentTrackPanel,
   getControlsPanel,
   getShuffleRepeatPanel,
+  updatePanel,
 };
