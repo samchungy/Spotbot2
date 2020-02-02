@@ -37,14 +37,13 @@ async function setClearOneDay(teamId, channelId, userId) {
                 });
               }
             });
-        resolve(tracksToDelete);
+        if (tracksToDelete.length) {
+          await deleteTracks(teamId, channelId, playlist.id, tracksToDelete);
+        }
+        resolve();
       }));
     }
-    const allTracksPromises = await Promise.all(promises);
-    const allTracks = allTracksPromises.flat();
-    if (allTracks.length > 0) {
-      await deleteTracks(teamId, channelId, playlist.id, allTracks);
-    }
+    await Promise.all(promises);
     return {success: true, response: `${CLEAR_RESPONSE.success} <@${userId}>.`, status: null};
   } catch (error) {
     logger.error(error);
