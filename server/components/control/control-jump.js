@@ -29,15 +29,14 @@ async function setJumpToStart(teamId, channelId, userId) {
       return {success: false, response: JUMP_RESPONSE.empty, status: status};
     }
 
-
-    const device = await loadDefaultDevice(teamId, channelId);
-    await play(teamId, channelId, device.id, playlist.uri);
+    await play(teamId, channelId, status.device.id, playlist.uri);
     await sleep(100);
 
     const newStatus = await fetchCurrentPlayback(teamId, channelId );
-    if (newStatus.device && newStatus.context && newStatus.context.uri.includes(playlist.uri)) {
+    if (newStatus.device && newStatus.context && newStatus.context.uri.includes(playlist.id)) {
       return {success: true, response: JUMP_RESPONSE.success(userId), status: newStatus};
     }
+    return {success: false, response: JUMP_RESPONSE.fail, status: newStatus};
   } catch (error) {
     logger.error(error);
     return {success: false, response: JUMP_RESPONSE.fail, status: null};
@@ -45,5 +44,6 @@ async function setJumpToStart(teamId, channelId, userId) {
 }
 
 module.exports = {
+  JUMP_RESPONSE,
   setJumpToStart,
 };
