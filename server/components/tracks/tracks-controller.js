@@ -1,6 +1,4 @@
 const logger = require('../../util/util-logger');
-const config = require('config');
-const TRACKS = config.get('slack.responses.tracks');
 const {findAndStore, getThreeTracks} = require('./tracks-find');
 const {findAndStoreArtists, getArtistTracks, getThreeArtists} = require('./tracks-artists-find');
 const {getCurrentInfo} = require('./tracks-current');
@@ -9,6 +7,7 @@ const {addTrack} = require('./tracks-add');
 const {post, postEphemeral, reply} = require('../slack/slack-api');
 const {inChannelPost, deleteReply, ephemeralPost, updateReply} = require('../slack/format/slack-format-reply');
 const {removeTrackReview, removeTracks} = require('./tracks-remove');
+const CANCELLED = `:information_source: Search cancelled.`;
 
 /**
  * Find an artist
@@ -63,7 +62,7 @@ async function find(teamId, channelId, userId, query, triggerId) {
 async function cancelSearch(responseUrl) {
   try {
     await reply(
-        updateReply(TRACKS.cancelled, null),
+        updateReply(CANCELLED, null),
         responseUrl,
     );
   } catch (error) {

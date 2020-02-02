@@ -1,13 +1,17 @@
-const config = require('config');
 const logger = require('../../util/util-logger');
 const {fetchDevices} = require('../spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {sleep} = require('../../util/util-timeout');
 const {pause} = require('../spotify-api/spotify-api-playback');
 
-const PAUSE_FAIL_RESPONSES = config.get('slack.responses.playback.pause_fail');
-const PAUSE_RESPONSES = config.get('slack.responses.playback.pause');
-
+const PAUSE_FAIL_RESPONSE = {
+  no_devices: ':warning: Spotify is not open on any device.',
+  already: ':information_source: Spotify is already paused.',
+  error: ':warning: An error occured.',
+};
+const PAUSE_RESPONSE = {
+  success: ':double_vertical_bar: Spotify was paused by',
+};
 
 /**
  * Pauses playback on Spotify
@@ -20,11 +24,11 @@ async function setPause(teamId, channelId, userId) {
     const [status, spotifyDevices] = await Promise.all([fetchCurrentPlayback(teamId, channelId ), fetchDevices(teamId, channelId )]);
 
     if (!spotifyDevices.devices.length) {
-      return {success: false, response: PAUSE_FAIL_RESPONSES.no_devices, status: status};
+      return {success: false, response: PAUSE_FAIL_RESPONSE.no_devices, status: status};
     }
     // Check if Spotify is already paused
     if (!status.is_playing) {
-      return {success: false, response: PAUSE_FAIL_RESPONSES.already, status: status};
+      return {success: false, response: PAUSE_FAIL_RESPONSE.already, status: status};
     }
 
     // Try Pause
@@ -32,12 +36,12 @@ async function setPause(teamId, channelId, userId) {
     await sleep(100);
     const newStatus = await fetchCurrentPlayback(teamId, channelId );
     if (!newStatus.is_playing) {
-      return {success: true, response: `${PAUSE_RESPONSES.success} <@${userId}>.`, status: newStatus};
+      return {success: true, response: `${PAUSE_RESPONSE.success} <@${userId}>.`, status: newStatus};
     }
   } catch (error) {
     logger.error(error);
   }
-  return {success: false, response: PAUSE_FAIL_RESPONSES.error, status: null};
+  return {success: false, response: PAUSE_FAIL_RESPONSE.error, status: null};
 }
 
 module.exports = {

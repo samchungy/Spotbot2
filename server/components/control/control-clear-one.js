@@ -5,7 +5,10 @@ const {deleteTracks, fetchTracks, fetchPlaylistTotal} = require('../spotify-api/
 const {loadPlaylist} = require('../settings/settings-interface');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
-const CLEAR_ONE_RESPONSE = config.get('slack.responses.playback.clear_one');
+const CLEAR_RESPONSE = {
+  success: ':put_litter_in_its_place: Tracks older than one day were removed from the playlist by',
+  error: ':warning: An error occured.',
+};
 
 /**
  * Clear tracks older than one day from playlist
@@ -42,10 +45,10 @@ async function setClearOneDay(teamId, channelId, userId) {
     if (allTracks.length > 0) {
       await deleteTracks(teamId, channelId, playlist.id, allTracks);
     }
-    return {success: true, response: `${CLEAR_ONE_RESPONSE.success} <@${userId}>.`, status: null};
+    return {success: true, response: `${CLEAR_RESPONSE.success} <@${userId}>.`, status: null};
   } catch (error) {
     logger.error(error);
-    return {success: false, response: CLEAR_ONE_RESPONSE.error, status: null};
+    return {success: false, response: CLEAR_RESPONSE.error, status: null};
   }
 }
 

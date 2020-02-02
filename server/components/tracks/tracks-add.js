@@ -15,13 +15,18 @@ const {sleep} = require('../../util/util-timeout');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
 const Track = require('../../util/util-spotify-track');
 const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
-const TRACKS = config.get('slack.responses.tracks');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const EXPIRY = Math.floor(Date.now() / 1000) + (30 * 24 * 60); // Current Time in Epoch + a month in seconds
-const repeatMessage = (title, timeAgo, repeatDuration) => `:no_entry_sign: ${title} was already added ${timeAgo}. Repeats are disabled for ${repeatDuration} hours in this channel's settings.`;
-const successMessage = (title) => `:tada: ${title} was added to the playlist.`;
-const successBackMessage = (title) => `:tada: ${title} was added to the playlist. Spotify will return back to the playlist after this song.`;
-const blacklistMessage = (title) => `:no_entry_sign: ${title} is blacklisted and cannot be added.`;
+
+const TRACKS_RESPONSES = {
+  blacklist: (title) => `:no_entry_sign: ${title} is blacklisted and cannot be added.`,
+  error: ':warning: An error occured.',
+  expired: ':information_source: Search has expired.',
+  query_error: ':warning: Invalid query, please try again.',
+  repeat: (title, timeAgo, repeatDuration) => `:no_entry_sign: ${title} was already added ${timeAgo}. Repeats are disabled for ${repeatDuration} hours in this channel's settings.`,
+  success: (title) => `:tada: ${title} was added to the playlist.`,
+  success_back: (title) => `:tada: ${title} was added to the playlist. Spotify will return back to the playlist after this song.`,
+};
 
 /**
  * Add a track to the Spotbot playlist
@@ -39,14 +44,14 @@ async function addTrack(teamId, channelId, userId, trackUri) {
     // Handle Blacklist
     const blacklist = await loadBlacklist(teamId, channelId);
     if (blacklist.find((track) => trackUri === track.uri)) {
-      return blacklistMessage(track.title);
+      return TRACKS_RESPONSES.blacklist(track.title);
     }
 
     const [history, repeatDuration] = await Promise.all([loadTrackSearch(teamId, channelId, trackUri), loadRepeat(teamId, channelId)]);
     // Handle Repeats
     if (history && history.uri === trackUri) {
       if (moment(history.time).add(repeatDuration, 'hours').isAfter(moment())) {
-        return repeatMessage(track.title, moment(history.time).fromNow(), repeatDuration);
+        return TRACKS_RESPONSES.repeat(track.title, moment(history.time).fromNow(), repeatDuration);
       }
     }
 
@@ -62,7 +67,7 @@ async function addTrack(teamId, channelId, userId, trackUri) {
           await Promise.all([storeBackToPlaylistState(teamId, channelId, Date.now()), removeInvalidTracks(teamId, channelId, playlist.id, country), addTracksToPlaylist(teamId, channelId, playlist.id, [status.item.uri, trackUri])]);
           // Save our history
           await Promise.all([storeTrackSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), setBackToPlaylist(teamId, channelId, playlist, status.item.uri, country)]);
-          return successBackMessage(track.title);
+          return TRACKS_RESPONSES.success_back(track.title);
         } else {
           await sleep(2000); // Wait 2 seconds and then try again
           return await addTrack(teamId, channelId, userId, trackUri);
@@ -71,10 +76,10 @@ async function addTrack(teamId, channelId, userId, trackUri) {
     }
     // Save history + add to playlist
     await Promise.all([storeTrackSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), addTracksToPlaylist(teamId, channelId, playlist.id, [trackUri])]);
-    return successMessage(track.title);
+    return TRACKS_RESPONSES.success(track.title);
   } catch (error) {
     logger.error(error);
-    return TRACKS.error;
+    return TRACKS_RESPONSES.query_error;
   }
 }
 
@@ -154,4 +159,5 @@ async function setBackToPlaylist(teamId, channelId, playlist, currentPlaying, co
 
 module.exports = {
   addTrack,
+  TRACKS_RESPONSES,
 };

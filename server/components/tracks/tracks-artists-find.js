@@ -8,20 +8,29 @@ const {actionSection, buttonActionElement, contextSection, imageSection, textSec
 const {postEphemeral, reply} = require('../slack/slack-api');
 const {ephemeralPost, updateReply} = require('../slack/format/slack-format-reply');
 const {isInvalidQuery} = require('./tracks-find');
+
 const Artist = require('../../util/util-spotify-artist');
 const Track = require('../../util/util-spotify-track');
 const Search = require('../../util/util-spotify-search');
+
 const EXPIRY = Math.floor(Date.now() / 1000) + 86400; // Current Time in Epoch + 84600 (A day)
-const TRACKS = config.get('slack.responses.tracks');
 const LIMIT = config.get('spotify_api.tracks.limit'); // 24 Search results = 8 pages.
-const ARTISTS = config.get('slack.responses.artists');
+const TRACKS_RESPONSES = require('../tracks/tracks-add');
 const ARTIST_ACTIONS = config.get('slack.actions.artists');
 const TRACK_ACTIONS = config.get('slack.actions.tracks');
 
 const DISPLAY_LIMIT = config.get('slack.limits.max_options');
 const BUTTON = config.get('slack.buttons');
 
-const artistPanel = (title, url, genres, followers) => `<${url}|*${title}*>\n\n:notes: *Genres:* ${genres}\n\n:busts_in_silhouette: *Followers*: ${followers}\n`;
+const ARTISTS_RESPONSES = {
+  artist_panel: (title, url, genres, followers) => `<${url}|*${title}*>\n\n:notes: *Genres:* ${genres}\n\n:busts_in_silhouette: *Followers*: ${followers}\n`,
+  error: ':warning: An error occured.',
+  expired: ':information_source: Search has expired.',
+  found: ':mag: Are these the artists you were looking for?',
+  no_artists: (query) => `:information_source: No tracks found for the query "${query}"`,
+  query_error: ':warning: Invalid query, please try again.',
+  query_empty: ':information_source: No query entered. Please enter a query.',
+};
 
 /**
  * Find tracks from Spotify and store them in our database.
@@ -33,23 +42,23 @@ const artistPanel = (title, url, genres, followers) => `<${url}|*${title}*>\n\n:
 async function findAndStoreArtists(teamId, channelId, query, triggerId) {
   try {
     if (query === '') {
-      return {success: false, response: TRACKS.query.empty};
+      return {success: false, response: ARTISTS_RESPONSES.query_error};
     }
     if (isInvalidQuery(query)) {
-      return {success: false, response: TRACKS.query.error};
+      return {success: false, response: ARTISTS_RESPONSES.query_error};
     }
     const profile = await loadProfile(teamId, channelId);
     const searchResults = await fetchArtists(teamId, channelId, query, profile.country, LIMIT);
     const numArtists = searchResults.artists.items.length;
     if (!numArtists) {
-      return {success: false, response: TRACKS.no_tracks + `"${query}".`};
+      return {success: false, response: ARTISTS_RESPONSES.no_artists(query)};
     }
     const search = new Search(searchResults.artists.items.map((artist) => new Artist(artist)), query);
     await storeTrackSearch(teamId, channelId, triggerId, search, EXPIRY);
     return {success: true, response: null};
   } catch (error) {
     logger.error(error);
-    return {success: false, response: TRACKS.error};
+    return {success: false, response: ARTISTS_RESPONSES.error};
   }
 };
 
@@ -66,7 +75,7 @@ async function getThreeArtists(teamId, channelId, userId, triggerId, responseUrl
     const artistSearch = await loadTrackSearch(teamId, channelId, triggerId);
     if (!artistSearch) {
       await reply(
-          updateReply(TRACKS.expired, null),
+          updateReply(ARTISTS_RESPONSES.expired, null),
           responseUrl,
       );
     }
@@ -75,7 +84,7 @@ async function getThreeArtists(teamId, channelId, userId, triggerId, responseUrl
     const artistBlocks = currentArtists.map((artist) => {
       return [
         imageSection(
-            artistPanel(artist.name, artist.url, artist.genres, artist.followers),
+            ARTIST_RESPONSES.artist_panel(artist.name, artist.url, artist.genres, artist.followers),
             artist.art,
             `Artist Art`,
         ),
@@ -87,7 +96,7 @@ async function getThreeArtists(teamId, channelId, userId, triggerId, responseUrl
     }).flat();
 
     const blocks = [
-      textSection(ARTISTS.found),
+      textSection(ARTISTS_RESPONSES.found),
       ...artistBlocks,
       contextSection(null, `Page ${artistSearch.currentSearch}/${artistSearch.numSearches}`),
       actionSection(
@@ -103,12 +112,12 @@ async function getThreeArtists(teamId, channelId, userId, triggerId, responseUrl
     // This is an update request
     if (responseUrl) {
       await reply(
-          updateReply(TRACKS.found, blocks),
+          updateReply(TRACKS_RESPONSES.found, blocks),
           responseUrl,
       );
     } else {
       await postEphemeral(
-          ephemeralPost(channelId, userId, TRACKS.found, blocks),
+          ephemeralPost(channelId, userId, TRACKS_RESPONSES.found, blocks),
       );
     }
   } catch (error) {
@@ -132,7 +141,7 @@ async function getArtistTracks(teamId, channelId, artistId, triggerId) {
     return {success: true, response: null};
   } catch (error) {
     logger.error(error);
-    return {success: false, response: TRACKS.error};
+    return {success: false, response: ARTISTS_RESPONSES.error};
   }
 };
 

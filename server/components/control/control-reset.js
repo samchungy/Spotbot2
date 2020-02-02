@@ -15,10 +15,15 @@ const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const REVIEW = config.get('slack.actions.reset_review');
 const REVIEW_JUMP = config.get('slack.actions.reset_review_jump');
 const AFRICA = config.get('spotify_api.africa');
-const RESET = config.get('slack.responses.playback.reset');
 
-
-const reviewTitle = (numTracks) => `Hold up! *${numTracks}* ${numTracks > 1 ? `tracks were` : `track was`} added in the past 30 minutes. Are you sure you want to remove ${numTracks > 1 ? `them` : `it`}?`;
+const RESET_RESPONSE = {
+  empty: ':information_source: Playlist is already empty.',
+  error: ':warning: An error occured.',
+  kept: (trackUris) => ` ${trackUris.length} ${trackUris.length > 1 ? `tracks` : `track`} from the past 30 minutes ${trackUris.length > 1 ? `were` : `was`} kept.`,
+  review_title: (numTracks) => `Hold up! *${numTracks}* ${numTracks > 1 ? `tracks were` : `track was`} added in the past 30 minutes. Are you sure you want to remove ${numTracks > 1 ? `them` : `it`}?`,
+  success: (userId) => `:put_litter_in_its_place: The Spotbot playlist was reset by <@${userId}>`,
+  failed: ` Spotbot failed to return to the start of the playlist.`,
+};
 
 /**
  * Review reset modal
@@ -41,7 +46,7 @@ async function resetReview(teamId, channelId, isClose, view, playlistId, userId)
     }
   } catch (error) {
     logger.error(error);
-    return {success: false, response: RESET.error, status: null};
+    return {success: false, response: RESET_RESPONSE.error, status: null};
   }
 }
 
@@ -56,10 +61,10 @@ async function resetReview(teamId, channelId, isClose, view, playlistId, userId)
  */
 async function setReset(teamId, channelId, playlistId, trackUris, userId, jump) {
   try {
-    let res = `${RESET.success} <@${userId}>.`;
+    let res = RESET_RESPONSE.success(userId);
     await reduceTracks(teamId, channelId, playlistId);
     if (trackUris) {
-      res = res + ` ${trackUris.length} ${trackUris.length > 1 ? `tracks` : `track`} from the past 30 minutes ${trackUris.length > 1 ? `were` : `was`} kept.`;
+      res = res + RESET_RESPONSE.kept(trackUris);
       const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, null, 0);
       const allTracks = [];
       spotifyTracks.items
@@ -81,9 +86,9 @@ async function setReset(teamId, channelId, playlistId, trackUris, userId, jump) 
     if (jump) {
       const {success, status} = await setJumpToStart(teamId, channelId, userId);
       if (!success) {
-        res = res + ` Spotbot failed to return to the start of the playlist.`;
+        res = res + ``;
       } else {
-        res = res + ` Spotbot is now playing from the start of the playlist.`;
+        res = res + RESET_RESPONSE.failed;
       }
       return {success: true, response: res, status: status};
     }
@@ -109,7 +114,7 @@ async function startReset(teamId, channelId, timestamp, userId, triggerId) {
     const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
 
     if (!total) {
-      return {success: false, response: RESET.empty, status: null};
+      return {success: false, response: RESET_RESPONSE.empty, status: null};
     }
     const reviewTracks = await getReviewTracks(teamId, channelId, playlist, total);
     if (reviewTracks.length) {
@@ -170,7 +175,7 @@ async function getReviewBlocks(playlistTracks) {
     });
 
     const blocks = [
-      textSection(reviewTitle(playlistTracks.length)),
+      textSection(RESET_RESPONSE.review_title(playlistTracks.length)),
       multiSelectStaticGroups(REVIEW, `Select songs to keep on the playlist`, `Tracks added in the past 10 minutes have been pre-selected. Closing this window will keep none.`, initialOptions.length ? initialOptions : null, groups, true),
       selectStatic(REVIEW_JUMP, `Jump to the start of the playlist?`, `This will only work if a track is selected above.`, option(`Yes`, 'true'), yesOrNo()),
     ];

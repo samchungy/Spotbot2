@@ -12,9 +12,11 @@ const {post} = require('../slack/slack-api');
 const Track = require('../../util/util-spotify-track');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
-const nowPlayingDirect = (title, user, time) => `:microphone: ${title} was added directly to the playlist in Spotify ${time} by ${user}.`;
-const nowPlaying = (title, user, time) => `:microphone: ${title} was added was last added ${time} by ${user}.`;
-
+const WHOM_RESPONSE = {
+  now_playing_direct: (title, user, time) => `:microphone: ${title} was added directly to the playlist in Spotify ${time} by ${user}.`,
+  now_playing: (title, user, time) => `:microphone: ${title} was added was last added ${time} by ${user}.`,
+  response: (track) => `:microphone: ${track.title} is playing because Spotbot is returning to the playlist. The next song will be back on the playlist.`,
+};
 
 /**
  * Get Whomever requested a song
@@ -37,15 +39,15 @@ async function getWhom(teamId, channelId) {
             // This track was added through Spotbot
             const history = await loadTrackSearch(teamId, channelId, track.uri);
             if (!history) {
-              text = nowPlayingDirect(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
+              text = WHOM_RESPONSE.now_playing_direct(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
             } else {
-              text = nowPlaying(track.title, `<@${history.userId}>`, moment(history.time).fromNow());
+              text = WHOM_RESPONSE.now_playing(track.title, `<@${history.userId}>`, moment(history.time).fromNow());
             }
           } else {
-            text = nowPlayingDirect(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
+            text = WHOM_RESPONSE.now_playing_direct(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
           }
         } else {
-          text = `:microphone: ${track.title} is playing because Spotbot is returning to the playlist. The next song will be back on the playlist.`;
+          text = WHOM_RESPONSE.response(track);
         }
       } else {
         return await getCurrentInfo(teamId, channelId);

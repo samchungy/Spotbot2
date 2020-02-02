@@ -10,6 +10,10 @@ const {ephemeralPost} = require('../slack/format/slack-format-reply');
 const {sendModal, postEphemeral} = require('../slack/slack-api');
 const {option, multiSelectStatic, slackModal} = require('../slack/format/slack-format-modal');
 
+const REMOVE_RESPONSES = {
+  no_songs: `You have not added any songs to the playlist.`,
+  removed: `:put_litter_in_its_place: The requested tracks were removed from the playlist.`,
+};
 
 /**
  * Remove User Tracks from the Playlist
@@ -54,7 +58,7 @@ async function removeTrackReview(teamId, channelId, userId, triggerId) {
       await sendModal(triggerId, view);
     } else {
       postEphemeral(
-          ephemeralPost(channelId, userId, `You have not added any songs to the playlist.`, null),
+          ephemeralPost(channelId, userId, REMOVE_RESPONSES.no_songs, null),
       );
     }
   } catch (error) {
@@ -103,7 +107,7 @@ async function removeTracks(teamId, channelId, userId, view) {
     if (tracksToDelete.length) {
       await deleteTracks(teamId, channelId, playlist.id, tracksToDelete);
       await postEphemeral(
-          ephemeralPost(channelId, userId, `:put_litter_in_its_place: The requested tracks were removed from the playlist.`, null),
+          ephemeralPost(channelId, userId, REMOVE_RESPONSES.removed, null),
       );
     };
     return;
