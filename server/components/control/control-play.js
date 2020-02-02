@@ -9,15 +9,13 @@ const {PlaybackError} = require('../../errors/errors-playback');
 const {sleep} = require('../../util/util-timeout');
 
 const NO_DEVICES = config.get('dynamodb.settings_helper.no_devices');
-const PLAY_FAIL_RESPONSE = {
+const PLAY_RESPONSE = {
   already: ':information_source: Spotify is already playing. Check if speaker is muted.',
   empty: ':information_source: Playlist is empty. Please add songs to the playlist.',
   no_device: ':warning: Spotify is not open on your selected device.',
   no_devices: ':warning: Spotify is not open on any device.',
   error: ':warning: An error occured.',
   empty_playlist: ':information_source: Playlist is empty. Please add songs to the playlist.',
-};
-const PLAY_RESPONSE = {
   success: (user) => `:arrow_forward: Spotify is now playing. Started by <@${user}>.`,
 };
 const noSongs = (status, playlist) => status.is_playing && !status.item && status.context && status.context.uri.includes(playlist.id);
@@ -34,13 +32,13 @@ async function setPlay(teamId, channelId, userId) {
 
     // Spotify is already running
     if (status.is_playing && status.item) {
-      return {success: false, response: PLAY_FAIL_RESPONSE.already, status: status};
+      return {success: false, response: PLAY_RESPONSE.already, status: status};
     }
     const playlist = await loadPlaylist(teamId, channelId );
 
     // We have an empty playlist and status is IsPlaying
     if (noSongs(status, playlist)) {
-      return {success: false, response: PLAY_FAIL_RESPONSE.empty, status: status};
+      return {success: false, response: PLAY_RESPONSE.empty, status: status};
     }
 
     // If we are playing from a spotify device already, just keep using it
@@ -49,22 +47,21 @@ async function setPlay(teamId, channelId, userId) {
     }
 
     // Load our default Device and fetch all available Spotify devices
-
     const [device, spotifyDevices] = await Promise.all([loadDefaultDevice(teamId, channelId), fetchDevices(teamId, channelId )]);
 
     if (device.id != NO_DEVICES) {
       // Default device selected
       if (spotifyDevices.devices.length == 0 || !spotifyDevices.devices.find(({id}) => id === device.id)) {
         // If selected devices is not turned on
-        return {success: false, response: PLAY_FAIL_RESPONSE.no_device, status: status};
+        return {success: false, response: PLAY_RESPONSE.no_device, status: status};
       }
       // Use our selected devices.
-      return await attemptPlay(teamId, channelId, device.id, status, playlist, 0), userId;
+      return await attemptPlay(teamId, channelId, device.id, status, playlist, 0, userId);
     } else {
       // No default device selected -- Choose any available
       if (spotifyDevices.devices.length == 0) {
         // No devices available to use
-        return {success: false, response: PLAY_FAIL_RESPONSE.no_devices, status: status};
+        return {success: false, response: PLAY_RESPONSE.no_devices, status: status};
       } else {
         // Use the first available device
         return await attemptPlay(teamId, channelId, spotifyDevices.devices[0].id, status, playlist, 0, userId);
@@ -73,7 +70,7 @@ async function setPlay(teamId, channelId, userId) {
   } catch (error) {
     logger.error(error);
   }
-  return {success: false, response: PLAY_FAIL_RESPONSE.error, status: null};
+  return {success: false, response: PLAY_RESPONSE.error, status: null};
 };
 
 /**
@@ -94,7 +91,7 @@ async function attemptPlay(teamId, channelId, deviceId, status, playlist, attemp
     }
     // We have an empty playlist and status is IsPlaying
     if (noSongs(status, playlist)) {
-      return {success: false, response: PLAY_FAIL_RESPONSE.empty_playlist, status: status};
+      return {success: false, response: PLAY_RESPONSE.empty_playlist, status: status};
     }
     if (attempt == 2) {
       throw new PlaybackError();
@@ -115,4 +112,5 @@ async function attemptPlay(teamId, channelId, deviceId, status, playlist, attemp
 
 module.exports = {
   setPlay,
+  PLAY_RESPONSE,
 };
