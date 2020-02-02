@@ -12,4 +12,9 @@ const mockFetchDevices = {
   ],
 };
 
-module.exports = {mockFetchDevices};
+const mockFetchDevicesNone = {
+  devices: [
+  ],
+};
+
+module.exports = {mockFetchDevices, mockFetchDevicesNone};

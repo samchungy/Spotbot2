@@ -183,9 +183,17 @@ const fullPlaylistSetting = {
   url: 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty',
 };
 
+const fullDefaultDevice = {
+  name: 'AU13282 - Computer',
+  id: '87997bb4312981a00f1d8029eb874c55a211a0cc',
+};
+
+const fullDefaultDeviceNone = {name: 'None', id: 'no_devices'};
 
 module.exports = {
   emptySettings,
+  fullDefaultDevice,
+  fullDefaultDeviceNone,
   fullDevice,
   fullPlaylists,
   fullPlaylistSetting,
