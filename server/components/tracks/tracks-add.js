@@ -1,7 +1,7 @@
 
 
 const config = require('config');
-const logger = require('pino')();
+const logger = require('../../util/util-logger');
 const moment = require('moment-timezone');
 
 const {addTracksToPlaylist, deleteTracks, fetchPlaylistTotal, fetchTracks} = require('../spotify-api/spotify-api-playlists');

@@ -1,4 +1,4 @@
-const logger = require('pino')();
+const logger = require('../../util/util-logger');
 const config = require('config');
 const TRACKS = config.get('slack.responses.tracks');
 const {findAndStore, getThreeTracks} = require('./tracks-find');

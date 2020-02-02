@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('pino')();
+const logger = require('../../util/util-logger');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const REMOVE_MODAL = config.get('slack.actions.remove_modal');
 const {loadPlaylistSetting, loadProfile} = require('../settings/settings-dal');

@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('pino')();
+const logger = require('../../util/util-logger');
 const {fetchDevices} = require('../spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {sleep} = require('../../util/util-timeout');

@@ -1,4 +1,4 @@
-const logger = require('pino')();
+const logger = require('../../util/util-logger');
 const config = require('config');
 const moment = require('moment-timezone');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');

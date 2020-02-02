@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('pino')();
+const logger = require('../../util/util-logger');
 const moment = require('moment-timezone');
 const {skip} = require('../spotify-api/spotify-api-playback');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');

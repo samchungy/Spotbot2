@@ -1,4 +1,4 @@
-const logger = require('pino')();
+const logger = require('../../util/util-logger');
 const config = require('config');
 const {repeat, shuffle} = require('../spotify-api/spotify-api-playback');
 const {sleep} = require('../../util/util-timeout');

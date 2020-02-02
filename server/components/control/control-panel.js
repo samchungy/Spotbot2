@@ -1,7 +1,6 @@
 const config = require('config');
-const {loadBackToPlaylist, loadPlaylistSetting} = require('../settings/settings-dal');
-const Track = require('../../util/util-spotify-track');
-const CONTEXT_RESPONSES = config.get('slack.responses.playback.context');
+const logger = require('../../util/util-logger');
+const {loadBackToPlaylist, loadPlaylist} = require('../settings/settings-interface');
 const {actionSection, buttonActionElement, confirmObject, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('../slack/format/slack-format-blocks');
 const CONTROLLER = config.get('slack.actions.controller');
 const CONTROLLER_OVERFLOW = config.get('slack.actions.controller_overflow');

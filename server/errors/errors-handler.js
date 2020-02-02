@@ -1,4 +1,4 @@
-const logger = require('pino')();
+const logger = require('../util/util-logger');
 
 module.exports = async (ctx, next) => {
   try {
