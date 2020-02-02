@@ -8,11 +8,15 @@ const {inChannelPost} = require('../slack/format/slack-format-reply');
 const {post} = require('../slack/slack-api');
 const Track = require('../../util/util-spotify-track');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
-const PLAY_RESPONSES = config.get('slack.responses.playback.play');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
-const currentlyPlayingText = (title) => `:sound: Currently playing ${title}.`;
-const contextOn = (playlist, position, total) => `:information_source: Playing from the Spotbot playlist: ${playlist}. ${position ? `Track ${position} of ${total}.`: ``}`;
-const contextOff = (playlist, back) => `:information_source: Not playing from the Spotbot playlist: ${playlist}. ${back ? ` Spotbot will return when you add songs to the playlist.`: ``}`;
+
+const CURRENT_RESPONSES = {
+  currently_playing: (title) => `:sound: Currently playing ${title}.`,
+  context_on: (playlist, position, total) => `:information_source: Playing from the Spotbot playlist: ${playlist}. ${position ? `Track ${position} of ${total}.`: ``}`,
+  context_off: (playlist, back) => `:information_source: Not playing from the Spotbot playlist: ${playlist}. ${back ? ` Spotbot will return when you add songs to the playlist.`: ``}`,
+  returning: (playlist) => `:information_source: Spotbot is returning to the Spotbot playlist: <${playlist}>. The next song will be back on the playlist.`,
+  not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first. Use `/control` to play Spotbot.',
+};
 
 /**
  * Get Current Info
@@ -27,24 +31,24 @@ async function getCurrentInfo(teamId, channelId) {
     if (status.item && status.is_playing) {
       const playlist = await loadPlaylist(teamId, channelId);
       const track = new Track(status.item);
-      text = currentlyPlayingText(track.title);
+      text = CURRENT_RESPONSES.currently_playing(track.title);
       blocks.push(textSection(text));
       if (status.context && status.context.uri.includes(playlist.id)) {
         // Find position in playlist
         const {positions, total} = await getTrackPositions(teamId, channelId, playlist.id, track.uri);
         if (positions.length == 1) {
-          blocks.push(contextSection(null, contextOn(`<${playlist.url}|${playlist.name}>`, positions[0]+1, total)));
+          blocks.push(contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`, positions[0]+1, total)));
         } else if (positions.length== 0) {
-          blocks.push(contextSection(null, `:information_source: Spotbot is returning to the Spotbot playlist: <${playlist.url}|${playlist.name}>. The next song will be back on the playlist.`));
+          blocks.push(contextSection(null, CURRENT_RESPONSES.returning(`<${playlist.url}|${playlist.name}>`)));
         } else {
-          blocks.push(contextSection(null, contextOn(`<${playlist.url}|${playlist.name}>`)));
+          blocks.push(contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`)));
         }
       } else {
         const backToPlaylist = await loadBackToPlaylist(teamId, channelId);
-        blocks.push(contextSection(null, contextOff(`<${playlist.url}|${playlist.name}>`, backToPlaylist === 'true')));
+        blocks.push(contextSection(null, CURRENT_RESPONSES.context_off(`<${playlist.url}|${playlist.name}>`, backToPlaylist === 'true')));
       }
     } else {
-      text = PLAY_RESPONSES.not_playing + ` Use \`/control\` to play Spotbot.`;
+      text = CURRENT_RESPONSES.not_playing;
     }
     await post(
         inChannelPost(channelId, text, blocks.length ? blocks : null),
