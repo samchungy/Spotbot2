@@ -15,7 +15,7 @@ const DISPLAY_LIMIT = config.get('slack.limits.max_options');
 const BUTTON = config.get('slack.buttons');
 const trackPanel = (title, url, artist, album, time) => `<${url}|*${title}*>\n:clock1: *Duration*: ${time}\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`;
 
-const TRACKS_RESPONSES = {
+const TRACK_RESPONSE = {
   error: ':warning: An error occured.',
   expired: ':information_source: Search has expired.',
   found: ':mag: Are these the tracks you were looking for?',
@@ -34,23 +34,23 @@ const TRACKS_RESPONSES = {
 async function findAndStore(teamId, channelId, query, triggerId) {
   try {
     if (query === '') {
-      return {success: false, response: TRACKS_RESPONSES.query_empty};
+      return {success: false, response: TRACK_RESPONSE.query_empty};
     }
     if (isInvalidQuery(query)) {
-      return {success: false, response: TRACKS_RESPONSES.query_error};
+      return {success: false, response: TRACK_RESPONSE.query_error};
     }
     const profile = await loadProfile(teamId, channelId);
     const searchResults = await fetchSearchTracks(teamId, channelId, query, profile.country, LIMIT);
     const numTracks = searchResults.tracks.items.length;
     if (!numTracks) {
-      return {success: false, response: TRACKS_RESPONSES.no_tracks + `"${query}".`};
+      return {success: false, response: TRACK_RESPONSE.no_tracks + `"${query}".`};
     }
     const search = new Search(searchResults.tracks.items.map((track) => new Track(track)), query);
     await storeSearch(teamId, channelId, triggerId, search, EXPIRY);
     return {success: true, response: null};
   } catch (error) {
     logger.error(error);
-    return {success: false, response: TRACKS_RESPONSES.error};
+    return {success: false, response: TRACK_RESPONSE.error};
   }
 };
 
@@ -65,9 +65,10 @@ async function findAndStore(teamId, channelId, query, triggerId) {
 async function getThreeTracks(teamId, channelId, userId, triggerId, responseUrl) {
   try {
     const trackSearch = await loadSearch(teamId, channelId, triggerId);
+    logger.info(trackSearch);
     if (!trackSearch) {
       await reply(
-          updateReply(TRACKS_RESPONSES.expired, null),
+          updateReply(TRACK_RESPONSE.expired, null),
           responseUrl,
       );
     }
@@ -88,7 +89,7 @@ async function getThreeTracks(teamId, channelId, userId, triggerId, responseUrl)
     }).flat();
 
     const blocks = [
-      textSection(TRACKS_RESPONSES.found),
+      textSection(TRACK_RESPONSE.found),
       ...trackBlocks,
       contextSection(null, `Page ${trackSearch.currentSearch}/${trackSearch.numSearches}`),
       actionSection(
@@ -104,12 +105,12 @@ async function getThreeTracks(teamId, channelId, userId, triggerId, responseUrl)
     // This is an update request
     if (responseUrl) {
       await reply(
-          updateReply(TRACKS_RESPONSES.found, blocks),
+          updateReply(TRACK_RESPONSE.found, blocks),
           responseUrl,
       );
     } else {
       await postEphemeral(
-          ephemeralPost(channelId, userId, TRACKS_RESPONSES.found, blocks),
+          ephemeralPost(channelId, userId, TRACK_RESPONSE.found, blocks),
       );
     }
   } catch (error) {
@@ -131,4 +132,5 @@ module.exports = {
   getThreeTracks,
   findAndStore,
   isInvalidQuery,
+  TRACK_RESPONSE,
 };
