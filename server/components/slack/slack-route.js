@@ -1,5 +1,4 @@
 const config = require('config');
-const logger = require('../../util/util-logger');
 const SLACK_ACTIONS = config.get('slack.actions');
 const PLAYLIST = config.get('dynamodb.settings.playlist');
 const DEFAULT_DEVICE = config.get('dynamodb.settings.default_device');
@@ -20,6 +19,7 @@ const {changeAuthentication, saveView} = require('../settings/spotifyauth/spotif
 const {clearOneDay, jumpToStart, pause, play, reset, skip, toggleRepeat, toggleShuffle, verifyResetReview, voteToSkip} = require('../control/control-controller');
 const {getMoreArtists, getMoreTracks, cancelSearch, removeTracks, setTrack, viewArtist} = require('../tracks/tracks-controller');
 const {saveBlacklist} = require('../settings/blacklist/blacklist-controller');
+const {switchDevice} = require('../settings/device-select/device-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
@@ -145,6 +145,12 @@ module.exports = ( prefix, Router ) => {
               case SLACK_ACTIONS.remove_modal:
                 if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
                   removeTracks(payload.team.id, payload.view.private_metadata, payload.user.id, payload.view);
+                }
+                ctx.body = '';
+                break;
+              case SLACK_ACTIONS.device_modal:
+                if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
+                  switchDevice(payload.team.id, payload.view.private_metadata, payload.user.id, payload.view);
                 }
                 ctx.body = '';
                 break;
