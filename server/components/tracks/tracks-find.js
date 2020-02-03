@@ -65,9 +65,8 @@ async function findAndStore(teamId, channelId, query, triggerId) {
 async function getThreeTracks(teamId, channelId, userId, triggerId, responseUrl) {
   try {
     const trackSearch = await loadSearch(teamId, channelId, triggerId);
-    logger.info(trackSearch);
     if (!trackSearch) {
-      await reply(
+      return await reply(
           updateReply(TRACK_RESPONSE.expired, null),
           responseUrl,
       );
