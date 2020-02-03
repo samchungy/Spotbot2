@@ -18,7 +18,7 @@ const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const EXPIRY = Math.floor(Date.now() / 1000) + (30 * 24 * 60); // Current Time in Epoch + a month in seconds
 
-const TRACKS_RESPONSES = {
+const TRACK_ADD_RESPONSE = {
   blacklist: (title) => `:no_entry_sign: ${title} is blacklisted and cannot be added.`,
   error: ':warning: An error occured.',
   expired: ':information_source: Search has expired.',
@@ -44,14 +44,14 @@ async function addTrack(teamId, channelId, userId, trackUri) {
     // Handle Blacklist
     const blacklist = await loadBlacklist(teamId, channelId);
     if (blacklist.find((track) => trackUri === track.uri)) {
-      return TRACKS_RESPONSES.blacklist(track.title);
+      return TRACK_ADD_RESPONSE.blacklist(track.title);
     }
 
     const [history, repeatDuration] = await Promise.all([loadSearch(teamId, channelId, trackUri), loadRepeat(teamId, channelId)]);
     // Handle Repeats
     if (history && history.uri === trackUri) {
       if (moment(history.time).add(repeatDuration, 'hours').isAfter(moment())) {
-        return TRACKS_RESPONSES.repeat(track.title, moment(history.time).fromNow(), repeatDuration);
+        return TRACK_ADD_RESPONSE.repeat(track.title, moment(history.time).fromNow(), repeatDuration);
       }
     }
 
@@ -67,7 +67,7 @@ async function addTrack(teamId, channelId, userId, trackUri) {
           await Promise.all([storeBackToPlaylistState(teamId, channelId, Date.now()), removeInvalidTracks(teamId, channelId, playlist.id, country), addTracksToPlaylist(teamId, channelId, playlist.id, [status.item.uri, trackUri])]);
           // Save our history
           await Promise.all([storeSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), setBackToPlaylist(teamId, channelId, playlist, status.item.uri, country)]);
-          return TRACKS_RESPONSES.success_back(track.title);
+          return TRACK_ADD_RESPONSE.success_back(track.title);
         } else {
           await sleep(2000); // Wait 2 seconds and then try again
           return await addTrack(teamId, channelId, userId, trackUri);
@@ -76,10 +76,10 @@ async function addTrack(teamId, channelId, userId, trackUri) {
     }
     // Save history + add to playlist
     await Promise.all([storeSearch(teamId, channelId, trackUri, modelHistory(trackUri, userId, Date.now()), EXPIRY), addTracksToPlaylist(teamId, channelId, playlist.id, [trackUri])]);
-    return TRACKS_RESPONSES.success(track.title);
+    return TRACK_ADD_RESPONSE.success(track.title);
   } catch (error) {
     logger.error(error);
-    return TRACKS_RESPONSES.query_error;
+    return TRACK_ADD_RESPONSE.query_error;
   }
 }
 
@@ -159,5 +159,5 @@ async function setBackToPlaylist(teamId, channelId, playlist, currentPlaying, co
 
 module.exports = {
   addTrack,
-  TRACKS_RESPONSES,
+  TRACKS_RESPONSES: TRACK_ADD_RESPONSE,
 };
