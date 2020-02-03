@@ -2,6 +2,7 @@ const config = require('config');
 const {openSettings, updateView} = require('./settings-controller');
 const {checkIsAdmin, checkSettings, isSetup} = require('../settings/settings-middleware');
 const {openBlacklistModal} = require('./blacklist/blacklist-controller');
+const {openDevicesModal} = require('./device-select/device-controller');
 const {validateAuthCode} = require('./spotifyauth/spotifyauth-controller');
 const HELP = config.get('settings.help');
 
@@ -15,7 +16,7 @@ module.exports = ( prefix, Router ) => {
         if (payload.text) {
           const textSplit = payload.text.split(' ');
           if (textSplit.length == 0) {
-          // Implement General Spotbot Help Menu
+            ctx.body = HELP;
           } else {
             switch (textSplit[0]) {
               case 'settings':
@@ -27,6 +28,12 @@ module.exports = ( prefix, Router ) => {
               case 'blacklist':
                 if (await checkSettings(payload.team_id, payload.channel_id, payload.response_url) && await checkIsAdmin(payload.team_id, payload.channel_id, payload.user_id, payload.response_url)) {
                   openBlacklistModal(payload.team_id, payload.channel_id, payload.trigger_id);
+                }
+                ctx.body = '';
+                break;
+              case 'device':
+                if (await checkSettings(payload.team_id, payload.channel_id, payload.response_url) && await checkIsAdmin(payload.team_id, payload.channel_id, payload.user_id, payload.response_url)) {
+                  openDevicesModal(payload.team_id, payload.channel_id, payload.user_id, payload.trigger_id);
                 }
                 ctx.body = '';
                 break;
