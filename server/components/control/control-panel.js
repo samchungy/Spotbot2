@@ -14,7 +14,7 @@ const CONTROLS = config.get('slack.actions.controls');
 
 const PANEL_RESPONSE = {
   context_off: (playlist, back) => `:information_source: Not playing from the Spotbot playlist: ${playlist}. ${back ? ` Spotbot will return when you add songs to the playlist.`: ``}`,
-  currently_playing: (title, artist, album) => `:sound: Currently Playing... ${title}\n\n:studio_microphone: Artists: ${artist}\nAlbum: ${album}\n`,
+  currently_playing: (title, artist, album) => `:sound: Currently Playing... ${title}\n\n:studio_microphone: Artists: ${artist}\n:dvd: Album: ${album}\n`,
   currently_playing_mrkdwn: (title, url, artist, album) => `:sound: *Currently Playing...*\n\n<${url}|*${title}*>\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`,
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   on_playlist: ':information_source: Currently playing from the Spotbot playlist.',
@@ -161,5 +161,6 @@ module.exports = {
   getCurrentTrackPanel,
   getControlsPanel,
   getShuffleRepeatPanel,
+  PANEL_RESPONSE,
   updatePanel,
 };
