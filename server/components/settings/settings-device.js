@@ -5,6 +5,7 @@ const {loadDevices, storeDevices} = require('./settings-dal');
 const {loadDefaultDevice} = require('./settings-interface');
 const {option} = require('../slack/format/slack-format-modal');
 const {modelDevice} = require('./settings-model');
+const Device = require('../../util/util-spotify-device');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 
@@ -20,7 +21,10 @@ async function allDevices(teamId, channelId) {
       ...defaultDevice ? [defaultDevice] : [], // If default device, add
       ...spotifyDevices.devices
           .filter((device) => (!defaultDevice || device.id != defaultDevice.id))
-          .map((device) => modelDevice(`${device.name} - ${device.type}`, device.id)),
+          .map((device) => {
+            const deviceObj = new Device(device);
+            return modelDevice(deviceObj.name, device.id);
+          }),
     ];
 
     return devices;
