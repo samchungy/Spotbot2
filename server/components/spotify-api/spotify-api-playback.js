@@ -73,10 +73,24 @@ async function repeat(teamId, channelId, state) {
   });
 }
 
+/**
+ * Transfer Device
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {string} deviceId
+ */
+async function transferDevice(teamId, channelId, deviceId) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId );
+  return await requester(teamId, channelId, 'Transfer Device', async () =>{
+    await spotifyApi.transferMyPlayback({device_ids: [deviceId], play: true});
+  });
+}
+
 module.exports = {
   pause,
   play,
   repeat,
   shuffle,
   skip,
+  transferDevice,
 };
