@@ -97,6 +97,7 @@
         "actions": {
           "blacklist_modal": "blacklist_modal",
           "settings_modal": "settings_modal",
+          "device_modal": "device_modal",
           "remove_modal": "remove_modal",
           "playlist": "playlist",
           "block_actions": "block_actions",
