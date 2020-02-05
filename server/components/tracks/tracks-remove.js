@@ -4,15 +4,16 @@ const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const REMOVE_MODAL = config.get('slack.actions.remove_modal');
 const {loadPlaylist, loadProfile} = require('../settings/settings-interface');
 const {fetchPlaylistTotal, fetchTracks, deleteTracks} = require('../spotify-api/spotify-api-playlists');
-const {loadSearch} = require('../tracks/tracks-dal');
+const {batchLoadSearch, loadSearch} = require('../tracks/tracks-dal');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
-const {ephemeralPost} = require('../slack/format/slack-format-reply');
-const {sendModal, postEphemeral} = require('../slack/slack-api');
+const {ephemeralPost, inChannelPost} = require('../slack/format/slack-format-reply');
+const {sendModal, post, postEphemeral} = require('../slack/slack-api');
 const {option, multiSelectStatic, slackModal} = require('../slack/format/slack-format-modal');
 
 const REMOVE_RESPONSES = {
-  no_songs: `You have not added any songs to the playlist.`,
-  removed: `:put_litter_in_its_place: The requested tracks were removed from the playlist.`,
+  no_songs: `:information_source: You have not added any songs to the playlist.`,
+  no_tracks: `:information_source: There are no tracks on the playlist to remove.`,
+  removed: (trackNames, userId) => `:put_litter_in_its_place: ${trackNames.join(', ')} ${trackNames.length > 1 ? `were`: `was`} removed from the playlist by <@${userId}>.`,
 };
 
 /**
@@ -24,43 +25,50 @@ const REMOVE_RESPONSES = {
  */
 async function removeTrackReview(teamId, channelId, userId, triggerId) {
   try {
-    const [playlist, {country}] = await Promise.all([loadPlaylist(teamId, channelId), loadProfile(teamId, channelId)]);
-    const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
-    const promises = [];
-    const attempts = Math.ceil(total/LIMIT);
-    for (let offset=0; offset<attempts; offset++) {
-      promises.push(new Promise(async (resolve) =>{
-        const spotifyTracks = await fetchTracks(teamId, channelId, playlist.id, country, offset*LIMIT);
-        const tracksToReview = [];
-        const playlistTracks = spotifyTracks.items.map((track) => new PlaylistTrack(track));
-        for (let i=0; i<playlistTracks.length; i++) {
-          const history = await loadSearch(teamId, channelId, playlistTracks[i].uri);
-          if (history && history.userId === userId) {
-            tracksToReview.push({
-              title: playlistTracks[i].title,
-              uri: playlistTracks[i].uri,
-              positions: [i+(LIMIT*offset)],
-            });
-          }
-        }
-        resolve(tracksToReview);
-      }));
+    const playlist = await loadPlaylist(teamId, channelId);
+    const [{tracks: {total}}, {country}] = await Promise.all([fetchPlaylistTotal(teamId, channelId, playlist.id), loadProfile(teamId, channelId)]);
+    const allTracks = await getAllTracks(teamId, channelId, playlist.id, country, total);
+    if (!allTracks.length) { // No tracks on the playlist
+      return await postEphemeral(
+          ephemeralPost(channelId, userId, REMOVE_RESPONSES.no_tracks, null),
+      );
     }
-    const allTracksPromises = await Promise.all(promises);
-    const allTracks = allTracksPromises.flat();
-    const allOptions = allTracks.map((track) => option(track.title, track.uri));
-    if (allTracks.length) {
-      // We have tracks to review, send a modal
-      const blocks = [
-        multiSelectStatic(REMOVE_MODAL, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, allOptions.slice(0, LIMIT)),
-      ];
-      const view = slackModal(REMOVE_MODAL, `Remove Tracks`, `Confirm`, `Close`, blocks, true, channelId);
-      await sendModal(triggerId, view);
-    } else {
-      postEphemeral(
+    // Get a list of unique URIs
+    const uniqueUris = [...new Set(allTracks.map((item) => item.uri))];
+    const uniqueTracks = allTracks.reduce((unique, track, index) => { // Highly efficient way to filter the tracks after finding the unique Uris
+      const offset = index - unique.length;
+      if (uniqueUris[index-offset] == track.uri) {
+        unique.push(track);
+      }
+      return unique;
+    }, []);
+
+    // Prepare to batch load
+    const numSearches = Math.ceil(uniqueUris.length/LIMIT);
+    const searchPromises = [];
+    for (let i=0; i<numSearches; i++) {
+      const offset = i*LIMIT;
+      searchPromises.push(batchLoadSearch(teamId, channelId, uniqueUris.slice(offset, offset+LIMIT)));
+    }
+    const searches = (await Promise.all(searchPromises)).flat();
+
+    if (!searches.length) {
+      return await postEphemeral(
           ephemeralPost(channelId, userId, REMOVE_RESPONSES.no_songs, null),
       );
     }
+
+    const userAdditionUris = searches.filter((search) => search.value.userId === userId); // filter for user added songs
+    const allOptions = userAdditionUris.map((search) => {
+      const track = uniqueTracks.find((track) => track.uri == search.value.uri); // map them back to our tracks
+      return option(track.title, track.uri);
+    });
+
+    const blocks = [
+      multiSelectStatic(REMOVE_MODAL, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, allOptions.slice(0, LIMIT)),
+    ];
+    const view = slackModal(REMOVE_MODAL, `Remove Tracks`, `Confirm`, `Close`, blocks, true, channelId);
+    await sendModal(triggerId, view);
   } catch (error) {
     logger.error(error);
   }
@@ -75,41 +83,25 @@ async function removeTrackReview(teamId, channelId, userId, triggerId) {
  */
 async function removeTracks(teamId, channelId, userId, view) {
   try {
-    const submissions = extractSubmissions(view).map((track) => track.value);
+    const playlist = await loadPlaylist(teamId, channelId);
+
+    const submissions = extractSubmissions(view).map((track) => {
+      return {
+        name: track.text.text,
+        uri: track.value,
+      };
+    });
     if (!submissions.length) {
       return;
     }
-    const [playlist, {country}] = await Promise.all([loadPlaylist(teamId, channelId), loadProfile(teamId, channelId)]);
-    const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlist.id);
-    // Delete selected tracks. We use this method to preserve the order and time added of the previous tracks.
-    const promises = [];
-    const attempts = Math.ceil(total/LIMIT);
-    for (let offset=0; offset<attempts; offset++) {
-      promises.push(new Promise(async (resolve) =>{
-        const spotifyTracks = await fetchTracks(teamId, channelId, playlist.id, country, offset*LIMIT);
-        const tracksToReview = [];
-        const playlistTracks = spotifyTracks.items.map((track) => new PlaylistTrack(track));
-        for (let i=0; i<playlistTracks.length; i++) {
-          const history = await loadSearch(teamId, channelId, playlistTracks[i].uri);
-          if (history && history.userId === userId) {
-            tracksToReview.push({
-              uri: playlistTracks[i].uri,
-              positions: [i+(LIMIT*offset)],
-            });
-          }
-        }
-        resolve(tracksToReview);
-      }));
-    }
-    const allTracksPromises = await Promise.all(promises);
-    const allTracks = allTracksPromises.flat();
-    const tracksToDelete = allTracks.filter((track)=>submissions.includes(track.uri));
-    if (tracksToDelete.length) {
-      await deleteTracks(teamId, channelId, playlist.id, tracksToDelete);
-      await postEphemeral(
-          ephemeralPost(channelId, userId, REMOVE_RESPONSES.removed, null),
-      );
-    };
+    await deleteTracks(teamId, channelId, playlist.id, submissions.map((track) => {
+      return {
+        uri: track.uri,
+      };
+    }));
+    await post(
+        inChannelPost(channelId, REMOVE_RESPONSES.removed(submissions.map((track) => track.name), userId), null),
+    );
     return;
   } catch (error) {
     logger.error(error);
@@ -136,6 +128,32 @@ function extractSubmissions(view) {
   return submissions;
 }
 
+
+/**
+ * Get all tracks from a playlist
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {string} playlistId
+ * @param {string} country
+ * @param {string} total
+ */
+async function getAllTracks(teamId, channelId, playlistId, country, total) {
+  const promises = [];
+  const attempts = Math.ceil(total/LIMIT);
+  for (let offset=0; offset<attempts; offset++) {
+    promises.push(getTracks(teamId, channelId, playlistId, country, offset*LIMIT));
+  }
+  return (await Promise.all(promises)).flat();
+}
+
+const getTracks = async (teamId, channelId, playlistId, country, offset) => {
+  const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, country, offset);
+  const allTracks = spotifyTracks.items.map((track) => {
+    const playlistTrack = new PlaylistTrack(track);
+    return playlistTrack;
+  });
+  return allTracks;
+};
 
 module.exports = {
   removeTracks,
