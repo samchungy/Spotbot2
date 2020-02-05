@@ -39,8 +39,24 @@ const getSearch = (search) => {
   return dynamoDb.get(getSearchInfo(search)).promise();
 };
 
+const batchGetSearch = (search) => {
+  return dynamoDb.batchGet((search)).promise();
+};
+
+
+const batchGetParams = (keys) => {
+  return {
+    RequestItems: {
+      [SEARCH_TABLE]: {
+        Keys: keys,
+      },
+    },
+  };
+};
 
 module.exports = {
+  batchGetParams,
+  batchGetSearch,
   getSearch,
   putSearch,
   searchModel,
