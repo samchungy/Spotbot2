@@ -70,7 +70,7 @@ async function addTrack(teamId, channelId, userId, trackUri) {
           await Promise.all([storeSearch(teamId, channelId, track.uri, modelHistory(track.uri, userId, Date.now()), EXPIRY), setBackToPlaylist(teamId, channelId, playlist, status.item.uri, country)]);
           return TRACK_ADD_RESPONSE.success_back(track.title);
         } else {
-          await sleep(2000); // Wait 2 seconds and then try again
+          await sleep(2000); // Wait 2 seconds and then try again (concurrent back 2 playlist requests)
           return await addTrack(teamId, channelId, userId, track.uris);
         }
       }
@@ -97,23 +97,9 @@ async function removeInvalidTracks(teamId, channelId, playlistId, country) {
     const promises = [];
     const attempts = Math.ceil(total/LIMIT);
     for (let offset=0; offset<attempts; offset++) {
-      promises.push(new Promise(async (resolve) =>{
-        const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, country, offset*LIMIT);
-        const tracksToDelete = [];
-        spotifyTracks.items
-            .map((track) => new PlaylistTrack(track))
-            .forEach((track) => {
-              if (!track.is_playable) {
-                tracksToDelete.push({
-                  uri: track.uri,
-                });
-              }
-            });
-        resolve(tracksToDelete);
-      }));
+      promises.push(getTracksToDelete(teamId, channelId, playlistId, country, offset));
     }
-    const allTracksPromises = await Promise.all(promises);
-    const allTracks = allTracksPromises.flat();
+    const allTracks = (await Promise.all(promises)).flat();
     for (let i = 0; i<Math.ceil(allTracks.length/LIMIT); i++) {
       await deleteTracks(teamId, channelId, playlistId, allTracks.slice((i)*LIMIT, (i+1)*LIMIT));
     }
@@ -122,6 +108,21 @@ async function removeInvalidTracks(teamId, channelId, playlistId, country) {
     throw error;
   }
 }
+
+const getTracksToDelete = async (teamId, channelId, playlistId, country, offset) => {
+  const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, country, offset*LIMIT);
+  const tracksToDelete = [];
+  spotifyTracks.items
+      .map((track) => new PlaylistTrack(track))
+      .forEach((track) => {
+        if (!track.is_playable) {
+          tracksToDelete.push({
+            uri: track.uri,
+          });
+        }
+      });
+  return tracksToDelete;
+};
 
 /**
  * Put spotify back onto the playlist

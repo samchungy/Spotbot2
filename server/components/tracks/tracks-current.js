@@ -35,7 +35,7 @@ async function getCurrentInfo(teamId, channelId) {
       blocks.push(textSection(text));
       if (status.context && status.context.uri.includes(playlist.id)) {
         // Find position in playlist
-        const {positions, total} = await getTrackPositions(teamId, channelId, playlist.id, track.uri);
+        const {positions, total} = await getAllTrackPositions(teamId, channelId, playlist.id, track.uri);
         if (positions.length == 1) {
           blocks.push(contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`, positions[0]+1, total)));
         } else if (positions.length== 0) {
@@ -65,24 +65,13 @@ async function getCurrentInfo(teamId, channelId) {
  * @param {string} playlistId
  * @param {string} trackUri
  */
-async function getTrackPositions(teamId, channelId, playlistId, trackUri) {
+async function getAllTrackPositions(teamId, channelId, playlistId, trackUri) {
   try {
     const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlistId);
     const promises = [];
     const attempts = Math.ceil(total/LIMIT);
     for (let offset=0; offset<attempts; offset++) {
-      promises.push(new Promise(async (resolve) =>{
-        const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, null, offset*LIMIT);
-        const positions = [];
-        spotifyTracks.items
-            .map((track) => new PlaylistTrack(track))
-            .forEach((track, index) => {
-              if (track.uri === trackUri) {
-                positions.push(index+(LIMIT*offset));
-              }
-            });
-        resolve(positions);
-      }));
+      promises.push(getTrackPositions(teamId, channelId, playlistId, offset, trackUri));
     }
     const allTracksPromises = await Promise.all(promises);
     const allPositions = allTracksPromises.flat();
@@ -93,6 +82,20 @@ async function getTrackPositions(teamId, channelId, playlistId, trackUri) {
   }
 }
 
+const getTrackPositions = async (teamId, channelId, playlistId, offset, trackUri) => {
+  const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, null, offset*LIMIT);
+  const positions = [];
+  spotifyTracks.items
+      .map((track) => new PlaylistTrack(track))
+      .forEach((track, index) => {
+        if (track.uri === trackUri) {
+          positions.push(index+(LIMIT*offset));
+        }
+      });
+  return positions;
+};
+
 module.exports = {
+  CURRENT_RESPONSES,
   getCurrentInfo,
 };
