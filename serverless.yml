@@ -93,6 +93,7 @@ resources:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
       Properties:
+        BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
           - AttributeName: name
             AttributeType: S
@@ -103,9 +104,6 @@ resources:
             KeyType: HASH
           - AttributeName: team_channel
             KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
         SSESpecification:
           SSEEnabled: false
         TableName: ${self:provider.environment.AUTH_TABLE}
@@ -113,6 +111,7 @@ resources:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
       Properties:
+        BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
           - AttributeName: name
             AttributeType: S
@@ -123,14 +122,12 @@ resources:
             KeyType: HASH
           - AttributeName: team_channel
             KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
         TableName: ${self:provider.environment.SETTINGS_TABLE}
     SpotbotSearchTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
       Properties:
+        BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
           - AttributeName: triggerId
             AttributeType: S
@@ -141,9 +138,6 @@ resources:
             KeyType: HASH
           - AttributeName: team_channel
             KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
         TableName: ${self:provider.environment.SEARCH_TABLE}
         TimeToLiveSpecification:
             AttributeName: ttl
