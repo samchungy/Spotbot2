@@ -1,6 +1,6 @@
 const config = require('config');
 const logger = require('../../../util/util-logger');
-const BLACKLIST = config.get('dynamodb.blacklist.database');
+const BLACKLIST = config.get('dynamodb.settings_extra.blacklist');
 const {getSetting, putSetting, settingModel} = require('../../../db/settings');
 
 

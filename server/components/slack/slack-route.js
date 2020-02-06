@@ -70,7 +70,6 @@ module.exports = ( prefix, Router ) => {
                       setTrack(payload.team.id, payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
                       ctx.body = '';
                       break;
-
                       // CONTROLS
                     case CONTROLS.play:
                       play(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
@@ -138,10 +137,15 @@ module.exports = ( prefix, Router ) => {
                 break;
               case SLACK_ACTIONS.blacklist_modal:
                 if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
-                  saveBlacklist(payload.view, payload.user.id);
+                  const errors = await saveBlacklist(payload.view, payload.user.id);
+                  if (errors) {
+                    ctx.body = errors;
+                  } else {
+                    ctx.body = '';
+                  }
                 }
-                ctx.body = '';
                 break;
+
               case SLACK_ACTIONS.remove_modal:
                 if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
                   removeTracks(payload.team.id, payload.view.private_metadata, payload.user.id, payload.view);
