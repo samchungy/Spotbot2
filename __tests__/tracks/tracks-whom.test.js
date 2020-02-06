@@ -80,10 +80,10 @@ describe('Slash command /whom', () => {
   loadSearch.mockReturnValueOnce(Promise.resolve(null));
   loadProfile.mockReturnValueOnce(Promise.resolve(fullProfile));
   fetchCurrentPlayback.mockReturnValueOnce(Promise.resolve(mockFetchCurrentPlaybackOnPlaylist));
-  fetchTracks.mockReturnValueOnce(Promise.resolve(mockFetchWhomTracks));
   fetchPlaylistTotal.mockReturnValueOnce(Promise.resolve({tracks: {total: 9}}));
   fetchUserProfile.mockReturnValueOnce(Promise.resolve(mockFetchProfile));
-  test('should show returning to playlist current playing', async () => {
+  fetchTracks.mockReturnValueOnce(Promise.resolve(mockFetchWhomTracks));
+  test('should show added direct to playlist', async () => {
     const response = await request(server)
         .post('/tracks/whom')
         .send(whomSlashCommand);
