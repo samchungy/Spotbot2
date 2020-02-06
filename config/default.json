@@ -26,7 +26,8 @@
         },
         "africa": "spotify:track:2374M0fQpWi3dLnB54qaLX",
         "tracks": {
-          "limit": 30
+          "limit": 30,
+          "info_limit": 50
         },
         "recent_limit": 5
       },
@@ -54,7 +55,8 @@
           "profile": "profile",
           "spotify_playlists": "spotify_playlists",
           "spotify_devices": "spotify_devices",
-          "skip": "skip"
+          "skip": "skip",
+          "blacklist": "blacklist"
         },
         "settings_auth": {
           "reauth": "reauth",
@@ -69,13 +71,7 @@
           "create_new_playlist": "create_new_playlist."
         },
         "blacklist": {
-          "database": "blacklist",
-          "label": "Blacklisted Tracks",
-          "hint": "Songs which are blacklisted cannot be added through Spotbot. They can also be skipped instantly.",
-          "currently_blacklisted": "Currently on the blacklist:",
-          "recently_played": "Recently played:",
-          "currently": "Currently playing:",
-          "skipped": "Skipped Recently:"
+          "limit": 80
         }
       },
       "settings": {
