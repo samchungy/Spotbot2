@@ -8,7 +8,37 @@ const fullHistoryJungle = {
   time: 1580898047401,
 };
 
+const fullBatchLoad = [{
+  'team_channel': 'TRVUTD7DMCRVUTDP47',
+  'value': {
+    'uri': 'spotify:track:1sCgWGukswGPlym4ggdoav',
+    'userId': 'URVUTD7UP',
+    'time': 1580897869308,
+  },
+  'ttl': 1580941067,
+  'triggerId': 'spotify:track:1sCgWGukswGPlym4ggdoav',
+}, {
+  'team_channel': 'TRVUTD7DMCRVUTDP47',
+  'value': {
+    'uri': 'spotify:track:2xbh5NWAm6zjfeZg3yrwbO',
+    'userId': 'URVUTD7UP',
+    'time': 1580875220688,
+  },
+  'ttl': 1580918420,
+  'triggerId': 'spotify:track:2xbh5NWAm6zjfeZg3yrwbO',
+}, {
+  'team_channel': 'TRVUTD7DMCRVUTDP47',
+  'value': {
+    'uri': 'spotify:track:2hGEh8arAfHzomA28XHPdD',
+    'userId': 'URVUTD7UP',
+    'time': 1580875235544,
+  },
+  'ttl': 1580918435,
+  'triggerId': 'spotify:track:2hGEh8arAfHzomA28XHPdD',
+}];
+
 module.exports = {
+  fullBatchLoad,
   fullHistory,
   fullHistoryJungle,
   fullTrackSearch,
