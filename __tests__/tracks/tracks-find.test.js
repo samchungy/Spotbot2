@@ -34,7 +34,7 @@ afterEach(() => {
 
 loadPlaylist.mockReturnValue(Promise.resolve(fullPlaylistSetting));
 
-describe('Slash Command: /play - empty text', () => {
+describe('Slash Command: /find - empty text', () => {
   const findSlashEmptyPayload = {...findSlashPayload};
   findSlashEmptyPayload.text = '';
 
@@ -47,7 +47,7 @@ describe('Slash Command: /play - empty text', () => {
   });
 });
 
-describe('Slash Command: /play - invalid query', () => {
+describe('Slash Command: /find - invalid query', () => {
   const findSlashInvalidPayload = {...findSlashPayload};
   findSlashInvalidPayload.text = '***';
 
@@ -60,7 +60,7 @@ describe('Slash Command: /play - invalid query', () => {
   });
 });
 
-describe('Slash Command: /play - query lime', () => {
+describe('Slash Command: /find - query lime', () => {
   const findSlashLimePayload = {...findSlashPayload};
   findSlashLimePayload.text = 'lime';
   loadProfile.mockReturnValueOnce(Promise.resolve(fullProfile));
