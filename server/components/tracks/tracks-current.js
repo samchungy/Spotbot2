@@ -12,7 +12,7 @@ const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 
 const CURRENT_RESPONSES = {
   currently_playing: (title) => `:sound: Currently playing ${title}.`,
-  context_on: (playlist, position, total) => `:information_source: Playing from the Spotbot playlist: ${playlist}. ${position ? `Track ${position} of ${total}.`: ``}`,
+  context_on: (playlist, position, total, next) => `:information_source: Playing from the Spotbot playlist: ${playlist}. ${position ? `Track ${position} of ${total}`: ``}${next ? ` - Next track: ${next}.`: `.`}`,
   context_off: (playlist, back) => `:information_source: Not playing from the Spotbot playlist: ${playlist}. ${back ? ` Spotbot will return when you add songs to the playlist.`: ``}`,
   returning: (playlist) => `:information_source: Spotbot is returning to the Spotbot playlist: <${playlist}>. The next song will be back on the playlist.`,
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first. Use `/control` to play Spotbot.',
@@ -37,7 +37,7 @@ async function getCurrentInfo(teamId, channelId) {
         // Find position in playlist
         const {positions, total} = await getAllTrackPositions(teamId, channelId, playlist.id, track.uri);
         if (positions.length == 1) {
-          blocks.push(contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`, positions[0]+1, total)));
+          blocks.push(contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`, positions[0].position+1, total, positions[0].next ? positions[0].next.title : null)));
         } else if (positions.length== 0) {
           blocks.push(contextSection(null, CURRENT_RESPONSES.returning(`<${playlist.url}|${playlist.name}>`)));
         } else {
@@ -71,28 +71,29 @@ async function getAllTrackPositions(teamId, channelId, playlistId, trackUri) {
     const promises = [];
     const attempts = Math.ceil(total/LIMIT);
     for (let offset=0; offset<attempts; offset++) {
-      promises.push(getTrackPositions(teamId, channelId, playlistId, offset, trackUri));
+      promises.push(getTracks(teamId, channelId, playlistId, offset));
     }
     const allTracksPromises = await Promise.all(promises);
-    const allPositions = allTracksPromises.flat();
-    return {positions: allPositions, total};
+    const positions = [];
+    allTracksPromises.flat().forEach((track, index, array) => {
+      if (track.uri === trackUri) {
+        if (index+1 != array.length) {
+          positions.push({position: index, next: array[index+1]});
+        } else {
+          positions.push({position: index, next: null});
+        }
+      }
+    });
+    return {positions: positions, total};
   } catch (error) {
     logger.error('Get Track positions failed');
     throw error;
   }
 }
 
-const getTrackPositions = async (teamId, channelId, playlistId, offset, trackUri) => {
+const getTracks = async (teamId, channelId, playlistId, offset) => {
   const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, null, offset*LIMIT);
-  const positions = [];
-  spotifyTracks.items
-      .map((track) => new PlaylistTrack(track))
-      .forEach((track, index) => {
-        if (track.uri === trackUri) {
-          positions.push(index+(LIMIT*offset));
-        }
-      });
-  return positions;
+  return spotifyTracks.items.map((track) => new PlaylistTrack(track));
 };
 
 module.exports = {
