@@ -1,11 +1,14 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
+const INFO_LIMIT = config.get('spotify_api.tracks.info_limit');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const REMOVE_MODAL = config.get('slack.actions.remove_modal');
 const {loadPlaylist, loadProfile} = require('../settings/settings-interface');
 const {fetchPlaylistTotal, fetchTracks, deleteTracks} = require('../spotify-api/spotify-api-playlists');
-const {batchLoadSearch, loadSearch} = require('../tracks/tracks-dal');
+const {fetchTracksInfo} = require('../spotify-api/spotify-api-tracks');
+const {batchLoadSearch} = require('../tracks/tracks-dal');
 const PlaylistTrack = require('../../util/util-spotify-playlist-track');
+const Track = require('../../util/util-spotify-track');
 const {ephemeralPost, inChannelPost} = require('../slack/format/slack-format-reply');
 const {sendModal, post, postEphemeral} = require('../slack/slack-api');
 const {option, multiSelectStatic, slackModal} = require('../slack/format/slack-format-modal');
@@ -36,11 +39,7 @@ async function removeTrackReview(teamId, channelId, userId, triggerId) {
     // Get a list of unique URIs
     const uniqueUris = [...new Set(allTracks.map((item) => item.uri))];
     const uniqueTracks = allTracks.reduce((unique, track, index) => { // Highly efficient way to filter the tracks after finding the unique Uris
-      const offset = index - unique.length;
-      if (uniqueUris[index-offset] == track.uri) {
-        unique.push(track);
-      }
-      return unique;
+      return (uniqueUris[index-(index - unique.length)] == track.uri) ? [...unique, track] : unique;
     }, []);
 
     // Prepare to batch load
@@ -84,23 +83,34 @@ async function removeTrackReview(teamId, channelId, userId, triggerId) {
 async function removeTracks(teamId, channelId, userId, view) {
   try {
     const playlist = await loadPlaylist(teamId, channelId);
+    const {country} = await loadProfile(teamId, channelId);
 
-    const submissions = extractSubmissions(view).map((track) => {
-      return {
-        name: track.text.text,
-        uri: track.value,
-      };
-    });
+    const submissions = extractSubmissions(view).map((track) => track.value.replace('spotify:track:', ''));
     if (!submissions.length) {
       return;
     }
-    await deleteTracks(teamId, channelId, playlist.id, submissions.map((track) => {
+
+    // We grab it's info in case there is a re-linked URI.
+    const allTrackInfoPromises = [];
+    const attempts = Math.ceil(submissions.length/INFO_LIMIT);
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      allTrackInfoPromises.push(fetchTracksInfo(teamId, channelId, country, submissions.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT)));
+    }
+    // Extract Promise Info
+    const allSpotifyTrackInfos = (await Promise.all(allTrackInfoPromises)).map((infoPromise) => infoPromise.tracks).flat();
+    const trackInfos = allSpotifyTrackInfos.map((track) => {
+      const trackObj = new Track(track);
+      trackObj.uri = track.linked_from ? track.linked_from.uri : trackObj.uri; // Sometimes tracks are re-linked.
+      return trackObj;
+    });
+
+    await deleteTracks(teamId, channelId, playlist.id, trackInfos.map((track) => {
       return {
         uri: track.uri,
       };
     }));
     await post(
-        inChannelPost(channelId, REMOVE_RESPONSES.removed(submissions.map((track) => track.name), userId), null),
+        inChannelPost(channelId, REMOVE_RESPONSES.removed(trackInfos.map((track) => track.title), userId), null),
     );
     return;
   } catch (error) {
