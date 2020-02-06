@@ -59,7 +59,7 @@ async function switchDevice(teamId, channelId, userId, view) {
     const submission = extractSubmission(view);
     if (submission) {
       const status = await fetchCurrentPlayback(teamId, channelId);
-      if (status.device.id == submission.value) {
+      if (status && status.device && status.device.id == submission.value) {
         return;
       }
       const spotifyDevices = await fetchDevices(teamId, channelId);

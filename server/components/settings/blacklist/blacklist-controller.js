@@ -139,6 +139,7 @@ function extractSubmissions(view) {
 }
 
 module.exports ={
+  BLACKLIST_RESPONSE,
   openBlacklistModal,
   saveBlacklist,
 };
