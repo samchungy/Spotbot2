@@ -15,7 +15,6 @@ const Search = require('../../util/util-spotify-search');
 
 const EXPIRY = Math.floor(Date.now() / 1000) + 86400; // Current Time in Epoch + 84600 (A day)
 const LIMIT = config.get('spotify_api.tracks.limit'); // 24 Search results = 8 pages.
-const TRACKS_RESPONSES = require('../tracks/tracks-add');
 const ARTIST_ACTIONS = config.get('slack.actions.artists');
 const TRACK_ACTIONS = config.get('slack.actions.tracks');
 
@@ -42,7 +41,7 @@ const ARTISTS_RESPONSES = {
 async function findAndStoreArtists(teamId, channelId, query, triggerId) {
   try {
     if (query === '') {
-      return {success: false, response: ARTISTS_RESPONSES.query_error};
+      return {success: false, response: ARTISTS_RESPONSES.query_empty};
     }
     if (isInvalidQuery(query)) {
       return {success: false, response: ARTISTS_RESPONSES.query_error};
@@ -74,7 +73,7 @@ async function getThreeArtists(teamId, channelId, userId, triggerId, responseUrl
   try {
     const artistSearch = await loadSearch(teamId, channelId, triggerId);
     if (!artistSearch) {
-      await reply(
+      return await reply(
           updateReply(ARTISTS_RESPONSES.expired, null),
           responseUrl,
       );
@@ -112,12 +111,12 @@ async function getThreeArtists(teamId, channelId, userId, triggerId, responseUrl
     // This is an update request
     if (responseUrl) {
       await reply(
-          updateReply(TRACKS_RESPONSES.found, blocks),
+          updateReply(ARTISTS_RESPONSES.found, blocks),
           responseUrl,
       );
     } else {
       await postEphemeral(
-          ephemeralPost(channelId, userId, TRACKS_RESPONSES.found, blocks),
+          ephemeralPost(channelId, userId, ARTISTS_RESPONSES.found, blocks),
       );
     }
   } catch (error) {
@@ -147,6 +146,7 @@ async function getArtistTracks(teamId, channelId, artistId, triggerId) {
 
 
 module.exports = {
+  ARTISTS_RESPONSES,
   findAndStoreArtists,
   getArtistTracks,
   getThreeArtists,
