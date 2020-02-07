@@ -14,7 +14,9 @@ function extractSubmissions(view) {
     if ({}.hasOwnProperty.call(values, item)) {
       switch (item) {
         case REVIEW:
-          submissions[item] = values[item][item].selected_options.map((option) => option.value);
+          if (values[item][item].selected_options) {
+            submissions[item] = values[item][item].selected_options.map((option) => option.value);
+          }
           break;
         case REVIEW_JUMP:
           submissions[item] = values[item][item].selected_option.value;

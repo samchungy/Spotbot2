@@ -1,22 +1,22 @@
 const dynamoDb = require('./db');
-const SETTINGS_TABLE = process.env.SEARCH_TABLE;
+const SEARCH_TABLE = process.env.SEARCH_TABLE;
 
-const searchSet = (item) => {
+const searchTable = (item) => {
   return {
-    TableName: SETTINGS_TABLE,
+    TableName: SEARCH_TABLE,
     ...item,
   };
 };
 
 const getSearchInfo = (key) => {
-  return searchSet({
+  return searchTable({
     Key: key,
   });
 };
 
 
 const searchInfo = (item) => {
-  return searchSet(
+  return searchTable(
       {
         Item: item,
       });
@@ -39,10 +39,25 @@ const getSearch = (search) => {
   return dynamoDb.get(getSearchInfo(search)).promise();
 };
 
+const batchGetSearch = (search) => {
+  return dynamoDb.batchGet((search)).promise();
+};
+
+
+const batchGetParams = (keys) => {
+  return {
+    RequestItems: {
+      [SEARCH_TABLE]: {
+        Keys: keys,
+      },
+    },
+  };
+};
 
 module.exports = {
+  batchGetParams,
+  batchGetSearch,
   getSearch,
   putSearch,
   searchModel,
-  searchInfo,
 };

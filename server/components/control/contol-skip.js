@@ -1,23 +1,31 @@
 const config = require('config');
-const logger = require('pino')();
+const logger = require('../../util/util-logger');
 const moment = require('moment-timezone');
 const {skip} = require('../spotify-api/spotify-api-playback');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
+const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
 const {loadSkip, storeSkip} = require('./control-dal');
-const {loadSkipVotes, loadSkipVotesAfterHours, loadTimezone} = require('../settings/settings-dal');
+const {loadProfile, loadSkipVotes, loadSkipVotesAfterHours, loadTimezone} = require('../settings/settings-interface');
 const {modelSkip} = require('./control-skip-model');
 const {actionSection, buttonActionElement, contextSection, textSection} = require('../slack/format/slack-format-blocks');
 const {deleteChat, postEphemeral, post, reply, updateChat} = require('../slack/slack-api');
 const {deleteMessage, ephemeralPost, inChannelPost, messageUpdate, updateReply} = require('../slack/format/slack-format-reply');
 const Track = require('../../util/util-spotify-track');
 
-const SKIP_RESPONSE = config.get('slack.responses.playback.skip');
 const SKIP_VOTE = config.get('slack.actions.skip_vote');
-const skipRequest = (userId, title) => `:black_right_pointing_double_triangle_with_vertical_bar: *Skip Request:*\n\n <@${userId}> has requested to skip ${title}`;
-const skipVoters = (users) => `*Votes*: ${userList(users)}.`;
-const userList = (users) => `${users.map((user) => `<@${user}>`).join(', ')}`;
-const skipVotesNeeded = (votes) => `*${votes}* more ${votes == 1 ? 'vote' : 'votes'} needed.`;
-const skipConfirmation = (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} was skipped by ${userList(users)}.`;
+const SKIP_RESPONSE = {
+  already: ':information_source: You have already voted on this.',
+  button: `:black_right_pointing_double_triangle_with_vertical_bar: Skip`,
+  blacklist: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} is on the blacklist and was skipped by ${SKIP_RESPONSE.users(users)}.`,
+  confirmation: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} was skipped by ${SKIP_RESPONSE.users(users)}.`,
+  expired: ':information_source: Skip vote has expired.',
+  not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
+  failed: ':warning: Skip Failed.',
+  users: (users) => `${users.map((user) => `<@${user}>`).join(', ')}`,
+  request: (userId, title) => `:black_right_pointing_double_triangle_with_vertical_bar: Skip Request:\n\n <@${userId}> has requested to skip ${title}`,
+  voters: (users) => `*Votes*: ${SKIP_RESPONSE.users(users)}.`,
+  votesNeeded: (votes) => `*${votes}* more ${votes == 1 ? 'vote' : 'votes'} needed.`,
+};
 
 /**
  * Skip the track on Spotify
@@ -29,7 +37,8 @@ async function startSkipVote(teamId, channelId, userId) {
   try {
     // Get current playback status
     let skipVotes;
-    const status = await fetchCurrentPlayback(teamId, channelId );
+    const {country} = await loadProfile(teamId, channelId);
+    const status = await fetchCurrentPlayback(teamId, channelId, country);
 
     // Spotify is not playing anything so we cannot skip
     if (!status.device || !status.item) {
@@ -37,9 +46,20 @@ async function startSkipVote(teamId, channelId, userId) {
     }
 
     const statusTrack = new Track(status.item);
+
+    const blacklist = await loadBlacklist(teamId, channelId);
+    if (blacklist.find((track) => statusTrack.uri === track.uri)) {
+      await skip(teamId, channelId );
+      await post(
+          inChannelPost(channelId, SKIP_RESPONSE.blacklist(statusTrack.title, [userId])),
+      );
+      return {success: true, response: null, status: null};
+    }
+
+
     // See if there is an existing skip request
     const currentSkip = await loadSkip(teamId, channelId);
-    if (currentSkip && currentSkip.track.id == statusTrack.id) {
+    if (currentSkip && currentSkip.track && currentSkip.track.id == statusTrack.id) {
       // If so - Add Vote to Skip
       await addVote(teamId, channelId, userId, currentSkip, status);
       return {success: true, response: null, status: null};
@@ -54,12 +74,18 @@ async function startSkipVote(teamId, channelId, userId) {
     } else {
       skipVotes = parseInt(await loadSkipVotes(teamId, channelId ));
     }
-
     // Skip threshold is 0
     if (!skipVotes) {
-      await setSkip(teamId, channelId );
+      // Store skip for blacklist
+      if (currentSkip && currentSkip.history) {
+        currentSkip.history.unshift(statusTrack);
+        await storeSkip(teamId, channelId, modelSkip(null, null, null, null, currentSkip.history));
+      } else {
+        await storeSkip(teamId, channelId, modelSkip(null, null, null, null, [statusTrack]));
+      }
+      await skip(teamId, channelId);
       await post(
-          inChannelPost(channelId, skipConfirmation(statusTrack.title, [userId])),
+          inChannelPost(channelId, SKIP_RESPONSE.confirmation(statusTrack.title, [userId])),
       );
       return {success: true, response: null, status: null};
     }
@@ -67,11 +93,10 @@ async function startSkipVote(teamId, channelId, userId) {
     // else Generate a skip request
     const skipBlock = getSkipBlock(userId, skipVotes, statusTrack.title, statusTrack.id, [userId]);
     const slackPost = await post(
-        inChannelPost(channelId, skipRequest(userId, statusTrack.title), skipBlock),
+        inChannelPost(channelId, SKIP_RESPONSE.request(userId, statusTrack.title), skipBlock),
     );
-
     // Store skip with the message timestamp so that we can update the message later
-    const model = modelSkip(slackPost.message.ts, statusTrack, [userId], skipVotes);
+    const model = modelSkip(slackPost.message.ts, statusTrack, [userId], skipVotes, currentSkip ? currentSkip.history : []);
     await storeSkip(teamId, channelId, model);
     return {success: true, response: null, status: null};
   } catch (error) {
@@ -99,7 +124,7 @@ async function addVoteFromPost(teamId, channelId, userId, value, responseUrl) {
     );
     return;
   }
-  await addVote(channelId, userId, currentSkip, status);
+  await addVote(teamId, channelId, userId, currentSkip, status);
 }
 
 /**
@@ -129,7 +154,7 @@ async function addVote(teamId, channelId, userId, currentSkip, status) {
       // Still have votes to go
       const skipBlock = getSkipBlock(userId, currentSkip.votesNeeded, statusTrack.title, statusTrack.id, currentSkip.users);
       await updateChat(
-          messageUpdate(channelId, currentSkip.timestamp, skipRequest(currentSkip.users[0], currentSkip.track.title), skipBlock),
+          messageUpdate(channelId, currentSkip.timestamp, SKIP_RESPONSE.request(currentSkip.users[0], currentSkip.track.title), skipBlock),
       );
       await storeSkip(teamId, channelId, currentSkip);
       return;
@@ -139,11 +164,18 @@ async function addVote(teamId, channelId, userId, currentSkip, status) {
         await deleteChat(
             deleteMessage(channelId, currentSkip.timestamp),
         ),
-        await skip(teamId, channelId );
-        // Skip Vote threshold reached
-        await post(
-            inChannelPost(channelId, skipConfirmation(statusTrack.title, currentSkip.users), null),
-        );
+        await Promise.all([
+          skip(teamId, channelId),
+          post(
+              inChannelPost(channelId, SKIP_RESPONSE.confirmation(statusTrack.title, currentSkip.users), null),
+          ),
+        ]);
+        if (currentSkip && currentSkip.history) {
+          currentSkip.history.unshift(statusTrack);
+          await storeSkip(teamId, channelId, modelSkip(null, null, null, null, currentSkip.history));
+        } else {
+          await storeSkip(teamId, channelId, modelSkip(null, null, null, null, [statusTrack]));
+        }
       } catch (error) {
         // Expected behaviour, we have 2 competing skip clicks. Just allow the first to succeed.
         if (error.data && error.data.error && error.data.error.includes('message_not_found')) {
@@ -177,29 +209,16 @@ async function addVote(teamId, channelId, userId, currentSkip, status) {
  */
 function getSkipBlock(userId, votesNeeded, trackName, trackId, users) {
   return [
-    textSection(skipRequest(userId, trackName)),
-    contextSection(null, skipVotesNeeded(votesNeeded)),
-    contextSection(null, skipVoters(users)),
-    actionSection(SKIP_VOTE, [buttonActionElement(SKIP_VOTE, `:black_right_pointing_double_triangle_with_vertical_bar: Skip`, trackId)]),
+    textSection(SKIP_RESPONSE.request(userId, trackName)),
+    contextSection(null, SKIP_RESPONSE.votesNeeded(votesNeeded)),
+    contextSection(null, SKIP_RESPONSE.voters(users)),
+    actionSection(SKIP_VOTE, [buttonActionElement(SKIP_VOTE, SKIP_RESPONSE.button, trackId)]),
   ];
-}
-
-/**
- * Skip
- * @param {string} teamId
- * @param {string} channelId
- */
-async function setSkip(teamId, channelId ) {
-  try {
-    await skip(teamId, channelId );
-  } catch (error) {
-    logger.error(error);
-    throw error;
-  }
 }
 
 module.exports = {
   addVote,
   addVoteFromPost,
   startSkipVote,
+  SKIP_RESPONSE,
 };

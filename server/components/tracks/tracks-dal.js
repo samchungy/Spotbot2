@@ -1,6 +1,5 @@
-const config = require('config');
 const logger = require('../../util/util-logger');
-const {getSearch, putSearch, searchModel} = require('../../db/search');
+const {batchGetSearch, batchGetParams, getSearch, putSearch, searchModel} = require('../../db/search');
 
 
 /**
@@ -11,7 +10,7 @@ const {getSearch, putSearch, searchModel} = require('../../db/search');
  * @param {Object} trackSearch
  * @param {Object} expiry
  */
-async function storeTrackSearch(teamId, channelId, triggerId, trackSearch, expiry) {
+async function storeSearch(teamId, channelId, triggerId, trackSearch, expiry) {
   try {
     const search = searchModel(teamId, channelId, triggerId, trackSearch, expiry);
     return await putSearch(search);
@@ -27,7 +26,7 @@ async function storeTrackSearch(teamId, channelId, triggerId, trackSearch, expir
  * @param {string} channelId
  * @param {string} triggerId
  */
-async function loadTrackSearch(teamId, channelId, triggerId) {
+async function loadSearch(teamId, channelId, triggerId) {
   try {
     const search = searchModel(teamId, channelId, triggerId, null);
     const item = await getSearch(search);
@@ -38,8 +37,45 @@ async function loadTrackSearch(teamId, channelId, triggerId) {
   }
 }
 
+/**
+ * Batch Load Tracks search from DB
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {array} triggerIds
+ */
+async function batchLoadSearch(teamId, channelId, triggerIds) {
+  try {
+    let params = batchGetParams(triggerIds.map((triggerId) => searchModel(teamId, channelId, triggerId, null)));
+    let unprocessedEmpty = true;
+    const results = [];
+    while (unprocessedEmpty) {
+      const {Responses: searches, UnprocessedKeys} = await batchGetSearch(params);
+      unprocessedEmpty = Object.entries(UnprocessedKeys).length === 0 && UnprocessedKeys.constructor === Object;
+      if (unprocessedEmpty) {
+        for (const table in searches) {
+          if ({}.hasOwnProperty.call(searches, table)) {
+            results.push(searches[table]);
+            unprocessedEmpty = false;
+          }
+        }
+      } else {
+        for (const table in searches) {
+          if ({}.hasOwnProperty.call(searches, table)) {
+            params = searches[table].Keys;
+          }
+        }
+      }
+    }
+    return results.flat();
+  } catch (error) {
+    logger.error('Batch loading track search from Dynamodb failed');
+    throw error;
+  }
+}
+
 
 module.exports = {
-  loadTrackSearch,
-  storeTrackSearch,
+  batchLoadSearch,
+  loadSearch,
+  storeSearch,
 };

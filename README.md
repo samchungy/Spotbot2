@@ -14,8 +14,7 @@
   - Added the ability to Jump to the Start of the playlist and Clear Songs > 1 day.
 
 - Individual Channel Separation (Requires different spotify accounts)
-  - Adds the ability to have multiple Spotbot instances in a single Slack Workspace to control different playlists
-  - Added a global settings panel to manage all Spotbot instances running in channels
+  - Adds the ability to have multiple Spotbot instances in a single Slack Workspace to control different playlists/spotify accounts
 
 - Updated all UI to use Slack Block Kit
 
@@ -25,5 +24,15 @@
 
 - /find
   - Added duration of songs to find panel.
+  - Improved load times on searches by optimising album images
+  - removed /findpop
+
+- /skip
+  - Blacklisted songs can now be skipped immediately.
+
+- Admin
+  - Removed /spotbot auth and moved it into /spotbot settings
+  - Removed admin add/remove commands and moved it into /spotbot settings
+  - Blacklisted tracks can be added and viewed in /spotbot blacklist
 
 

@@ -1,7 +1,7 @@
 const dynamoDb = require('./db');
 const SETTINGS_TABLE = process.env.SETTINGS_TABLE;
 
-const tableSet = (item) => {
+const settingTable = (item) => {
   return {
     TableName: SETTINGS_TABLE,
     ...item,
@@ -9,7 +9,7 @@ const tableSet = (item) => {
 };
 
 const settingInfo = (item) => {
-  return tableSet(
+  return settingTable(
       {
         Item: item,
       });
@@ -32,7 +32,7 @@ const putRequest = (team, channel, name, value) => {
 };
 
 const getSettingInfo = (key) => {
-  return tableSet({
+  return settingTable({
     Key: key,
   });
 };

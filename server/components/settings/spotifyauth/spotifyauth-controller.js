@@ -3,16 +3,48 @@ const logger = require('../../../util/util-logger');
 const {AuthError, PremiumError} = require('../../../errors/errors-auth');
 const {fetchAuthorizeURL, fetchTokens} = require('../../spotify-api/spotify-api-auth');
 const {fetchProfile} = require('../../spotify-api/spotify-api-profile');
-const {loadState, storeState, storeTokens, storeProfile} = require('./spotifyauth-dal');
-const {modelProfile, modelState} = require('../settings-model');
+const {loadState, storeState, storeTokens, storeView} = require('./spotifyauth-dal');
+const {storeDefaultDevice, storePlaylist, storeProfile} = require('../settings-interface');
+const {modelProfile, modelState, modelView} = require('../settings-model');
 const {buttonSection} = require('../../slack/format/slack-format-modal');
-const {contextSection} = require('../../slack/format/slack-format-blocks');
+const {contextSection, confirmObject} = require('../../slack/format/slack-format-blocks');
 const {isEqual} = require('../../../util/util-objects');
 
 const SETTINGS_AUTH = config.get('dynamodb.settings_auth');
-const HINTS = config.get('settings.hints');
-const LABELS = config.get('settings.labels');
-const PREMIUM_ERROR = config.get('settings.errors.premium');
+const HINTS = {
+  auth_verify: 'Click to verify Spotify authentication.',
+  auth_verify_button: 'Verify',
+  auth_urL_fail: 'Try again',
+  auth_url_button: ':link: Authenticate with Spotify',
+  reauth_confirm: `This will disable this channel's Spotbot functionality until Spotbot is reauthenticated.`,
+  reauth_url_button: ':gear: Re-authenticate with Spotify',
+};
+
+const LABELS = {
+  auth_url: 'Click to authenticate with Spotify.',
+  auth_urL_fail: ':warning: Authentication attempt failed.',
+  reauth_confirm: 'Are you sure?',
+  reauth: 'Click to re-authenticate with Spotify.',
+};
+
+const PREMIUM_ERROR = `:x: The Spotify account used is not a Premium account`;
+/**
+ * Resets the authentication
+ * @param {string} teamId
+ * @param {string} channelId
+ */
+async function changeAuthentication(teamId, channelId ) {
+  try {
+    await storeTokens(teamId, channelId, null, null);
+    await Promise.all([
+      storeDefaultDevice(teamId, channelId, null),
+      storePlaylist(teamId, channelId, null),
+    ]);
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
 
 /**
  * Generates a Spotify Authorization URL and stores a state in our db
@@ -25,23 +57,12 @@ async function getAuthorizationURL(teamId, channelId, triggerId) {
     // TODO Store triggerId as Spotify Auth state.
     const state = modelState(teamId, channelId, triggerId);
     const [, authUrl] = await Promise.all([storeState(teamId, channelId, state), fetchAuthorizeURL(teamId, channelId, encodeURI(JSON.stringify(state)))]);
-    console.log(authUrl);
     return authUrl;
   } catch (error) {
     logger.error(error);
     throw error;
     // TODO Handle status report to Slack
   }
-}
-
-/**
- * New Authentication Attempt, reset current auth
- * @param {string} teamId
- * @param {string} channelId
- */
-async function resetAuthentication(teamId, channelId) {
-  // Invalidate any previous auth we had
-  await storeTokens(teamId, channelId, null, null);
 }
 
 /**
@@ -114,7 +135,7 @@ async function getAuthBlock(teamId, channelId, triggerId) {
     } else {
       // Place authenticated blocks
       authBlock.push(
-          buttonSection(SETTINGS_AUTH.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_AUTH.reauth),
+          buttonSection(SETTINGS_AUTH.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_AUTH.reauth, confirmObject(LABELS.reauth_confirm, HINTS.reauth_confirm, 'Reset Authentication', 'Cancel')),
           contextSection(SETTINGS_AUTH.auth_confirmation, authStatement(profile.display_name ? profile.display_name : profile.id)),
       );
     }
@@ -141,9 +162,27 @@ async function getAuthBlock(teamId, channelId, triggerId) {
   };
 }
 
+
+/**
+ * Save the ViewId from our Authentication attempt
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {string} viewId
+ * @param {string} triggerId
+ */
+async function saveView(teamId, channelId, viewId, triggerId) {
+  try {
+    const store = modelView(viewId, triggerId);
+    await storeView(teamId, channelId, store);
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
+  changeAuthentication,
   getAuthBlock,
   getAuthorizationURL,
-  resetAuthentication,
+  saveView,
   validateAuthCode,
 };

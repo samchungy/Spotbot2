@@ -1,9 +1,9 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
-const {loadPlaylistSetting, loadPlaylists, storePlaylists} = require('./settings-dal');
+const {loadPlaylists, storePlaylists} = require('./settings-dal');
 const {modelPlaylist} = require('./settings-model');
 const {createPlaylist, fetchPlaylists} = require('../spotify-api/spotify-api-playlists');
-const {loadProfile} = require('./settings-dal');
+const {loadPlaylist, loadProfile} = require('./settings-interface');
 const {option, optionGroup} = require('../slack/format/slack-format-modal');
 
 const LIMIT = config.get('spotify_api.playlists.limit');
@@ -19,8 +19,8 @@ const NEW_PLAYLIST_REGEX = new RegExp(`^${NEW_PLAYLIST}`);
  */
 async function getAllPlaylists(teamId, channelId, query) {
   try {
-    const currentPlaylist = await loadPlaylistSetting(teamId, channelId );
-    const playlists = await fetchAllPlaylists(teamId, channelId, currentPlaylist);
+    const currentPlaylist = await loadPlaylist(teamId, channelId );
+    const playlists = await allPlaylists(teamId, channelId, currentPlaylist);
     await storePlaylists(teamId, channelId, playlists);
 
     // Converts into Slack Option if it matches the search query
@@ -41,7 +41,7 @@ async function getAllPlaylists(teamId, channelId, query) {
 
     return {
       option_groups: [
-        optionGroup('Search Results:', searchPlaylists),
+        optionGroup('Search Results:', searchPlaylists.slice(0, 100)),
         optionGroup('Other:', other),
       ],
     };
@@ -57,14 +57,13 @@ async function getAllPlaylists(teamId, channelId, query) {
  * @param {string} channelId
  * @param {modelPlaylist} currentPlaylist
  */
-async function fetchAllPlaylists(teamId, channelId, currentPlaylist) {
+async function allPlaylists(teamId, channelId, currentPlaylist) {
   try {
     const compatiblePlaylists = [...currentPlaylist ? [currentPlaylist] : []];
     let count = 0;
     const profile = await loadProfile(teamId, channelId );
     while (true) {
       const playlists = await fetchPlaylists(teamId, channelId, count, LIMIT);
-
       // Only if it is a collaborative playlist or the owner is ourselves - a playlist compatible.
       // and current playlist is not in the list
       compatiblePlaylists.push(
@@ -81,7 +80,7 @@ async function fetchAllPlaylists(teamId, channelId, currentPlaylist) {
         break;
       }
     }
-    return compatiblePlaylists.slice(0, 100);
+    return compatiblePlaylists;
   } catch (error) {
     logger.error('Fetching all Spotify Playlists failed');
     throw error;
@@ -99,8 +98,8 @@ async function getPlaylistValue(teamId, channelId, newValue) {
     if (newValue.includes(NEW_PLAYLIST)) {
       newValue = newValue.replace(NEW_PLAYLIST_REGEX, '');
       // Create a new playlist using Spotify API
-      const spotifyId = await loadProfile(teamId, channelId );
-      const newPlaylist = await createPlaylist(teamId, channelId, spotifyId, newValue);
+      const {id} = await loadProfile(teamId, channelId );
+      const newPlaylist = await createPlaylist(teamId, channelId, id, newValue);
       return modelPlaylist(newValue, newPlaylist.id, newPlaylist.uri, newPlaylist.external_urls.spotify);
     } else {
       // Grab the playlist object from our earlier Database playlist fetch
@@ -115,6 +114,6 @@ async function getPlaylistValue(teamId, channelId, newValue) {
 
 module.exports = {
   getAllPlaylists,
-  fetchAllPlaylists,
+  allPlaylists,
   getPlaylistValue,
 };

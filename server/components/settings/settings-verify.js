@@ -3,8 +3,10 @@ const {isPositiveInteger} = require('../../util/util-objects');
 const DB = config.get('dynamodb.settings');
 const AUTH_URL = config.get('dynamodb.settings_auth.auth_url');
 const AUTH_CONFIRMATION = config.get('dynamodb.settings_auth.auth_confirmation');
-const ERRORS = config.get('settings.errors');
-
+const VERIFY_RESPONSE = {
+  integer_error: 'Please enter a valid integer',
+  not_authenticated: 'Please authenticate an account with Spotify',
+};
 
 /**
  * Extract the results from the submitted Slack modal view
@@ -17,8 +19,8 @@ function extractSubmissions(view) {
   for (const setting in values) {
     if ({}.hasOwnProperty.call(values, setting)) {
       switch (setting) {
-        case DB.slack_channel:
-          submissions[setting] = values[setting][setting].selected_channel;
+        case DB.channel_admins:
+          submissions[setting] = values[setting][setting].selected_users;
           break;
         case DB.playlist:
         case DB.default_device:
@@ -64,7 +66,7 @@ function verifySettings(submission, blocks) {
         case DB.skip_votes:
         case DB.skip_votes_ah:
           if (!isPositiveInteger(value)) {
-            errors[setting] = ERRORS.integer;
+            errors[setting] = VERIFY_RESPONSE.integer;
           }
           break;
       }
@@ -72,7 +74,7 @@ function verifySettings(submission, blocks) {
   }
   // Check for Authentication
   if (blocks.length === 1 || blocks[1].block_id !== AUTH_CONFIRMATION) {
-    errors[AUTH_URL] = ERRORS.not_authenticated;
+    errors[AUTH_URL] = VERIFY_RESPONSE.not_authenticated;
   }
   return errors;
 }

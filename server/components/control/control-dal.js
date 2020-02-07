@@ -1,39 +1,10 @@
 const config = require('config');
-const {getSetting, putSetting, settingModel} = require('../../db/settings');
+const {loadSetting, storeSetting} = require('../settings/settings-dal');
 
-const SKIP = config.get('dynamodb.skip');
+const SKIP = config.get('dynamodb.settings_extra.skip');
 
-/**
- * Stores our skip request/vote to the DB
- * @param {string} team
- * @param {string} channel
- * @param {object} skip
- */
-async function storeSkip(team, channel, skip) {
-  try {
-    const setting = settingModel(team, channel, SKIP, skip);
-    await putSetting(setting);
-  } catch (error) {
-    logger.error('Storing Skip to Dyanmodb failed.');
-    throw error;
-  }
-}
-
-/**
- * Loads our skip request/vote from the DB
- * @param {string} team
- * @param {string} channel
- */
-async function loadSkip(team, channel) {
-  try {
-    const setting = settingModel(team, channel, SKIP, null);
-    const item = await getSetting(setting);
-    return item.Item ? item.Item.value : null;
-  } catch (error) {
-    logger.error('Storing Skip to Dyanmodb failed.');
-    throw error;
-  }
-}
+const storeSkip = (teamId, channelId, value) => storeSetting(teamId, channelId, SKIP, value);
+const loadSkip = (teamId, channelId) => loadSetting(teamId, channelId, SKIP);
 
 module.exports = {
   loadSkip,

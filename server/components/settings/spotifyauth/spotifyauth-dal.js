@@ -1,8 +1,9 @@
 const config = require('config');
 const logger = require('../../../util/util-logger');
-const {getSetting, putSetting, settingModel} = require('../../../db/settings');
+const {getAuth, putAuth, authModel} = require('../../../db/auth');
 
 const AUTH = config.get('dynamodb.auth');
+const VIEW = config.get('dynamodb.auth.view_id');
 
 // Loading Functions
 
@@ -13,8 +14,8 @@ const AUTH = config.get('dynamodb.auth');
  */
 async function loadState(teamId, channelId ) {
   try {
-    const setting = settingModel(teamId, channelId, AUTH.state, null);
-    const result = await getSetting(setting);
+    const setting = authModel(teamId, channelId, AUTH.state, null);
+    const result = await getAuth(setting);
     return result.Item ? result.Item.value : null;
   } catch (error) {
     logger.error('Get State failed');
@@ -30,8 +31,8 @@ async function loadState(teamId, channelId ) {
 async function loadTokens(teamId, channelId ) {
   try {
     let access; let refresh;
-    const authentication = settingModel(teamId, channelId, AUTH.object, null);
-    const result = await getSetting(authentication);
+    const authentication = authModel(teamId, channelId, AUTH.object, null);
+    const result = await getAuth(authentication);
     if (result.Item) {
       access = result.Item.value[AUTH.access];
       refresh = result.Item.value[AUTH.refresh];
@@ -46,18 +47,23 @@ async function loadTokens(teamId, channelId ) {
   }
 }
 
-// Storing Functions
-
 /**
- * Store Spotify Profile in db
+ * Load stored View from db
  * @param {string} teamId
  * @param {string} channelId
- * @param {Object} profileObject
  */
-async function storeProfile(teamId, channelId, profileObject) {
-  const setting = settingModel(teamId, channelId, AUTH.spotify_id, profileObject);
-  return putSetting(setting);
+async function loadView(teamId, channelId ) {
+  try {
+    const setting = authModel(teamId, channelId, VIEW, null);
+    const item = await getAuth(setting);
+    return item.Item ? item.Item.value : null;
+  } catch (error) {
+    logger.error('Loading view from Dynamodb failed');
+    throw error;
+  }
 }
+
+// Storing Functions
 
 /**
  * Store Spotify Auth State in db
@@ -66,8 +72,8 @@ async function storeProfile(teamId, channelId, profileObject) {
  * @param {string} state
  */
 async function storeState(teamId, channelId, state) {
-  const setting = settingModel(teamId, channelId, AUTH.state, state);
-  return putSetting(setting);
+  const setting = authModel(teamId, channelId, AUTH.state, state);
+  return putAuth(setting);
 }
 
 /**
@@ -78,18 +84,35 @@ async function storeState(teamId, channelId, state) {
  * @param {string} refreshToken
  */
 async function storeTokens(teamId, channelId, accessToken, refreshToken) {
-  const authentication = settingModel(teamId, channelId, AUTH.object, {
+  const authentication = authModel(teamId, channelId, AUTH.object, {
     [AUTH.access]: accessToken,
     [AUTH.refresh]: refreshToken,
     [AUTH.expires]: new Date(),
   });
-  return putSetting(authentication);
+  return putAuth(authentication);
+}
+
+/**
+ * Stores a model object in db
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {modelView} view
+ */
+async function storeView(teamId, channelId, view) {
+  try {
+    const setting = authModel(teamId, channelId, VIEW, view);
+    return await putAuth(setting);
+  } catch (error) {
+    logger.error('Storing view to Dynamodb failed');
+    throw error;
+  }
 }
 
 module.exports = {
   loadState,
   loadTokens,
-  storeProfile,
+  loadView,
   storeState,
   storeTokens,
+  storeView,
 };

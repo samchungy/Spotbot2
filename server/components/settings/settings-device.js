@@ -1,9 +1,11 @@
 const config = require('config');
 const logger = require('../../util/util-logger');
 const {fetchDevices} = require('../spotify-api/spotify-api-devices');
-const {loadDevices, loadDefaultDevice, storeDevices} = require('./settings-dal');
+const {loadDevices, storeDevices} = require('./settings-dal');
+const {loadDefaultDevice} = require('./settings-interface');
 const {option} = require('../slack/format/slack-format-modal');
 const {modelDevice} = require('./settings-model');
+const Device = require('../../util/util-spotify-device');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 
@@ -12,19 +14,22 @@ const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
  * @param {string} teamId
  * @param {string} channelId
  */
-async function fetchAllDevices(teamId, channelId) {
+async function allDevices(teamId, channelId) {
   try {
     const [defaultDevice, spotifyDevices] = await Promise.all([loadDefaultDevice(teamId, channelId), fetchDevices(teamId, channelId )]);
     const devices = [
       ...defaultDevice ? [defaultDevice] : [], // If default device, add
       ...spotifyDevices.devices
           .filter((device) => (!defaultDevice || device.id != defaultDevice.id))
-          .map((device) => modelDevice(`${device.name} - ${device.type}`, device.id)),
+          .map((device) => {
+            const deviceObj = new Device(device);
+            return modelDevice(deviceObj.name, device.id);
+          }),
     ];
 
     return devices;
   } catch (error) {
-    logger.error('Fetching all Spotify spotifyDevices failed');
+    logger.error('all devices from Spotify failed');
     throw error;
   }
 }
@@ -36,7 +41,7 @@ async function fetchAllDevices(teamId, channelId) {
  */
 async function getAllDevices(teamId, channelId) {
   try {
-    const spotifyDevices = await fetchAllDevices(teamId, channelId);
+    const spotifyDevices = await allDevices(teamId, channelId);
     await storeDevices(teamId, channelId, spotifyDevices);
     const devices = [
       option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices), // Add a none option
@@ -81,5 +86,5 @@ async function getDeviceValue(teamId, channelId, newValue, oldValue) {
 module.exports = {
   getDeviceValue,
   getAllDevices,
-  fetchAllDevices,
+  allDevices,
 };

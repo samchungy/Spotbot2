@@ -1,8 +1,7 @@
 const logger = require('../../util/util-logger');
-const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
-const {getCurrentTrackPanel, getShuffleRepeatPanel, getControlsPanel} = require('./control-panel');
-const {inChannelPost, messageUpdate} = require('../slack/format/slack-format-reply');
-const {post, updateChat} = require('../slack/slack-api');
+const {updatePanel} = require('./control-panel');
+const {inChannelPost} = require('../slack/format/slack-format-reply');
+const {post} = require('../slack/slack-api');
 const {setPlay} = require('./control-play');
 const {setPause} = require('./control-pause');
 const {startSkipVote, addVoteFromPost} = require('./contol-skip');
@@ -19,56 +18,9 @@ const {setClearOneDay} = require('./control-clear-one');
  */
 async function openControls(teamId, channelId) {
   try {
-    try {
-      const status = await fetchCurrentPlayback(teamId, channelId);
-      const {altText, currentPanel} = await getCurrentTrackPanel(teamId, channelId, status);
-
-      const controlPanel = [
-        ...currentPanel,
-        ...getShuffleRepeatPanel(status) ? [getShuffleRepeatPanel(status)] : [],
-        getControlsPanel(),
-      ];
-
-      await post(
-          inChannelPost(channelId, altText, controlPanel),
-      );
-    } catch (error) {
-      console.error(error);
-      logger.error('Yeet');
-    }
-  } catch (error) {
-    logger.error('Failed to report failiure to Slack');
-  }
-}
-
-
-/**
- * Update the control panel
- * @param {string} teamId
- * @param {string} channelId
- * @param {string} timestamp
- * @param {string} response
- * @param {Object} status
- */
-async function updatePanel(teamId, channelId, timestamp, response, status) {
-  try {
-    if (!status) {
-      status = await fetchCurrentPlayback(teamId, channelId );
-    }
-    const {altText, currentPanel} = await getCurrentTrackPanel(teamId, channelId, status, response);
-
-    const controlPanel = [
-      ...currentPanel,
-      ...getShuffleRepeatPanel(status) ? [getShuffleRepeatPanel(status)] : [],
-      getControlsPanel(),
-    ];
-
-    await updateChat(
-        messageUpdate(channelId, timestamp, altText, controlPanel),
-    );
+    await updatePanel(teamId, channelId);
   } catch (error) {
     logger.error(error);
-    throw error;
   }
 }
 
@@ -77,10 +29,11 @@ async function updatePanel(teamId, channelId, timestamp, response, status) {
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} timestamp
+ * @param {string} userId
  */
-async function play(teamId, channelId, timestamp) {
+async function play(teamId, channelId, timestamp, userId) {
   try {
-    const {success, response, status} = await setPlay(teamId, channelId);
+    const {success, response, status} = await setPlay(teamId, channelId, userId);
     if (!success) {
       await updatePanel(teamId, channelId, timestamp, response, status);
     } else {
@@ -122,7 +75,7 @@ async function pause(teamId, channelId, timestamp, userId) {
 }
 
 /**
- * Hits pause on Spotify
+ * Starts a skip vote on Spotify
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} timestamp
@@ -130,8 +83,10 @@ async function pause(teamId, channelId, timestamp, userId) {
  */
 async function skip(teamId, channelId, timestamp, userId) {
   try {
-    const {response, status} = await startSkipVote(teamId, channelId, userId);
-    await updatePanel(teamId, channelId, timestamp, response, status);
+    const {success, response, status} = await startSkipVote(teamId, channelId, userId);
+    if ((!success && !timestamp) || timestamp) {
+      await updatePanel(teamId, channelId, timestamp, response, status);
+    }
   } catch (error) {
     logger.error(error);
   }
@@ -241,14 +196,22 @@ async function reset(teamId, channelId, timestamp, userId, triggerId) {
   try {
     const {success, response, status} = await startReset(teamId, channelId, timestamp, userId, triggerId);
     if (!success) {
-      await updatePanel(teamId, channelId, timestamp, response, status);
+      if (timestamp) {
+        await updatePanel(teamId, channelId, timestamp, response, status);
+      }
     } else {
-      await Promise.all([
-        updatePanel(teamId, channelId, timestamp, null, status),
-        post(
+      if (timestamp) {
+        await Promise.all([
+          updatePanel(teamId, channelId, timestamp, null, status),
+          post(
+              inChannelPost(channelId, response, null),
+          ),
+        ]);
+      } else {
+        await post(
             inChannelPost(channelId, response, null),
-        ),
-      ]);
+        );
+      }
     }
   } catch (error) {
     logger.error(error);

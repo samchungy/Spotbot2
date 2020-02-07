@@ -1,15 +1,27 @@
 const config = require('config');
-const {loadPlaylistSetting} = require('../settings/settings-dal');
-const Track = require('../../util/util-spotify-track');
-const CONTEXT_RESPONSES = config.get('slack.responses.playback.context');
+const logger = require('../../util/util-logger');
+const {loadBackToPlaylist, loadPlaylist} = require('../settings/settings-interface');
 const {actionSection, buttonActionElement, confirmObject, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('../slack/format/slack-format-blocks');
+const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
+const {inChannelPost, messageUpdate} = require('../slack/format/slack-format-reply');
+const {post, updateChat} = require('../slack/slack-api');
+
+const Track = require('../../util/util-spotify-track');
+
 const CONTROLLER = config.get('slack.actions.controller');
 const CONTROLLER_OVERFLOW = config.get('slack.actions.controller_overflow');
 const CONTROLS = config.get('slack.actions.controls');
-const PLAY_RESPONSES = config.get('slack.responses.playback.play');
-const currentlyPlayingTextMrkdwn = (title, url, artist, album) => `:sound: *Currently Playing...*\n\n<${url}|*${title}*>\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`;
-const currentlyPlayingText = (title, artist, album) => `:sound: Currently Playing... ${title}\n\n:studio_microphone: Artists: ${artist}\nAlbum: ${album}\n`;
 
+const PANEL_RESPONSE = {
+  context_off: (playlist, back) => `:information_source: Not playing from the Spotbot playlist: ${playlist}. ${back ? ` Spotbot will return when you add songs to the playlist.`: ``}`,
+  currently_playing: (title, artist, album) => `:sound: Currently Playing... ${title}\n\n:studio_microphone: Artists: ${artist}\n:dvd: Album: ${album}\n`,
+  currently_playing_mrkdwn: (title, url, artist, album) => `:sound: *Currently Playing...*\n\n<${url}|*${title}*>\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`,
+  not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
+  on_playlist: ':information_source: Currently playing from the Spotbot playlist.',
+  paused: ':double_vertical_bar: Spotify is currently paused.',
+  repeat: ' Repeat is *enabled*.',
+  shuffle: ' Shuffle is *enabled*.',
+};
 
 /**
  * Get Current Track Panel
@@ -25,16 +37,16 @@ async function getCurrentTrackPanel(teamId, channelId, status, response) {
   const currentPanel = [];
   if (status.item) {
     const track = new Track(status.item);
-    const text = currentlyPlayingTextMrkdwn(track.name, track.url, track.artists, track.album);
-    altText = currentlyPlayingText(track.name, track.artists, track.album);
+    const text = PANEL_RESPONSE.currently_playing_mrkdwn(track.name, track.url, track.artists, track.album);
+    altText = PANEL_RESPONSE.currently_playing(track.name, track.artists, track.album);
     currentPanel.push(
         imageSection(text, track.art, `Album Art`),
     );
   } else {
     // Not Playing
-    altText = PLAY_RESPONSES.not_playing;
+    altText = PANEL_RESPONSE.not_playing;
     currentPanel.push(
-        textSection(PLAY_RESPONSES.not_playing),
+        textSection(PANEL_RESPONSE.not_playing),
     );
   }
 
@@ -44,19 +56,19 @@ async function getCurrentTrackPanel(teamId, channelId, status, response) {
     context = response;
   } else {
   // Check if we are playing from the playlist
+    const [backToPlaylist, playlist] = await Promise.all([loadBackToPlaylist(teamId, channelId), loadPlaylist(teamId, channelId )]);
     if (status.context) {
-      const playlist = await loadPlaylistSetting(teamId, channelId );
       if (status.context.uri.includes(playlist.id)) {
-        context = CONTEXT_RESPONSES.on_playlist;
+        context = PANEL_RESPONSE.on_playlist;
       } else {
-        context = CONTEXT_RESPONSES.not_on_playlist;
+        context = PANEL_RESPONSE.context_off(`<${playlist.url}|${playlist.name}>`, backToPlaylist === 'true');
       }
     } else {
-      context = CONTEXT_RESPONSES.not_on_playlist;
+      context = PANEL_RESPONSE.context_off(`<${playlist.url}|${playlist.name}>`, backToPlaylist === 'true');
     }
 
     if (!status.is_playing) {
-      context = CONTEXT_RESPONSES.paused;
+      context = PANEL_RESPONSE.paused;
     }
   }
 
@@ -65,7 +77,7 @@ async function getCurrentTrackPanel(teamId, channelId, status, response) {
   }
 
   return {altText, currentPanel};
-}
+};
 
 
 /**
@@ -98,15 +110,50 @@ function getShuffleRepeatPanel(status) {
   let warning = `:warning:`; // Shuffle/Repeat States
   // Check if Shuffle/Repeat are enabled
   if (status.shuffle_state) {
-    warning += CONTEXT_RESPONSES.shuffle;
+    warning += PANEL_RESPONSE.shuffle;
   }
   if (status.repeat_state && status.repeat_state != `off`) {
-    warning += CONTEXT_RESPONSES.repeat;
+    warning += PANEL_RESPONSE.repeat;
   }
-  if (warning.includes(CONTEXT_RESPONSES.shuffle) || warning.includes(CONTEXT_RESPONSES.repeat)) {
+  if (warning.includes(PANEL_RESPONSE.shuffle) || warning.includes(PANEL_RESPONSE.repeat)) {
     return contextSection(null, warning);
   }
   return null;
+}
+
+/**
+ * Update the control panel
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {string} timestamp
+ * @param {string} response
+ * @param {Object} status
+ */
+async function updatePanel(teamId, channelId, timestamp, response, status) {
+  try {
+    if (!status) {
+      status = await fetchCurrentPlayback(teamId, channelId );
+    }
+    const {altText, currentPanel} = await getCurrentTrackPanel(teamId, channelId, status, response);
+
+    const controlPanel = [
+      ...currentPanel,
+      ...getShuffleRepeatPanel(status) ? [getShuffleRepeatPanel(status)] : [],
+      getControlsPanel(),
+    ];
+    if (timestamp) {
+      await updateChat(
+          messageUpdate(channelId, timestamp, altText, controlPanel),
+      );
+    } else {
+      await post(
+          inChannelPost(channelId, altText, controlPanel),
+      );
+    }
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
 }
 
 
@@ -114,4 +161,6 @@ module.exports = {
   getCurrentTrackPanel,
   getControlsPanel,
   getShuffleRepeatPanel,
+  PANEL_RESPONSE,
+  updatePanel,
 };
