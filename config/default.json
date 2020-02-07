@@ -83,8 +83,7 @@
           "default_device": 0,
           "playlist": 3,
           "timezone": 3
-        },
-        "help": "*Find Tracks*\n\n`/find [track name]` - Find a track on Spotify\n`/artist [artist name]` - Find a track by an artist on Spotify\n`/removetrack` - Lists tracks to remove from the playlist\n\n*Playback Status*\n\n`/current` - Show the current playing track and it’s position in the playlist\n`/whom` - Show who requested the current track\n\n*Control*\n\n`/control` - Opens a Spotbot control panel\n`/play` - Hits play on Spotify\n`/pause`- Hits pause on Spotify\n`/skip` - Starts a vote to skip a track\n`/reset` - Nuke the playlist\n\n*Admin Commands*\n\n`/spotbot settings` - Opens the Spotbot Settings panel.\n`/spotbot blacklist` - Opens the Spotbot Blacklist panel.\n"
+        }
       },
       "slack": {
         "limits": {
