@@ -11,6 +11,7 @@ jest.mock('../../server/components/settings/settings-dal');
 jest.mock('../../server/components/settings/settings-interface');
 jest.mock('../../server/components/spotify-api/spotify-api-playlists');
 jest.mock('../../server/components/slack/slack-api');
+jest.mock('../../server/components/slack/slack-middleware', () => jest.fn(async (ctx, next) => await next()));
 
 const {emptySettings, fullDevice, fullPlaylists, fullProfile} = require('../mocks/db/settings');
 const {settingsCreatePlaylistPayload, settingsRegularPayload} = require('../mocks/payloads/slack-actions');

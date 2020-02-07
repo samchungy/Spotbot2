@@ -18,6 +18,7 @@ jest.mock('../../server/components/control/control-panel');
 jest.mock('../../server/util/util-timeout');
 jest.mock('../../server/components/slack/slack-api');
 jest.mock('../../server/components/control/control-jump');
+jest.mock('../../server/components/slack/slack-middleware', () => jest.fn(async (ctx, next) => await next()));
 
 const {clearOneDayPayload} = require('../mocks/payloads/slack-actions');
 const {mockFetchTracks, mockFetchTracksDayOld} = require('../mocks/spotify-api/playlist');

@@ -16,6 +16,7 @@ jest.mock('../../server/components/slack/slack-api');
 jest.mock('../../server/components/control/control-panel');
 jest.mock('../../server/util/util-timeout');
 jest.mock('../../server/components/tracks/tracks-dal');
+jest.mock('../../server/components/slack/slack-middleware', () => jest.fn(async (ctx, next) => await next()));
 
 const {findSlashPayload} = require('../mocks/payloads/slash-commands');
 const {mockSearchTracks} = require('../mocks/spotify-api/search');

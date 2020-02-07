@@ -13,6 +13,7 @@ jest.mock('../../server/components/settings/settings-interface');
 jest.mock('../../server/components/spotify-api/spotify-api-profile');
 jest.mock('../../server/components/spotify-api/spotify-api-auth');
 jest.mock('../../server/components/settings/settings-controller');
+jest.mock('../../server/components/slack/slack-middleware', () => jest.fn(async (ctx, next) => await next()));
 
 
 const {authUrlPayload, reauthPayload} = require('../mocks/payloads/slack-actions');

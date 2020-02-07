@@ -17,6 +17,7 @@ jest.mock('../../server/components/settings/settings-dal');
 jest.mock('../../server/components/spotify-api/spotify-api-playlists');
 jest.mock('../../server/components/slack/slack-api.js');
 jest.mock('../../server/components/spotify-api/spotify-api-devices');
+jest.mock('../../server/components/slack/slack-middleware', () => jest.fn(async (ctx, next) => await next()));
 
 
 beforeEach(() => {

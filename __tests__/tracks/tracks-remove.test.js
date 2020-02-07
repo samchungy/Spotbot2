@@ -15,6 +15,7 @@ jest.mock('../../server/components/spotify-api/spotify-api-playlists');
 jest.mock('../../server/components/slack/slack-api');
 jest.mock('../../server/components/tracks/tracks-dal');
 jest.mock('../../server/components/spotify-api/spotify-api-tracks');
+jest.mock('../../server/components/slack/slack-middleware', () => jest.fn(async (ctx, next) => await next()));
 
 const {mockFetchTracksRemove} = require('../mocks/spotify-api/playlist');
 const {mockFetchTracksInfo} = require('../mocks/spotify-api/tracks');

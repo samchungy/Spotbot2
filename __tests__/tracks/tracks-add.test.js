@@ -26,6 +26,7 @@ jest.mock('../../server/util/util-timeout');
 jest.mock('../../server/components/tracks/tracks-dal');
 jest.mock(('../../server/components/spotify-api/spotify-api-tracks'));
 jest.mock('../../server/components/settings/blacklist/blacklist-dal');
+jest.mock('../../server/components/slack/slack-middleware', () => jest.fn(async (ctx, next) => await next()));
 
 const {mockFetchTracks, mockFetchTracksbtp} = require('../mocks/spotify-api/playlist');
 const {mockFetchRobbery} = require('../mocks/spotify-api/tracks');

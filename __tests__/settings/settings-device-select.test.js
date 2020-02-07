@@ -18,6 +18,7 @@ jest.mock('../../server/components/spotify-api/spotify-api-tracks');
 jest.mock('../../server/components/settings/blacklist/blacklist-dal');
 jest.mock('../../server/components/control/control-dal');
 jest.mock('../../server/components/spotify-api/spotify-api-devices');
+jest.mock('../../server/components/slack/slack-middleware', () => jest.fn(async (ctx, next) => await next()));
 
 const {mockFetchCurrentPlayback} = require('../mocks/spotify-api/playback-status');
 const {mockFetchDevices} = require('../mocks/spotify-api/devices');

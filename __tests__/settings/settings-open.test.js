@@ -16,6 +16,7 @@ jest.mock('../../server/components/settings/spotifyauth/spotifyauth-dal');
 jest.mock('../../server/components/slack/slack-api.js');
 jest.mock('../../server/components/settings/settings-dal');
 jest.mock('../../server/components/settings/settings-interface');
+jest.mock('../../server/components/slack/slack-middleware', () => jest.fn(async (ctx, next) => await next()));
 
 const {settingsSlashPayload} = require('../mocks/payloads/slash-commands');
 const {mockFetchProfile, mockFetchProfileFree} = require('../mocks/spotify-api/profile');

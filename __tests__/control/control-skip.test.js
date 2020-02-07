@@ -18,6 +18,7 @@ jest.mock('../../server/components/settings/blacklist/blacklist-dal');
 jest.mock('../../server/components/control/control-panel');
 jest.mock('../../server/components/spotify-api/spotify-api-playback');
 jest.mock('../../server/components/control/control-dal');
+jest.mock('../../server/components/slack/slack-middleware', () => jest.fn(async (ctx, next) => await next()));
 
 const {skipSlashPayload} = require('../mocks/payloads/slash-commands');
 const {voteSkipPayload} = require('../mocks/payloads/slack-actions');

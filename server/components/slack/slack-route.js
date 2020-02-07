@@ -20,12 +20,14 @@ const {clearOneDay, jumpToStart, pause, play, reset, skip, toggleRepeat, toggleS
 const {getMoreArtists, getMoreTracks, cancelSearch, removeTracks, setTrack, viewArtist} = require('../tracks/tracks-controller');
 const {saveBlacklist} = require('../settings/blacklist/blacklist-controller');
 const {switchDevice} = require('../settings/device-select/device-controller');
+const slackVerifyMiddleware = require('../slack/slack-middleware');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
     prefix: prefix,
   });
   router
+      .use(slackVerifyMiddleware)
       .post('/', async (ctx, next) => {
         const payload = JSON.parse(ctx.request.body.payload);
         switch (payload.type) {

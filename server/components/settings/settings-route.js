@@ -4,6 +4,7 @@ const {checkIsAdmin, checkSettings, isSetup} = require('../settings/settings-mid
 const {openBlacklistModal} = require('./blacklist/blacklist-controller');
 const {openDevicesModal} = require('./device-select/device-controller');
 const {validateAuthCode} = require('./spotifyauth/spotifyauth-controller');
+const slackVerifyMiddleware = require('../slack/slack-middleware');
 const HELP = config.get('settings.help');
 
 module.exports = ( prefix, Router ) => {
@@ -11,6 +12,17 @@ module.exports = ( prefix, Router ) => {
     prefix: prefix,
   });
   router
+      .get('/auth/callback', async (ctx, next) => {
+        const {success, failReason, state} = await validateAuthCode(ctx.query.code, ctx.query.state);
+        if (success) {
+          ctx.body = 'Authentication Successful. Please close this window';
+          updateView(state.teamId, state.channelId);
+        } else {
+          ctx.status = 401;
+          ctx.body = failReason;
+        }
+      })
+      .use(slackVerifyMiddleware)
       .post('/', async (ctx, next) => {
         const payload = ctx.request.body;
         if (payload.text) {
@@ -42,16 +54,6 @@ module.exports = ( prefix, Router ) => {
                 break;
             }
           }
-        }
-      })
-      .get('/auth/callback', async (ctx, next) => {
-        const {success, failReason, state} = await validateAuthCode(ctx.query.code, ctx.query.state);
-        if (success) {
-          ctx.body = 'Authentication Successful. Please close this window';
-          updateView(state.teamId, state.channelId);
-        } else {
-          ctx.status = 401;
-          ctx.body = failReason;
         }
       });
   return router;
