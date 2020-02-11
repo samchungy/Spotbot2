@@ -1,0 +1,15 @@
+{
+  "name": "configs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "util-logger.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "config": "^3.2.5",
+    "pino": "^5.16.0"
+  }
+}
