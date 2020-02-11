@@ -1,15 +1,14 @@
-require('dotenv').config();
 const serverless = require('serverless-http');
 const Koa = require('koa');
 const Router = require('koa-router');
 const bodyParser = require('koa-bodyparser');
-const logger = require('koa-pino-logger');
-const errorHandler = require('./errors/errors-handler');
+const logger = require('koa-logger');
+const errorHandler = require('./error-handler');
 const router = require('./index')({Router});
 const app = new Koa();
 
 app
-    .use(logger({level: process.env.LOG_LEVEL}))
+    .use(logger())
     .use(errorHandler)
     .use(bodyParser({
       formLimit: '10mb',

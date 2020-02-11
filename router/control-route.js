@@ -1,15 +1,13 @@
-const {openControls} = require('./control-controller');
-const {publicAck} = require('../slack/format/slack-format-reply');
-const {checkSettingsMiddleware} = require('../settings/settings-middleware');
-const {pause, play, reset, skip} = require('../control/control-controller');
-const slackVerifyMiddleware = require('../slack/slack-middleware');
+// const {openControls} = require('../server/components/control/control-controller');
+// const {publicAck} = require('../server/components/slack/format/slack-format-reply');
+// const {checkSettingsMiddleware} = require('../server/components/settings/settings-middleware');
+// const {pause, play, reset, skip} = require('../server/components/control/control-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
     prefix: prefix,
   });
   router
-      .use(slackVerifyMiddleware)
       .use(checkSettingsMiddleware)
       .post('/', async (ctx, next) => {
         const payload = ctx.request.body;

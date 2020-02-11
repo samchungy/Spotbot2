@@ -1,14 +1,12 @@
-const {find, findArtists, getCurrentInfo, getWhom, removeTrackReview} = require('../tracks/tracks-controller');
-const {checkSettingsMiddleware} = require('../settings/settings-middleware');
-const {publicAck} = require('../slack/format/slack-format-reply');
-const slackVerifyMiddleware = require('../slack/slack-middleware');
+// const {find, findArtists, getCurrentInfo, getWhom, removeTrackReview} = require('../server/components/tracks/tracks-controller');
+// const {checkSettingsMiddleware} = require('../server/components/settings/settings-middleware');
+// const {publicAck} = require('../server/components/slack/format/slack-format-reply');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
     prefix: prefix,
   });
   router
-      .use(slackVerifyMiddleware)
       .use(checkSettingsMiddleware)
       .post('/find', async (ctx, next) => {
         const payload = ctx.request.body;

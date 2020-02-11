@@ -13,21 +13,19 @@ const MORE_ARTISTS = config.get('slack.actions.artists.see_more_artists');
 const ADD_TRACK = config.get('slack.actions.tracks.add_to_playlist');
 const VIEW_ARTIST = config.get('slack.actions.artists.view_artist_tracks');
 
-const {checkSettings} = require('../settings/settings-middleware');
-const {getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, updateView} = require('../settings/settings-controller');
-const {changeAuthentication, saveView} = require('../settings/spotifyauth/spotifyauth-controller');
-const {clearOneDay, jumpToStart, pause, play, reset, skip, toggleRepeat, toggleShuffle, verifyResetReview, voteToSkip} = require('../control/control-controller');
-const {getMoreArtists, getMoreTracks, cancelSearch, removeTracks, setTrack, viewArtist} = require('../tracks/tracks-controller');
-const {saveBlacklist} = require('../settings/blacklist/blacklist-controller');
-const {switchDevice} = require('../settings/device-select/device-controller');
-const slackVerifyMiddleware = require('../slack/slack-middleware');
+// const {checkSettings} = require('../server/components/settings/settings-middleware');
+// const {getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, updateView} = require('../server/components/settings/settings-controller');
+// const {changeAuthentication, saveView} = require('../server/components/settings/spotifyauth/spotifyauth-controller');
+// const {clearOneDay, jumpToStart, pause, play, reset, skip, toggleRepeat, toggleShuffle, verifyResetReview, voteToSkip} = require('../server/components/control/control-controller');
+// const {getMoreArtists, getMoreTracks, cancelSearch, removeTracks, setTrack, viewArtist} = require('../server/components/tracks/tracks-controller');
+// const {saveBlacklist} = require('../server/components/settings/blacklist/blacklist-controller');
+// const {switchDevice} = require('../server/components/settings/device-select/device-controller');
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
     prefix: prefix,
   });
   router
-      .use(slackVerifyMiddleware)
       .post('/', async (ctx, next) => {
         const payload = JSON.parse(ctx.request.body.payload);
         switch (payload.type) {
