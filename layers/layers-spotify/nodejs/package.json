@@ -1,0 +1,15 @@
+{
+  "name": "spotify-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "spotify-api-auth.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "moment-timezone": "^0.5.27",
+    "spotify-web-api-node": "git+https://github.com/samchungy/spotify-web-api-node.git#spotbot"
+  }
+}
