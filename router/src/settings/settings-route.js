@@ -1,5 +1,5 @@
-const Lambda = require('aws-sdk/clients/lambda');
-const lambda = new Lambda();
+const SNS = require('aws-sdk/clients/sns');
+const sns = new SNS();
 // const {openSettings} = require('../server/components/settings/settings-controller');
 const {checkIsAdmin, checkIsSetup} = require('./settings-check');
 // const {openBlacklistModal} = require('../server/components/settings/blacklist/blacklist-controller');
@@ -23,11 +23,10 @@ module.exports = ( prefix, Router ) => {
               case 'settings':
                 if (!await checkIsSetup(payload.team_id, payload.channel_id) || await checkIsAdmin(payload.team_id, payload.channel_id, payload.user_id, payload.response_url)) {
                   const params = {
-                    FunctionName: process.env.FUNC_PREFIX + 'settings-open',
-                    InvocationType: 'Event',
-                    Payload: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, triggerId: payload.trigger_id}),
+                    Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, triggerId: payload.trigger_id}),
+                    TopicArn: process.env.SETTINGS_OPEN,
                   };
-                  lambda.invoke(params).promise();
+                  await sns.publish(params).promise(); ;
                 }
                 ctx.body = '';
                 break;

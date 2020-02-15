@@ -14,10 +14,13 @@ custom:
   #     port: 8000
   #     dbPath: .dynamodb/db
   #     migrate: true
+  stage: ${opt:stage, self:provider.stage}
   dev:
     deletion_policy: Delete
   prod:
     deletion_policy: Retain
+  prefix: ${self:service}-${self:custom.stage}
+  topic: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.prefix}
 
 provider:
   name: aws
@@ -25,14 +28,14 @@ provider:
   runtime: nodejs12.x
   environment:
     REGION: ${self:provider.region}
-    AUTH_TABLE: ${self:service}-${opt:stage, self:provider.stage}-auth
-    SETTINGS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-settings
-    SEARCH_TABLE: ${self:service}-${opt:stage, self:provider.stage}-search
+    AUTH_TABLE: ${self:custom.prefix}-auth
+    SETTINGS_TABLE: ${self:custom.prefix}-settings
+    SEARCH_TABLE: ${self:custom.prefix}-search
     LOG_LEVEL: info
     SLACK_TOKEN: ${env:SLACK_TOKEN}
     CONFIG: /opt/config/config
     LOGGER: /opt/utils/util-logger
-    FUNC_PREFIX: ${self:service}-${opt:stage, self:provider.stage}-
+    MOMENT: /opt/moment-timezone/moment-timezone-with-data-1970-2030
   iamRoleStatements:
   - Effect: Allow
     Action:
@@ -49,17 +52,26 @@ provider:
     ]
   - Effect: Allow
     Action:
-      - lambda:InvokeFunction
-    Resource: "arn:aws:lambda:ap-southeast-2:#{AWS::AccountId}:function:${self:service}-${opt:stage, self:provider.stage}-"
+      - SNS:Publish
+    Resource: "${self:custom.topic}-*"
 layers:
-  config:
-    path: layers/layers-config-utils
-  db:
-    path: layers/layers-db
+  # Main Layers
+  core:
+    name: ${self:custom.prefix}-core
+    path: layers/layers-core
   settings:
+    name: ${self:custom.prefix}-settings
     path: layers/layers-settings
   slack:
+    name: ${self:custom.prefix}-slack
     path: layers/layers-slack
+  spotify:
+    name: ${self:custom.prefix}-spotify
+    path: layers/layers-spotify
+  # Other Layers
+  settingsblocks:
+    name: ${self:custom.prefix}-settingsblocks
+    path: components/settings/layers/layers-settings
 
 functions:
   #Router
@@ -72,14 +84,11 @@ functions:
         - ./**
     handler: authorizer/authorizer-headers.handler
   router:
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - lambda:InvokeFunction
-        Resource: "*"
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
-    memorySize: 128
+      SETTINGS_OPEN: ${self:custom.topic}-settings-open
+      SETTINGS_UPDATE_VIEW: ${self:custom.topic}-settings-update-view
+    memorySize: 512
     package:
       include:
         - ./router/**
@@ -94,17 +103,25 @@ functions:
             name: authorizer-slack-headers
             identitySource: method.request.header.X-Slack-Request-Timestamp, method.request.header.X-Slack-Signature
             type: request
+      - http:
+          method: get
+          path: spotify-auth-callback
     layers:
-      - { Ref: ConfigLambdaLayer }
-      - { Ref: DbLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
       - { Ref: SettingsLambdaLayer }
       - { Ref: SlackLambdaLayer }
+
       # - http: 
       #     path: /spotify-auth-callback
       #     method: get
   #Settings
   settings-open:
-    memorySize: 128
+    environment:
+      REDIRECT_URL: https://#{ApiGatewayRestApi}.execute-api.${self:provider.region}.amazonaws.com/${self:custom.stage}/spotify-auth-callback
+    events:
+      - sns: ${self:custom.prefix}-settings-open
+    memorySize: 320
     package:
       include:
         - ./components/settings/settings-open.js
@@ -112,13 +129,35 @@ functions:
         - ./**
     handler: components/settings/settings-open.handler
     layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SettingsLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
+      - { Ref: SettingsblocksLambdaLayer }
+  settings-update-view:
+    events:
+      - sns: ${self:custom.prefix}-settings-update-view
+    memorySize: 320
+    package:
+      include:
+        - ./components/settings/settings-update-view.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SettingsLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SettingsblocksLambdaLayer }
+
+
 
 resources:
   Resources:
     SpotbotAuthTable:
       Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: ${self:custom.${opt:stage, self:provider.stage}.deletion_policy}
+      DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
       Properties:
         BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
@@ -137,7 +176,7 @@ resources:
         TableName: ${self:provider.environment.AUTH_TABLE}
     SpotbotSettingsTable:
       Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: ${self:custom.${opt:stage, self:provider.stage}.deletion_policy}
+      DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
       Properties:
         BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
@@ -153,7 +192,7 @@ resources:
         TableName: ${self:provider.environment.SETTINGS_TABLE}
     SpotbotSearchTable:
       Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: ${self:custom.${opt:stage, self:provider.stage}.deletion_policy}
+      DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
       Properties:
         BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
