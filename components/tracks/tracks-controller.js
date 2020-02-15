@@ -1,4 +1,4 @@
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const {findAndStore, getThreeTracks} = require('./tracks-find');
 const {findAndStoreArtists, getArtistTracks, getThreeArtists} = require('./tracks-artists-find');
 const {getCurrentInfo} = require('./tracks-current');

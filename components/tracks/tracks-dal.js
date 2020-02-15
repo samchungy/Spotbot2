@@ -1,5 +1,5 @@
-const logger = require('../../util/util-logger');
-const {batchGetSearch, batchGetParams, getSearch, putSearch, searchModel} = require('../../db/search');
+const logger = require('../../../layers/config/util-logger');
+const {batchGetSearch, batchGetParams, getSearch, putSearch, searchModel} = require('../../../layers/db/search');
 
 
 /**

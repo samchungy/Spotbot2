@@ -1,7 +1,7 @@
 
 
 const config = require('config');
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const moment = require('moment-timezone');
 
 const {addTracksToPlaylist, deleteTracks, fetchPlaylistTotal, fetchTracks} = require('../spotify-api/spotify-api-playlists');
@@ -11,9 +11,9 @@ const {fetchTrackInfo} = require('../spotify-api/spotify-api-tracks');
 const {loadBackToPlaylist, loadPlaylist, loadProfile, loadRepeat, loadBackToPlaylistState, storeBackToPlaylistState} = require('../settings/settings-interface');
 const {loadSearch, storeSearch} = require('../tracks/tracks-dal');
 const {modelHistory} = require('../tracks/tracks-model');
-const {sleep} = require('../../util/util-timeout');
-const PlaylistTrack = require('../../util/util-spotify-playlist-track');
-const Track = require('../../util/util-spotify-track');
+const {sleep} = require('../../../layers/misc/util-timeout');
+const PlaylistTrack = require('../../../layers/spotifyObjects/util-spotify-playlist-track');
+const Track = require('../../../layers/spotifyObjects/util-spotify-track');
 const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const EXPIRY = Math.floor(Date.now() / 1000) + (30 * 24 * 60); // Current Time in Epoch + a month in seconds

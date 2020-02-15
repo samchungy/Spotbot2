@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const INFO_LIMIT = config.get('spotify_api.tracks.info_limit');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const REMOVE_MODAL = config.get('slack.actions.remove_modal');
@@ -7,8 +7,8 @@ const {loadPlaylist, loadProfile} = require('../settings/settings-interface');
 const {fetchPlaylistTotal, fetchTracks, deleteTracks} = require('../spotify-api/spotify-api-playlists');
 const {fetchTracksInfo} = require('../spotify-api/spotify-api-tracks');
 const {batchLoadSearch} = require('../tracks/tracks-dal');
-const PlaylistTrack = require('../../util/util-spotify-playlist-track');
-const Track = require('../../util/util-spotify-track');
+const PlaylistTrack = require('../../../layers/spotifyObjects/util-spotify-playlist-track');
+const Track = require('../../../layers/spotifyObjects/util-spotify-track');
 const {ephemeralPost, inChannelPost} = require('../slack/format/slack-format-reply');
 const {sendModal, post, postEphemeral} = require('../slack/slack-api');
 const {option, multiSelectStatic, slackModal} = require('../slack/format/slack-format-modal');

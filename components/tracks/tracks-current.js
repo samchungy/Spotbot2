@@ -1,4 +1,4 @@
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const config = require('config');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {fetchTracks, fetchPlaylistTotal} = require('../spotify-api/spotify-api-playlists');
@@ -6,8 +6,8 @@ const {loadBackToPlaylist, loadPlaylist} = require('../settings/settings-interfa
 const {contextSection, textSection} = require('../slack/format/slack-format-blocks');
 const {inChannelPost} = require('../slack/format/slack-format-reply');
 const {post} = require('../slack/slack-api');
-const Track = require('../../util/util-spotify-track');
-const PlaylistTrack = require('../../util/util-spotify-playlist-track');
+const Track = require('../spotify-api/spotifyObjects/util-spotify-track');
+const PlaylistTrack = require('../spotify-api/spotifyObjects/util-spotify-playlist-track');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 
 const CURRENT_RESPONSES = {

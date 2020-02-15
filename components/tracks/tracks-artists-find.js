@@ -1,4 +1,4 @@
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const config = require('config');
 const {fetchArtists} = require('../spotify-api/spotify-api-search');
 const {fetchArtistTracks} = require('../spotify-api/spotify-api-tracks');
@@ -9,9 +9,9 @@ const {postEphemeral, reply} = require('../slack/slack-api');
 const {ephemeralPost, updateReply} = require('../slack/format/slack-format-reply');
 const {isInvalidQuery} = require('./tracks-find');
 
-const Artist = require('../../util/util-spotify-artist');
-const Track = require('../../util/util-spotify-track');
-const Search = require('../../util/util-spotify-search');
+const Artist = require('../../../layers/spotifyObjects/util-spotify-artist');
+const Track = require('../../../layers/spotifyObjects/util-spotify-track');
+const Search = require('../../../layers/spotifyObjects/util-spotify-search');
 
 const EXPIRY = Math.floor(Date.now() / 1000) + 86400; // Current Time in Epoch + 84600 (A day)
 const LIMIT = config.get('spotify_api.tracks.limit'); // 24 Search results = 8 pages.

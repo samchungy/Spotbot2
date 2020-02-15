@@ -1,4 +1,4 @@
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const config = require('config');
 const moment = require('moment-timezone');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
@@ -9,8 +9,8 @@ const {loadSearch} = require('../tracks/tracks-dal');
 const {getCurrentInfo} = require('./tracks-current');
 const {inChannelPost} = require('../slack/format/slack-format-reply');
 const {post} = require('../slack/slack-api');
-const Track = require('../../util/util-spotify-track');
-const PlaylistTrack = require('../../util/util-spotify-playlist-track');
+const Track = require('../spotify-api/spotifyObjects/util-spotify-track');
+const PlaylistTrack = require('../spotify-api/spotifyObjects/util-spotify-playlist-track');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const WHOM_RESPONSE = {
   now_playing_direct: (title, user, time) => `:microphone: ${title} was added directly to the playlist in Spotify ${time} by ${user}.`,
