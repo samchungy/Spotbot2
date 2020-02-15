@@ -82,12 +82,13 @@ async function storeState(teamId, channelId, state) {
  * @param {string} channelId
  * @param {string} accessToken
  * @param {string} refreshToken
+ * @param {string} date
  */
-async function storeTokens(teamId, channelId, accessToken, refreshToken) {
+async function storeTokens(teamId, channelId, accessToken, refreshToken, date) {
   const authentication = authModel(teamId, channelId, AUTH.object, {
     [AUTH.access]: accessToken,
     [AUTH.refresh]: refreshToken,
-    [AUTH.expires]: new Date(),
+    [AUTH.expires]: date,
   });
   return putAuth(authentication);
 }
