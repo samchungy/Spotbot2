@@ -1,9 +1,9 @@
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {fetchPlaylistTotal} = require('../spotify-api/spotify-api-playlists');
 const {loadDefaultDevice, loadPlaylist} = require('../settings/settings-interface');
 const {play} = require('../spotify-api/spotify-api-playback');
-const {sleep} = require('../../util/util-timeout');
+const {sleep} = require('../../../layers/configs-utils/util-timeout');
 const JUMP_RESPONSE = {
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   success: (userId) => `:arrow_forward: Spotify is now playing from the start of the playlist. Set by <@${userId}>.`,

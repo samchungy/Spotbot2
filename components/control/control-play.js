@@ -1,12 +1,12 @@
 const config = require('config');
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 
 const {loadDefaultDevice, loadPlaylist} = require('../settings/settings-interface');
 const {play} = require('../spotify-api/spotify-api-playback');
 const {fetchDevices} = require('../spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
-const {PlaybackError} = require('../../errors/errors-playback');
-const {sleep} = require('../../util/util-timeout');
+const {PlaybackError} = require('../../../layers/errors/errors-playback');
+const {sleep} = require('../../../layers/configs-utils/util-timeout');
 
 const NO_DEVICES = config.get('dynamodb.settings_helper.no_devices');
 const PLAY_RESPONSE = {
@@ -94,7 +94,7 @@ async function attemptPlay(teamId, channelId, deviceId, status, playlist, attemp
       return {success: false, response: PLAY_RESPONSE.empty_playlist, status: status};
     }
     if (attempt == 2) {
-      throw new PlaybackError();
+      throw new Error;
     }
   }
 

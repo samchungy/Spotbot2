@@ -1,7 +1,7 @@
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const {fetchDevices} = require('../spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
-const {sleep} = require('../../util/util-timeout');
+const {sleep} = require('../../../layers/configs-utils/util-timeout');
 const {pause} = require('../spotify-api/spotify-api-playback');
 
 const PAUSE_RESPONSE = {

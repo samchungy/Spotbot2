@@ -1,12 +1,12 @@
 const config = require('config');
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const {loadBackToPlaylist, loadPlaylist} = require('../settings/settings-interface');
 const {actionSection, buttonActionElement, confirmObject, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('../slack/format/slack-format-blocks');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 const {inChannelPost, messageUpdate} = require('../slack/format/slack-format-reply');
 const {post, updateChat} = require('../slack/slack-api');
 
-const Track = require('../../util/util-spotify-track');
+const Track = require('../../../layers/spotifyObjects/util-spotify-track');
 
 const CONTROLLER = config.get('slack.actions.controller');
 const CONTROLLER_OVERFLOW = config.get('slack.actions.controller_overflow');

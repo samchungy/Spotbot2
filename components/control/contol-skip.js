@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const moment = require('moment-timezone');
 const {skip} = require('../spotify-api/spotify-api-playback');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
@@ -10,7 +10,7 @@ const {modelSkip} = require('./control-skip-model');
 const {actionSection, buttonActionElement, contextSection, textSection} = require('../slack/format/slack-format-blocks');
 const {deleteChat, postEphemeral, post, reply, updateChat} = require('../slack/slack-api');
 const {deleteMessage, ephemeralPost, inChannelPost, messageUpdate, updateReply} = require('../slack/format/slack-format-reply');
-const Track = require('../../util/util-spotify-track');
+const Track = require('../spotify-api/spotifyObjects/util-spotify-track');
 
 const SKIP_VOTE = config.get('slack.actions.skip_vote');
 const SKIP_RESPONSE = {

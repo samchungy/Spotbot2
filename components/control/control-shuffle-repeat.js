@@ -1,6 +1,6 @@
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const {repeat, shuffle} = require('../spotify-api/spotify-api-playback');
-const {sleep} = require('../../util/util-timeout');
+const {sleep} = require('../../../layers/misc/util-timeout');
 const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
 
 const SHUFFLE_RESPONSE = {

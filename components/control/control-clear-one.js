@@ -1,9 +1,9 @@
 const moment = require('moment-timezone');
 const config = require('config');
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const {deleteTracks, fetchTracks, fetchPlaylistTotal} = require('../spotify-api/spotify-api-playlists');
 const {loadPlaylist} = require('../settings/settings-interface');
-const PlaylistTrack = require('../../util/util-spotify-playlist-track');
+const PlaylistTrack = require('../../../layers/spotifyObjects/util-spotify-playlist-track');
 const LIMIT = config.get('spotify_api.playlists.tracks.limit');
 const CLEAR_RESPONSE = {
   success: (userId) => `:put_litter_in_its_place: Tracks older than one day were removed from the playlist by <@${userId}>`,
