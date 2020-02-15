@@ -1,4 +1,4 @@
-const {spotifyWebApi} = require('./spotify-api-initialise');
+const spotifyWebApi = require('./spotify-api-client');
 const requester = require('./spotify-api-requester');
 
 /**

@@ -1,5 +1,5 @@
 const config = require(process.env.CONFIG);
-const {spotifyWebApi} = require('./spotify-api-initialise');
+const spotifyWebApi = require('./spotify-api-client');
 const requester = require('./spotify-api-requester');
 const SCOPES = config.spotify_api.scopes;
 

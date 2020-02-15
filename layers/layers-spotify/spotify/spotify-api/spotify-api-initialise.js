@@ -1,5 +1,4 @@
 const SpotifyWebApi = require('spotify-web-api-node');
-const {loadTokens} = require('../spotify-auth/spotifyauth-dal');
 
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_SECRET;
@@ -12,16 +11,4 @@ const spotifyApi = new SpotifyWebApi({
   redirectUri: SPOTIFY_REDIRECT_URL,
 });
 
-/**
- * Sets tokens in the Spotify Api object.
- * @param {string} teamId
- * @param {string} channelId
- */
-async function setTokens(teamId, channelId ) {
-  const {accessToken, refreshToken} = await loadTokens(teamId, channelId );
-  spotifyApi.setAccessToken(accessToken);
-  spotifyApi.setRefreshToken(refreshToken);
-  return spotifyApi;
-}
-
-module.exports = {spotifyWebApi: setTokens};
+module.exports = spotifyApi;
