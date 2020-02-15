@@ -1,4 +1,4 @@
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const {loadAdmins, loadPlaylist} = require('./settings-interface');
 const {post, reply} = require('../slack/slack-api');
 const {ephemeralReply, ephemeralPost} = require('../slack/format/slack-format-reply');

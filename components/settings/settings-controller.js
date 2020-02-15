@@ -1,22 +1,22 @@
 const config = require('config');
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const {slackModal} = require('../slack/format/slack-format-modal');
 const {sendModal, updateModal} = require('../slack/slack-api');
 const {getAuthBlock} = require('./spotifyauth/spotifyauth-controller');
-const {loadView} = require('./spotifyauth/spotifyauth-dal');
-const {getSettingsBlocks} = require('./settings-block');
+const {loadView} = require('./layers/layers-spotify-auth/spotify-auth/spotifyauth-dal');
+const {getSettingsBlocks} = require('./layers/layers-settings/settings-blocks/settings-block');
 const {getAllPlaylists} = require('./settings-playlists');
 const {getAllDevices} = require('./settings-device');
 const {getAllTimezones} = require('./settings-timezones');
 const {transformValue} = require('./settings-transform');
 const {extractBlocks, extractSubmissions, verifySettings} = require('./settings-verify');
 
-const {loadSettings, storeSettings} = require('./settings-dal');
+const {loadSettings, storeSettings} = require('./layers/layers-settings-dal/settings-dal/settings-dal');
 
 const {ephemeralPost} = require('../slack/format/slack-format-reply');
 const {postEphemeral} = require('../slack/slack-api');
 
-const {isEqual, isEmpty} = require('../../util/util-objects');
+const {isEqual, isEmpty} = require('../../../layers/configs-utils/util-objects');
 
 const SETTINGS_MODAL = config.get('slack.actions.settings_modal');
 

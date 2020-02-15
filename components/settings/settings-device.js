@@ -1,11 +1,11 @@
 const config = require('config');
-const logger = require('../../util/util-logger');
+const logger = require('../../../layers/config/util-logger');
 const {fetchDevices} = require('../spotify-api/spotify-api-devices');
-const {loadDevices, storeDevices} = require('./settings-dal');
+const {loadDevices, storeDevices} = require('./layers/layers-settings-dal/settings-dal/settings-dal');
 const {loadDefaultDevice} = require('./settings-interface');
 const {option} = require('../slack/format/slack-format-modal');
-const {modelDevice} = require('./settings-model');
-const Device = require('../../util/util-spotify-device');
+const {modelDevice} = require('../../layers/layers-settings/settings/settings-model');
+const Device = require('../spotify-api/spotifyObjects/util-spotify-device');
 
 const SETTINGS_HELPER = config.get('dynamodb.settings_helper');
 

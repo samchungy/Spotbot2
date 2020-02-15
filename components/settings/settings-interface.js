@@ -1,5 +1,5 @@
 const config = require('config');
-const {loadSetting, storeSetting} = require('./settings-dal');
+const {loadSetting, storeSetting} = require('./layers/layers-settings-dal/settings-dal/settings-dal');
 
 const SETTINGS = config.get('dynamodb.settings');
 const SETTINGS_EXTRA = config.get('dynamodb.settings_extra');

@@ -1,5 +1,5 @@
 const config = require('config');
-const {isPositiveInteger} = require('../../util/util-objects');
+const {isPositiveInteger} = require('../../../layers/configs-utils/util-objects');
 const DB = config.get('dynamodb.settings');
 const AUTH_URL = config.get('dynamodb.settings_auth.auth_url');
 const AUTH_CONFIRMATION = config.get('dynamodb.settings_auth.auth_confirmation');

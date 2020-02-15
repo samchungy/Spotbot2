@@ -1,7 +1,7 @@
 const config = require('config');
-const logger = require('../../util/util-logger');
-const {loadPlaylists, storePlaylists} = require('./settings-dal');
-const {modelPlaylist} = require('./settings-model');
+const logger = require('../../../layers/config/util-logger');
+const {loadPlaylists, storePlaylists} = require('./layers/layers-settings-dal/settings-dal/settings-dal');
+const {modelPlaylist} = require('../../layers/layers-settings/settings/settings-model');
 const {createPlaylist, fetchPlaylists} = require('../spotify-api/spotify-api-playlists');
 const {loadPlaylist, loadProfile} = require('./settings-interface');
 const {option, optionGroup} = require('../slack/format/slack-format-modal');
