@@ -1,6 +1,6 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
-// const logger = require('..../util/util-logger');
+
 const {batchGetSettings, batchPutSettings, getSetting, putSetting, putRequest, settingModel} = require('/opt/db/settings');
 
 const SETTINGS = config.dynamodb.settings;
