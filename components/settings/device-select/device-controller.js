@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('../../../util/util-logger');
+const logger = require('../../../../layers/config/util-logger');
 const {loadDefaultDevice} = require('../settings-interface');
 const {transferDevice} = require('../../spotify-api/spotify-api-playback');
 const {fetchDevices} = require('../../spotify-api/spotify-api-devices');
@@ -8,7 +8,7 @@ const {sendModal, postEphemeral, post} = require('../../slack/slack-api');
 const {textSection} = require('../../slack/format/slack-format-blocks');
 const {selectStatic, option, slackModal} = require('../../slack/format/slack-format-modal');
 const {ephemeralPost, inChannelPost} = require('../../slack/format/slack-format-reply');
-const Device = require('../../../util/util-spotify-device');
+const Device = require('../../../../layers/spotifyObjects/util-spotify-device');
 const DEVICE_MODAL = config.get('slack.actions.device_modal');
 
 const DEVICE_RESPONSE = {

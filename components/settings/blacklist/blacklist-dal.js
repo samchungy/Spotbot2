@@ -1,7 +1,7 @@
 const config = require('config');
-const logger = require('../../../util/util-logger');
+const logger = require('../../../../layers/config/util-logger');
 const BLACKLIST = config.get('dynamodb.settings_extra.blacklist');
-const {getSetting, putSetting, settingModel} = require('../../../db/settings');
+const {getSetting, putSetting, settingModel} = require('../../../../layers/db/settings');
 
 
 // Load Functions

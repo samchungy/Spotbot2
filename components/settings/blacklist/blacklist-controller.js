@@ -1,5 +1,5 @@
 const config = require('config');
-const logger = require('../../../util/util-logger');
+const logger = require('../../../../layers/config/util-logger');
 const {loadBlacklist, storeBlacklist} = require('./blacklist-dal');
 const {loadProfile} = require('../settings-interface');
 const {loadSkip} = require('../../control/control-dal');
@@ -8,7 +8,7 @@ const {fetchTracksInfo} = require('../../spotify-api/spotify-api-tracks');
 const {sendModal, postEphemeral} = require('../../slack/slack-api');
 const {ephemeralPost} = require('../../slack/format/slack-format-reply');
 const {multiSelectStaticGroups, option, optionGroup, slackModal} = require('../../slack/format/slack-format-modal');
-const Track = require('../../../util/util-spotify-track');
+const Track = require('../../spotify-api/spotifyObjects/util-spotify-track');
 const INFO_LIMIT = config.get('spotify_api.tracks.info_limit');
 const LIMIT = config.get('spotify_api.recent_limit');
 const BLACKLIST_LIMIT = config.get('dynamodb.blacklist.limit');
