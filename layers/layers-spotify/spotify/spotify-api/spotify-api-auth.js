@@ -1,7 +1,7 @@
-const config = require('config');
+const config = require(process.env.CONFIG);
 const {spotifyWebApi} = require('./spotify-api-initialise');
 const requester = require('./spotify-api-requester');
-const SCOPES = config.get('spotify_api.scopes');
+const SCOPES = config.spotify_api.scopes;
 
 /**
  * Fetches an authorize URL from Spotify

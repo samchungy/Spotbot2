@@ -1,9 +1,9 @@
-const config = require('config');
+const config = require(process.env.CONFIG);
 const {spotifyWebApi} = require('./spotify-api-initialise');
 const requester = require('./spotify-api-requester');
-const COLLABORATIVE = config.get('spotify_api.playlists.collaborative');
-const PUBLIC = config.get('spotify_api.playlists.public');
-const LIMIT = config.get('spotify_api.playlists.tracks.limit');
+const COLLABORATIVE = config.spotify_api.playlists.collaborative;
+const PUBLIC = config.spotify_api.playlists.public;
+const LIMIT = config.spotify_api.playlists.tracks.limit;
 
 /**
  * Add tracks to a playlist in Spotify
@@ -62,6 +62,7 @@ async function replaceTracks(teamId, channelId, playlistId, uris) {
  * @param {String} playlistId
  * @param {String} market
  * @param {Number} offset
+ * @param {Number} limit
  */
 async function fetchTracks(teamId, channelId, playlistId, market, offset, limit) {
   const spotifyApi = await spotifyWebApi(teamId, channelId);
