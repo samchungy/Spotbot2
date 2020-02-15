@@ -1,9 +1,9 @@
-const config = require('config');
-const logger = require('../../../util/util-logger');
-const {getAuth, putAuth, authModel} = require('../../../db/auth');
+const config = require(process.env.CONFIG);
+const logger = require(process.env.LOGGER);
+const {getAuth, putAuth, authModel} = require('/opt/db/auth');
 
-const AUTH = config.get('dynamodb.auth');
-const VIEW = config.get('dynamodb.auth.view_id');
+const AUTH = config.dynamodb.auth;
+const VIEW = config.dynamodb.auth.view_id;
 
 // Loading Functions
 

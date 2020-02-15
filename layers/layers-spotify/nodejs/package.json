@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "moment-timezone": "^0.5.27",
     "spotify-web-api-node": "git+https://github.com/samchungy/spotify-web-api-node.git#spotbot"
   }
 }

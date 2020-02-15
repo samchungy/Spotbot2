@@ -1,16 +1,17 @@
-const config = require('config');
-const logger = require('../../../util/util-logger');
-const {AuthError, PremiumError} = require('../../../errors/errors-auth');
-const {fetchAuthorizeURL, fetchTokens} = require('../../spotify-api/spotify-api-auth');
-const {fetchProfile} = require('../../spotify-api/spotify-api-profile');
-const {loadState, storeState, storeTokens, storeView} = require('./spotifyauth-dal');
-const {storeDefaultDevice, storePlaylist, storeProfile} = require('../settings-interface');
-const {modelProfile, modelState, modelView} = require('../settings-model');
-const {buttonSection} = require('../../slack/format/slack-format-modal');
-const {contextSection, confirmObject} = require('../../slack/format/slack-format-blocks');
-const {isEqual} = require('../../../util/util-objects');
+const config = require(process.env.CONFIG);
+const logger = require(process.env.LOGGER);
 
-const SETTINGS_AUTH = config.get('dynamodb.settings_auth');
+const {AuthError, PremiumError} = require('/opt/errors/errors-auth');
+const {fetchAuthorizeURL, fetchTokens} = require('../spotify-api/spotify-api-auth');
+const {fetchProfile} = require('../spotify-api/spotify-api-profile');
+const {loadState, storeState, storeTokens, storeView} = require('./spotifyauth-dal');
+const {storeDefaultDevice, storePlaylist, storeProfile} = require('/opt/settings/settings-interface');
+const {modelProfile, modelState, modelView} = require('/opt/settings/settings-model');
+const {buttonSection} = require('/opt/slack/format/slack-format-modal');
+const {contextSection, confirmObject} = require('/opt/slack/format/slack-format-blocks');
+const {isEqual} = require('/opt/utils/util-objects');
+
+const SETTINGS_AUTH = config.dynamodb.settings_auth;
 const HINTS = {
   auth_verify: 'Click to verify Spotify authentication.',
   auth_verify_button: 'Verify',
@@ -27,7 +28,11 @@ const LABELS = {
   reauth: 'Click to re-authenticate with Spotify.',
 };
 
-const PREMIUM_ERROR = `:x: The Spotify account used is not a Premium account`;
+const AUTH_RESPONSE = {
+  auth_statement: (user) => `:white_check_mark: Authenticated with ${user} - Spotify Premium`,
+  premium_error: `:x: The Spotify account used is not a Premium account`,
+};
+
 /**
  * Resets the authentication
  * @param {string} teamId
@@ -114,8 +119,6 @@ async function validateAuthCode(code, state) {
   }
 }
 
-const authStatement = (user) => `:white_check_mark: Authenticated with ${user} - Spotify Premium`;
-
 /**
  * Geenerate the authentication block in Settings modal.
  * @param {string} teamId
@@ -136,7 +139,7 @@ async function getAuthBlock(teamId, channelId, triggerId) {
       // Place authenticated blocks
       authBlock.push(
           buttonSection(SETTINGS_AUTH.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_AUTH.reauth, confirmObject(LABELS.reauth_confirm, HINTS.reauth_confirm, 'Reset Authentication', 'Cancel')),
-          contextSection(SETTINGS_AUTH.auth_confirmation, authStatement(profile.display_name ? profile.display_name : profile.id)),
+          contextSection(SETTINGS_AUTH.auth_confirmation, AUTH_RESPONSE.auth_statement(profile.display_name ? profile.display_name : profile.id)),
       );
     }
   } catch (error) {
@@ -149,7 +152,7 @@ async function getAuthBlock(teamId, channelId, triggerId) {
       if (error instanceof PremiumError) {
         // If the user is not premium
         authBlock.push(
-            contextSection(SETTINGS_AUTH.auth_error, PREMIUM_ERROR),
+            contextSection(SETTINGS_AUTH.auth_error, AUTH_RESPONSE.premium_error),
         );
       }
     } else {
