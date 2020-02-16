@@ -1,7 +1,7 @@
 const logger = require(process.env.CONFIG);
 const {loadAdmins, loadPlaylist} = require('/opt/settings/settings-interface');
-const {post, reply} = require('/opt/slack/slack-api');
-const {ephemeralReply, ephemeralPost} = require('/opt/slack/format/slack-format-reply');
+const {postEphemeral, reply} = require('/opt/slack/slack-api');
+const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const MIDDLEWARE_RESPONSE = {
   admin_error: ':information_source: You must be a Spotbot admin for this channel to use this command.',
   settings_error: ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.',
@@ -22,26 +22,17 @@ async function checkIsSetup(teamId, channelId) {
 }
 
 /**
- * Checks if settings are set. (Koa Middleware)
+ * Checks if settings are set.
  * @param {string} teamId
  * @param {string} channelId
- * @param {string} responseUrl
  * @param {string} userId
  */
-async function checkSettings(teamId, channelId, responseUrl, userId) {
+async function checkSettings(teamId, channelId, userId) {
   try {
-    if (!await isSetup(teamId, channelId)) {
-      if (userId) {
-        post(
-            ephemeralPost(channelId, userId, MIDDLEWARE_RESPONSE.settings_error, null),
-        );
-      } else {
-        await reply(
-            ephemeralReply(MIDDLEWARE_RESPONSE.settings_error, null),
-            responseUrl,
-        );
-      }
-
+    if (!await checkIsSetup(teamId, channelId)) {
+      await postEphemeral(
+          ephemeralPost(channelId, userId, MIDDLEWARE_RESPONSE.settings_error, null),
+      );
       return false;
     };
     return true;
@@ -55,17 +46,15 @@ async function checkSettings(teamId, channelId, responseUrl, userId) {
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} userId
- * @param {string} responseUrl
  */
-async function checkIsAdmin(teamId, channelId, userId, responseUrl) {
+async function checkIsAdmin(teamId, channelId, userId) {
   try {
     const admins = await loadAdmins(teamId, channelId);
     if (admins && admins.includes(userId)) {
       return true;
     };
     await reply(
-        ephemeralReply(MIDDLEWARE_RESPONSE.admin_error, null),
-        responseUrl,
+        postEphemeral(channelId, userId, MIDDLEWARE_RESPONSE.admin_error, null),
     );
     return false;
   } catch (error) {

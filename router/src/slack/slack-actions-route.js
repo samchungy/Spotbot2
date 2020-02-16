@@ -13,7 +13,7 @@ const AUTH = config.dynamodb.settings_auth;
 // const TRACKS = SLACK_ACTIONS.tracks;
 // const ARTISTS = SLACK_ACTIONS.artists;
 
-// const {checkSettings} = require('../server/components/settings/settings-middleware');
+const {checkSettings} = require('../settings/settings-check');
 // const {getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, updateView} = require('../server/components/settings/settings-controller');
 // const {changeAuthentication, saveView} = require('../server/components/settings/spotifyauth/spotifyauth-controller');
 // const {clearOneDay, jumpToStart, pause, play, reset, skip, toggleRepeat, toggleShuffle, verifyResetReview, voteToSkip} = require('../server/components/control/control-controller');
@@ -141,37 +141,41 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                 }
                 break;
-              // case SLACK_ACTIONS.reset_review:
-              //   const metadata = payload.view.private_metadata;
-              //   const {channelId} = JSON.parse(metadata);
-              //   if (await checkSettings(payload.team.id, channelId, null, payload.user.id)) {
-              //     verifyResetReview(false, payload.view, payload.user.id);
-              //   }
-              //   ctx.body = '';
-              //   break;
-              // case SLACK_ACTIONS.blacklist_modal:
-              //   if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
-              //     const errors = await saveBlacklist(payload.view, payload.user.id);
-              //     if (errors) {
-              //       ctx.body = errors;
-              //     } else {
-              //       ctx.body = '';
-              //     }
-              //   }
-              //   break;
+                // case SLACK_ACTIONS.reset_review:
+                //   const metadata = payload.view.private_metadata;
+                //   const {channelId} = JSON.parse(metadata);
+                //   if (await checkSettings(payload.team.id, channelId, payload.user.id)) {
+                //     verifyResetReview(false, payload.view, payload.user.id);
+                //   }
+                //   ctx.body = '';
+                //   break;
+                // case SLACK_ACTIONS.blacklist_modal:
+                //   if (await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id)) {
+                //     const errors = await saveBlacklist(payload.view, payload.user.id);
+                //     if (errors) {
+                //       ctx.body = errors;
+                //     } else {
+                //       ctx.body = '';
+                //     }
+                //   }
+                //   break;
 
               // case SLACK_ACTIONS.remove_modal:
-              //   if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
+              //   if (await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id)) {
               //     removeTracks(payload.team.id, payload.view.private_metadata, payload.user.id, payload.view);
               //   }
               //   ctx.body = '';
               //   break;
-              // case SLACK_ACTIONS.device_modal:
-              //   if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
-              //     switchDevice(payload.team.id, payload.view.private_metadata, payload.user.id, payload.view);
-              //   }
-              //   ctx.body = '';
-              //   break;
+              case SLACK_ACTIONS.device_modal:
+                if (await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id)) {
+                  params = {
+                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, userId: payload.user.id, view: payload.view}),
+                    TopicArn: process.env.SETTINGS_DEVICE_SWITCH,
+                  };
+                  await sns.publish(params).promise();
+                  ctx.body = '';
+                  break;
+                }
             }
             break;
           case SLACK_ACTIONS.view_closed:

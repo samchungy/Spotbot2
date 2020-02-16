@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@slack/web-api": "^5.7.0",
-    "axios": "^0.19.2"
+    "@slack/web-api": "^5.7.0"
   }
 }

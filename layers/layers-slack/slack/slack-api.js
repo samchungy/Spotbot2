@@ -1,5 +1,4 @@
 const logger = require(process.env.LOGGER);
-const axios = require('axios');
 const slackClient = require('./slack-initialise');
 
 /**
@@ -31,20 +30,6 @@ async function updateModal(viewId, view) {
   } catch (error) {
     logger.error(`Slack API: Update Modal failed`, error);
     logger.error(error.data.response_metadata);
-    throw error;
-  }
-}
-
-/**
- * Reply to a Slack Slash Command via Response URL
- * @param {*} body
- * @param {*} responseUrl
- */
-async function reply(body, responseUrl) {
-  try {
-    return await axios.post(responseUrl, body);
-  } catch (error) {
-    logger.error(`Slack API: Reply failed`, error);
     throw error;
   }
 }
@@ -105,7 +90,6 @@ module.exports = {
   deleteChat,
   post,
   postEphemeral,
-  reply,
   sendModal,
   updateChat,
   updateModal,
