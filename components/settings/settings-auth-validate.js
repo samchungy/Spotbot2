@@ -47,9 +47,10 @@ module.exports.handler = async (event, context) => {
     // Store our tokens in our DB & Get Spotify URI for authenticator
     await storeTokens(stateJson.teamId, stateJson.channelId, accessToken, refreshToken, moment().add(55, 'm').toISOString());
     const profile = await fetchProfile(stateJson.teamId, stateJson.channelId);
+
     const params = {
-      Message: JSON.stringify({teamId: state.teamId, channelId: state.channelId}),
-      TopicArn: process.env.SETTINGS_UPDATE_VIEW,
+      Message: JSON.stringify({teamId: stateJson.teamId, channelId: stateJson.channelId}),
+      TopicArn: process.env.SETTINGS_AUTH_UPDATE_VIEW,
     };
     await Promise.all([
       storeProfile(stateJson.teamId, stateJson.channelId, modelProfile(profile.id, profile.country)),

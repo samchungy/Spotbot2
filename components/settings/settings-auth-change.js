@@ -14,7 +14,7 @@ module.exports.handler = async (event, context) => {
     const {teamId, channelId, triggerId, viewId} = JSON.parse(event.Records[0].Sns.Message);
     const params = {
       Message: JSON.stringify({teamId, channelId, triggerId, viewId}),
-      TopicArn: process.env.SETTINGS_UPDATE_VIEW,
+      TopicArn: process.env.SETTINGS_AUTH_UPDATE_VIEW,
     };
     await Promise.all([
       storeTokens(teamId, channelId, null, null),
