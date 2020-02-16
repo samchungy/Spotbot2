@@ -22,6 +22,7 @@ custom:
   prefix: ${self:service}-${self:custom.stage}
   topic: arn:aws:sns:${self:provider.region}:${self:custom.account_id}:${self:custom.prefix}
   lambda: arn:aws:lambda:${self:provider.region}:${self:custom.account_id}:function:${self:custom.prefix}
+  table: 
 
 provider:
   name: aws
@@ -48,6 +49,7 @@ provider:
   - Effect: Allow
     Action:
       - dynamodb:BatchGetItem
+      - dynamodb:BatchWriteItem
       - dynamodb:Query
       - dynamodb:Scan
       - dynamodb:GetItem
@@ -98,13 +100,13 @@ functions:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
       SETTINGS_AUTH_CHANGE: ${self:custom.topic}-settings-auth-change
       SETTINGS_AUTH_SAVE_VIEW: ${self:custom.topic}-settings-auth-save-view
+      SETTINGS_AUTH_UPDATE_VIEW: ${self:custom.topic}-settings-auth-update-view
       SETTINGS_AUTH_VALIDATE: ${self:custom.lambda}-settings-auth-validate
       SETTINGS_GET_OPTIONS_PLAYLISTS: ${self:custom.lambda}-settings-get-options-playlists
       SETTINGS_GET_OPTIONS_DEVICES: ${self:custom.lambda}-settings-get-options-devices
       SETTINGS_GET_OPTIONS_TIMEZONES: ${self:custom.lambda}-settings-get-options-timezones
       SETTINGS_OPEN: ${self:custom.topic}-settings-open
-      SETTINGS_UPDATE_VIEW: ${self:custom.topic}-settings-update-view
-
+      SETTINGS_SUBMIT_VERIFY: ${self:custom.lambda}-settings-submit-verify
     memorySize: 512
     package:
       include:
@@ -133,6 +135,8 @@ functions:
       #     method: get
   #Settings
   settings-auth-change:
+    environment:
+      SETTINGS_AUTH_UPDATE_VIEW: arn:aws:sns:ap-southeast-2:897201036940:spotbot-dev-settings-auth-update-view
     events:
       - sns: ${self:custom.prefix}-settings-auth-change
     memorySize: 128
@@ -160,7 +164,24 @@ functions:
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
+  settings-auth-update-view:
+    events:
+      - sns: ${self:custom.prefix}-settings-auth-update-view
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-auth-update-view.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-auth-update-view.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SettingsDashblocksLambdaLayer }
   settings-auth-validate:
+    environment:
+      SETTINGS_AUTH_UPDATE_VIEW: arn:aws:sns:ap-southeast-2:897201036940:spotbot-dev-settings-auth-update-view
     memorySize: 256
     package:
       include:
@@ -209,7 +230,7 @@ functions:
   settings-open:
     events:
       - sns: ${self:custom.prefix}-settings-open
-    memorySize: 384
+    memorySize: 448
     package:
       include:
         - ./components/settings/settings-open.js
@@ -221,24 +242,34 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
       - { Ref: SettingsDashblocksLambdaLayer }
-  settings-update-view:
-    environment:
-      SETTING_UPDATE_VIEW: arn:aws:sns:ap-southeast-2:897201036940:spotbot-dev-settings-update-view
+  settings-submit-save:
     events:
-      - sns: ${self:custom.prefix}-settings-update-view
-    memorySize: 128
+      - sns: ${self:custom.prefix}-settings-submit-save
+    memorySize: 384
     package:
       include:
-        - ./components/settings/settings-update-view.js
+        - ./components/settings/settings-submit-save.js
       exclude:
         - ./**
-    handler: components/settings/settings-update-view.handler
+    handler: components/settings/settings-submit-save.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: SettingsDashblocksLambdaLayer }
-
+  settings-submit-verify:
+    environment:
+      SETTINGS_SUBMIT_SAVE: ${self:custom.topic}-settings-submit-save
+    memorySize: 256
+    package:
+      include:
+        - ./components/settings/settings-submit-verify.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-submit-verify.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
 resources:
   Resources:
     SpotbotAuthTable:
