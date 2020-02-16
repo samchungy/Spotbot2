@@ -26,7 +26,7 @@ module.exports = ( prefix, Router ) => {
                     Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, triggerId: payload.trigger_id}),
                     TopicArn: process.env.SETTINGS_OPEN,
                   };
-                  await sns.publish(params).promise(); ;
+                  await sns.publish(params).promise();
                 }
                 ctx.body = '';
                 break;
