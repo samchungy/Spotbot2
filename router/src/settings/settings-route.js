@@ -23,7 +23,7 @@ module.exports = ( prefix, Router ) => {
               case 'settings':
                 if (!await checkIsSetup(payload.team_id, payload.channel_id) || await checkIsAdmin(payload.team_id, payload.channel_id, payload.user_id, payload.response_url)) {
                   const params = {
-                    Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, triggerId: payload.trigger_id}),
+                    Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, triggerId: payload.trigger_id, userId: payload.user_id}),
                     TopicArn: process.env.SETTINGS_OPEN,
                   };
                   await sns.publish(params).promise();
