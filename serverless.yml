@@ -4,7 +4,6 @@ package:
 
 plugins:
   - serverless-dotenv-plugin
-  - serverless-pseudo-parameters
 
 custom:
   # dynamodb:
@@ -14,31 +13,41 @@ custom:
   #     port: 8000
   #     dbPath: .dynamodb/db
   #     migrate: true
+  account_id: 897201036940
   stage: ${opt:stage, self:provider.stage}
   dev:
     deletion_policy: Delete
   prod:
     deletion_policy: Retain
   prefix: ${self:service}-${self:custom.stage}
-  topic: arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.prefix}
+  topic: arn:aws:sns:${self:provider.region}:${self:custom.account_id}:${self:custom.prefix}
+  lambda: arn:aws:lambda:${self:provider.region}:${self:custom.account_id}:function:${self:custom.prefix}
 
 provider:
   name: aws
   region: ap-southeast-2
   runtime: nodejs12.x
   environment:
-    REGION: ${self:provider.region}
+    #Tables
     AUTH_TABLE: ${self:custom.prefix}-auth
-    SETTINGS_TABLE: ${self:custom.prefix}-settings
     SEARCH_TABLE: ${self:custom.prefix}-search
+    SETTINGS_TABLE: ${self:custom.prefix}-settings
+    REGION: ${self:provider.region}
+    #Core Libraries
     LOG_LEVEL: info
-    SLACK_TOKEN: ${env:SLACK_TOKEN}
     CONFIG: /opt/config/config
     LOGGER: /opt/utils/util-logger
-    MOMENT: /opt/moment-timezone/moment-timezone-with-data-1970-2030
+    MOMENT: /opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030
+    #Tokens
+    SLACK_TOKEN: ${env:SLACK_TOKEN}
+    SPOTIFY_CLIENT_ID: ${env:SPOTIFY_CLIENT_ID}
+    SPOTIFY_SECRET: ${env:SPOTIFY_SECRET}
+    #Auth
+    REDIRECT_URL: { "Fn::Join" : ["", [" https://", { "Ref" : "ApiGatewayRestApi" }, ".execute-api.${self:provider.region}.amazonaws.com/${self:custom.stage}/spotify-auth-callback" ] ]  }
   iamRoleStatements:
   - Effect: Allow
     Action:
+      - dynamodb:BatchGetItem
       - dynamodb:Query
       - dynamodb:Scan
       - dynamodb:GetItem
@@ -52,16 +61,17 @@ provider:
     ]
   - Effect: Allow
     Action:
-      - SNS:Publish
+      - sns:Publish
     Resource: "${self:custom.topic}-*"
+  - Effect: Allow
+    Action:
+      - lambda:InvokeFunction
+    Resource: "${self:custom.lambda}-*"
 layers:
   # Main Layers
   core:
     name: ${self:custom.prefix}-core
     path: layers/layers-core
-  settings:
-    name: ${self:custom.prefix}-settings
-    path: layers/layers-settings
   slack:
     name: ${self:custom.prefix}-slack
     path: layers/layers-slack
@@ -69,7 +79,7 @@ layers:
     name: ${self:custom.prefix}-spotify
     path: layers/layers-spotify
   # Other Layers
-  settingsblocks:
+  settings-blocks:
     name: ${self:custom.prefix}-settingsblocks
     path: components/settings/layers/layers-settings
 
@@ -86,8 +96,14 @@ functions:
   router:
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+      SETTINGS_AUTH_CHANGE: ${self:custom.topic}-settings-auth-change
+      SETTINGS_AUTH_SAVE_VIEW: ${self:custom.topic}-settings-auth-save-view
+      SETTINGS_AUTH_VALIDATE: ${self:custom.lambda}-settings-auth-validate
+      SETTINGS_GET_OPTIONS_PLAYLISTS: ${self:custom.lambda}-settings-get-options-playlists
+      SETTINGS_GET_OPTIONS_DEVICES: ${self:custom.lambda}-settings-get-options-devices
       SETTINGS_OPEN: ${self:custom.topic}-settings-open
       SETTINGS_UPDATE_VIEW: ${self:custom.topic}-settings-update-view
+
     memorySize: 512
     package:
       include:
@@ -109,19 +125,79 @@ functions:
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
-      - { Ref: SettingsLambdaLayer }
       - { Ref: SlackLambdaLayer }
 
       # - http: 
       #     path: /spotify-auth-callback
       #     method: get
   #Settings
+  settings-auth-change:
+    events:
+      - sns: ${self:custom.prefix}-settings-auth-change
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-auth-change.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-auth-change.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SettingsDashblocksLambdaLayer }
+  settings-auth-save-view:
+    events:
+      - sns: ${self:custom.prefix}-settings-auth-save-view
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-auth-save-view.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-auth-save-view.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+  settings-auth-validate:
+    memorySize: 256
+    package:
+      include:
+        - ./components/settings/settings-auth-validate.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-auth-validate.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+  settings-get-options-devices:
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-get-options-devices.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-get-options-devices.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-get-options-playlists:
+    memorySize: 320
+    package:
+      include:
+        - ./components/settings/settings-get-options-playlists.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-get-options-playlists.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
   settings-open:
-    environment:
-      REDIRECT_URL: https://#{ApiGatewayRestApi}.execute-api.${self:provider.region}.amazonaws.com/${self:custom.stage}/spotify-auth-callback
     events:
       - sns: ${self:custom.prefix}-settings-open
-    memorySize: 320
+    memorySize: 384
     package:
       include:
         - ./components/settings/settings-open.js
@@ -130,28 +206,24 @@ functions:
     handler: components/settings/settings-open.handler
     layers:
       - { Ref: CoreLambdaLayer }
-      - { Ref: SettingsLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: SettingsblocksLambdaLayer }
+      - { Ref: SettingsDashblocksLambdaLayer }
   settings-update-view:
     events:
       - sns: ${self:custom.prefix}-settings-update-view
-    memorySize: 320
+    memorySize: 128
     package:
       include:
         - ./components/settings/settings-update-view.js
       exclude:
         - ./**
-    handler: components/settings/settings-open.handler
+    handler: components/settings/settings-update-view.handler
     layers:
       - { Ref: CoreLambdaLayer }
-      - { Ref: SettingsLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: SettingsblocksLambdaLayer }
-
-
+      - { Ref: SettingsDashblocksLambdaLayer }
 
 resources:
   Resources:

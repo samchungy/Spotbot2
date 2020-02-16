@@ -4,14 +4,6 @@ const logger = require(process.env.LOGGER);
 const {batchGetSettings, batchPutSettings, getSetting, putSetting, putRequest, settingModel} = require('/opt/db/settings');
 
 const SETTINGS = config.dynamodb.settings;
-const SETTINGS_EXTRA = config.dynamodb.settings_extra;
-
-// Settings Modal Helper Functions
-
-const loadDevices = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS_EXTRA.spotify_devices);
-const loadPlaylists = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS_EXTRA.spotify_playlists);
-const storeDevices = (teamId, channelId, value) => storeSetting(teamId, channelId, SETTINGS_EXTRA.spotify_devices, value);
-const storePlaylists = (teamId, channelId, value) => storeSetting(teamId, channelId, SETTINGS_EXTRA.spotify_playlists, value);
 
 /**
  * Load saved Settings from the db
@@ -97,12 +89,8 @@ async function storeSetting(teamId, channelId, settingKey, value) {
 }
 
 module.exports = {
-  loadDevices,
-  loadPlaylists,
   loadSetting,
   loadSettings,
-  storeDevices,
-  storePlaylists,
   storeSetting,
   storeSettings,
 };
