@@ -24,7 +24,7 @@ const getAuthInfo = (key) => {
 const authModel = (team, channel, name, value) => {
   return {
     name: name,
-    team_channel: team+channel,
+    team_channel: `${team}-${channel}`,
     ...value ? {value: value} : {},
   };
 };

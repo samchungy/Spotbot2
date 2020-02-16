@@ -25,7 +25,7 @@ const searchInfo = (item) => {
 const searchModel = (team, channel, triggerId, value, expiry) => {
   return {
     triggerId: triggerId,
-    team_channel: team+channel,
+    team_channel: `${team}-${channel}`,
     ...value ? {value: value} : {},
     ...expiry ? {ttl: expiry} : {},
   };

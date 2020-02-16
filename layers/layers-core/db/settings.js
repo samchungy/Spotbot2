@@ -18,7 +18,7 @@ const settingInfo = (item) => {
 const settingModel = (team, channel, name, value) => {
   return {
     name: name,
-    team_channel: team+channel,
+    team_channel: `${team}-${channel}`,
     ...value ? {value: value} : {},
   };
 };
