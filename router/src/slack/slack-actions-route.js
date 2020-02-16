@@ -1,6 +1,10 @@
 const config = require(process.env.CONFIG);
 const SNS = require('aws-sdk/clients/sns');
 const sns = new SNS();
+const Lambda = require('aws-sdk/clients/lambda');
+const lambda = new Lambda();
+
+const {isEmpty} = require('/opt/utils/util-objects');
 
 const SLACK_ACTIONS = config.slack.actions;
 const AUTH = config.dynamodb.settings_auth;
@@ -121,48 +125,54 @@ module.exports = ( prefix, Router ) => {
               break;
             }
           case SLACK_ACTIONS.view_submission:
-            // switch (payload.view.callback_id) {
-            //   // MODALS
-            //   case SLACK_ACTIONS.settings_modal:
-            //     const errors = await saveSettings(payload.team.id, payload.view.private_metadata, payload.view, payload.user.id);
-            //     if (errors) {
-            //       ctx.body = errors;
-            //     } else {
-            //       ctx.body = '';
-            //     }
-            //     break;
-            //   case SLACK_ACTIONS.reset_review:
-            //     const metadata = payload.view.private_metadata;
-            //     const {channelId} = JSON.parse(metadata);
-            //     if (await checkSettings(payload.team.id, channelId, null, payload.user.id)) {
-            //       verifyResetReview(false, payload.view, payload.user.id);
-            //     }
-            //     ctx.body = '';
-            //     break;
-            //   case SLACK_ACTIONS.blacklist_modal:
-            //     if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
-            //       const errors = await saveBlacklist(payload.view, payload.user.id);
-            //       if (errors) {
-            //         ctx.body = errors;
-            //       } else {
-            //         ctx.body = '';
-            //       }
-            //     }
-            //     break;
+            let errors;
+            switch (payload.view.callback_id) {
+              // MODALS
+              case SLACK_ACTIONS.settings_modal:
+                params = {
+                  FunctionName: process.env.SETTINGS_SUBMIT_VERIFY, // the lambda function we are going to invoke
+                  Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, view: payload.view, userId: payload.user.id}),
+                };
+                const {Payload: settingsErrorsPayload} = await lambda.invoke(params).promise();
+                errors = JSON.parse(settingsErrorsPayload);
+                if (errors && !isEmpty(errors)) {
+                  ctx.body = errors;
+                } else {
+                  ctx.body = '';
+                }
+                break;
+              // case SLACK_ACTIONS.reset_review:
+              //   const metadata = payload.view.private_metadata;
+              //   const {channelId} = JSON.parse(metadata);
+              //   if (await checkSettings(payload.team.id, channelId, null, payload.user.id)) {
+              //     verifyResetReview(false, payload.view, payload.user.id);
+              //   }
+              //   ctx.body = '';
+              //   break;
+              // case SLACK_ACTIONS.blacklist_modal:
+              //   if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
+              //     const errors = await saveBlacklist(payload.view, payload.user.id);
+              //     if (errors) {
+              //       ctx.body = errors;
+              //     } else {
+              //       ctx.body = '';
+              //     }
+              //   }
+              //   break;
 
-            //   case SLACK_ACTIONS.remove_modal:
-            //     if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
-            //       removeTracks(payload.team.id, payload.view.private_metadata, payload.user.id, payload.view);
-            //     }
-            //     ctx.body = '';
-            //     break;
-            //   case SLACK_ACTIONS.device_modal:
-            //     if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
-            //       switchDevice(payload.team.id, payload.view.private_metadata, payload.user.id, payload.view);
-            //     }
-            //     ctx.body = '';
-            //     break;
-            // }
+              // case SLACK_ACTIONS.remove_modal:
+              //   if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
+              //     removeTracks(payload.team.id, payload.view.private_metadata, payload.user.id, payload.view);
+              //   }
+              //   ctx.body = '';
+              //   break;
+              // case SLACK_ACTIONS.device_modal:
+              //   if (await checkSettings(payload.team.id, payload.view.private_metadata, null, payload.user.id)) {
+              //     switchDevice(payload.team.id, payload.view.private_metadata, payload.user.id, payload.view);
+              //   }
+              //   ctx.body = '';
+              //   break;
+            }
             break;
           case SLACK_ACTIONS.view_closed:
             // switch (payload.view.callback_id) {
