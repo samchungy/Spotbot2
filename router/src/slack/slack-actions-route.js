@@ -1,13 +1,13 @@
 const config = require(process.env.CONFIG);
-
-const {saveViewId} = require('/opt/spotify/spotify-auth');
+const SNS = require('aws-sdk/clients/sns');
+const sns = new SNS();
 
 const SLACK_ACTIONS = config.slack.actions;
 const AUTH = config.dynamodb.settings_auth;
-const CONTROLS = SLACK_ACTIONS.controls;
-const OVERFLOW = SLACK_ACTIONS.controller_overflow;
-const TRACKS = SLACK_ACTIONS.tracks;
-const ARTISTS = SLACK_ACTIONS.artists;
+// const CONTROLS = SLACK_ACTIONS.controls;
+// const OVERFLOW = SLACK_ACTIONS.controller_overflow;
+// const TRACKS = SLACK_ACTIONS.tracks;
+// const ARTISTS = SLACK_ACTIONS.artists;
 
 // const {checkSettings} = require('../server/components/settings/settings-middleware');
 // const {getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, updateView} = require('../server/components/settings/settings-controller');
@@ -23,6 +23,7 @@ module.exports = ( prefix, Router ) => {
   });
   router
       .post('/', async (ctx, next) => {
+        let params;
         const payload = JSON.parse(ctx.request.body.payload);
         switch (payload.type) {
           case SLACK_ACTIONS.block_actions:
@@ -30,19 +31,26 @@ module.exports = ( prefix, Router ) => {
               switch (payload.actions[0].action_id) {
                 // AUTH
                 case AUTH.auth_url:
-                  saveViewId(payload.team.id, payload.view.private_metadata, payload.view.id, payload.trigger_id);
+                  params = {
+                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, triggerId: payload.trigger_id, viewId: payload.view.id}),
+                    TopicArn: process.env.SETTINGS_AUTH_SAVE_VIEW,
+                  };
+                  await sns.publish(params).promise();
                   ctx.body = '';
                   break;
                 case AUTH.reauth:
-                  await changeAuthentication(payload.team.id, payload.view.private_metadata);
-                  updateView(payload.team.id, payload.view.private_metadata, payload.view.id, payload.trigger_id);
+                  params = {
+                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, triggerId: payload.trigger_id, viewId: payload.view.id}),
+                    TopicArn: process.env.SETTINGS_AUTH_CHANGE,
+                  };
+                  await sns.publish(params).promise();
                   ctx.body = '';
                   break;
                 default:
-                  if (!await checkSettings(payload.team.id, payload.channel.id, null, payload.user.id)) {
-                    ctx.body = '';
-                    break;
-                  }
+                  // if (!await checkSettings(payload.team.id, payload.channel.id, null, payload.user.id)) {
+                  //   ctx.body = '';
+                  //   break;
+                  // }
                   // switch (payload.actions[0].action_id) {
                   //   // ARTISTS
                   //   case ARTISTS.view_artist_tracks:
