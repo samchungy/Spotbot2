@@ -102,6 +102,8 @@ functions:
       SETTINGS_AUTH_SAVE_VIEW: ${self:custom.topic}-settings-auth-save-view
       SETTINGS_AUTH_UPDATE_VIEW: ${self:custom.topic}-settings-auth-update-view
       SETTINGS_AUTH_VALIDATE: ${self:custom.lambda}-settings-auth-validate
+      SETTINGS_DEVICE_SELECT: ${self:custom.topic}-settings-device-select
+      SETTINGS_DEVICE_SWITCH: ${self:custom.topic}-settings-device-switch
       SETTINGS_GET_OPTIONS_PLAYLISTS: ${self:custom.lambda}-settings-get-options-playlists
       SETTINGS_GET_OPTIONS_DEVICES: ${self:custom.lambda}-settings-get-options-devices
       SETTINGS_GET_OPTIONS_TIMEZONES: ${self:custom.lambda}-settings-get-options-timezones
@@ -192,6 +194,34 @@ functions:
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
+  settings-device-select:
+    events:
+      - sns: ${self:custom.prefix}-settings-device-select
+    memorySize: 448
+    package:
+      include:
+        - ./components/settings/settings-device-select.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-device-select.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-device-switch:
+    events:
+      - sns: ${self:custom.prefix}-settings-device-switch
+    memorySize: 256
+    package:
+      include:
+        - ./components/settings/settings-device-switch.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-device-switch.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
   settings-get-options-devices:
     memorySize: 128
     package:
