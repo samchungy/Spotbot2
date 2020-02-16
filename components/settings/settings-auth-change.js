@@ -12,17 +12,17 @@ const {storeTokens} = require('/opt/spotify/spotify-auth/spotify-auth-dal');
 module.exports.handler = async (event, context) => {
   try {
     const {teamId, channelId, triggerId, viewId} = JSON.parse(event.Records[0].Sns.Message);
-    await storeTokens(teamId, channelId, null, null);
-    await Promise.all([
-      storeDefaultDevice(teamId, channelId, null),
-      storePlaylist(teamId, channelId, null),
-    ]);
-    // Update View of Modal
     const params = {
       Message: JSON.stringify({teamId, channelId, triggerId, viewId}),
       TopicArn: process.env.SETTINGS_UPDATE_VIEW,
     };
-    await sns.publish(params).promise();
+    await Promise.all([
+      storeTokens(teamId, channelId, null, null),
+      storeDefaultDevice(teamId, channelId, null),
+      storePlaylist(teamId, channelId, null),
+      // Update View of Modal
+      sns.publish(params).promise(),
+    ]);
   } catch (error) {
     logger.error('Change Authentication Failed');
     logger.error(error);
