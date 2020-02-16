@@ -43,7 +43,7 @@ provider:
     SPOTIFY_CLIENT_ID: ${env:SPOTIFY_CLIENT_ID}
     SPOTIFY_SECRET: ${env:SPOTIFY_SECRET}
     #Auth
-    REDIRECT_URL: { "Fn::Join" : ["", [" https://", { "Ref" : "ApiGatewayRestApi" }, ".execute-api.${self:provider.region}.amazonaws.com/${self:custom.stage}/spotify-auth-callback" ] ]  }
+    REDIRECT_URL: { "Fn::Join" : ["", ["https://", { "Ref" : "ApiGatewayRestApi" }, ".execute-api.${self:provider.region}.amazonaws.com/${self:custom.stage}/spotify-auth-callback" ] ]  }
   iamRoleStatements:
   - Effect: Allow
     Action:
@@ -101,6 +101,7 @@ functions:
       SETTINGS_AUTH_VALIDATE: ${self:custom.lambda}-settings-auth-validate
       SETTINGS_GET_OPTIONS_PLAYLISTS: ${self:custom.lambda}-settings-get-options-playlists
       SETTINGS_GET_OPTIONS_DEVICES: ${self:custom.lambda}-settings-get-options-devices
+      SETTINGS_GET_OPTIONS_TIMEZONES: ${self:custom.lambda}-settings-get-options-timezones
       SETTINGS_OPEN: ${self:custom.topic}-settings-open
       SETTINGS_UPDATE_VIEW: ${self:custom.topic}-settings-update-view
 
@@ -194,6 +195,17 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
+  settings-get-options-timezones:
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-get-options-timezones.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-get-options-timezones.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SlackLambdaLayer }
   settings-open:
     events:
       - sns: ${self:custom.prefix}-settings-open
@@ -210,6 +222,8 @@ functions:
       - { Ref: SlackLambdaLayer }
       - { Ref: SettingsDashblocksLambdaLayer }
   settings-update-view:
+    environment:
+      SETTING_UPDATE_VIEW: arn:aws:sns:ap-southeast-2:897201036940:spotbot-dev-settings-update-view
     events:
       - sns: ${self:custom.prefix}-settings-update-view
     memorySize: 128

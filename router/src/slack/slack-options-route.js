@@ -35,8 +35,13 @@ module.exports = ( prefix, Router ) => {
               ctx.body = options;
               break;
             case SETTINGS.timezone:
-              // options = await getAllTimezones(payload.value);
-              // ctx.body = options;
+              params = {
+                FunctionName: process.env.SETTINGS_GET_OPTIONS_TIMEZONES, // the lambda function we are going to invoke
+                Payload: JSON.stringify({query: payload.value}),
+              };
+              const {Payload: timezonePayload} = await lambda.invoke(params).promise();
+              options = JSON.parse(timezonePayload);
+              ctx.body = options;
               break;
           }
         }
