@@ -2,8 +2,8 @@ const config = require(process.env.CONFIG);
 
 const {fetchProfile} = require('/opt/spotify/spotify-api/spotify-api-profile');
 const {fetchAuthorizeURL} = require('/opt/spotify/spotify-api/spotify-api-auth');
-const {loadTokens} 
 const {storeState} = require('/opt/spotify/spotify-auth/spotify-auth-dal');
+const {isAuthenticated} = require('/opt/spotify/spotify-auth/spotify-auth-check');
 const {AuthError, PremiumError} = require('/opt/errors/errors-auth');
 const {buttonSection} = require('/opt/slack/format/slack-format-modal');
 const {contextSection, confirmObject} = require('/opt/slack/format/slack-format-blocks');
@@ -43,7 +43,9 @@ async function getAuthBlock(teamId, channelId, triggerId) {
   const authBlock = [];
 
   try {
-    const 
+    if (!await isAuthenticated(teamId, channelId)) {
+      throw new AuthError();
+    }
     const profile = await fetchProfile(teamId, channelId );
     if (profile.product !== 'premium') {
       throw new PremiumError();

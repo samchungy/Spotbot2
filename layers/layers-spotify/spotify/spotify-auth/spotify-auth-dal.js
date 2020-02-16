@@ -30,16 +30,18 @@ async function loadState(teamId, channelId ) {
  */
 async function loadTokens(teamId, channelId ) {
   try {
-    let access; let refresh;
+    let access; let refresh; let expires;
     const authentication = authModel(teamId, channelId, AUTH.object, null);
     const result = await getAuth(authentication);
     if (result.Item) {
       access = result.Item.value[AUTH.access];
       refresh = result.Item.value[AUTH.refresh];
+      expires = result.Item.value[AUTH.expires];
     }
     return {
       accessToken: access,
       refreshToken: refresh,
+      expires: expires,
     };
   } catch (error) {
     logger.error('Get Tokens failed');
