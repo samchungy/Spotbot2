@@ -11,9 +11,9 @@ const {storeTokens} = require('/opt/spotify/spotify-auth/spotify-auth-dal');
  */
 module.exports.handler = async (event, context) => {
   try {
-    const {teamId, channelId, triggerId, viewId} = JSON.parse(event.Records[0].Sns.Message);
+    const {teamId, channelId, viewId} = JSON.parse(event.Records[0].Sns.Message);
     const params = {
-      Message: JSON.stringify({teamId, channelId, triggerId, viewId}),
+      Message: JSON.stringify({teamId, channelId, viewId}),
       TopicArn: process.env.SETTINGS_AUTH_UPDATE_VIEW,
     };
     await Promise.all([

@@ -1,7 +1,7 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
-const {postEphemeral, sendModal} = require('/opt/slack/slack-api');
+const {postEphemeral, updateModal} = require('/opt/slack/slack-api');
 const {slackModal} = require('/opt/slack/format/slack-format-modal');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const {getAuthBlock} = require('/opt/settings-blocks/settings-auth-blocks');
@@ -14,9 +14,9 @@ const OPEN_RESPONSE = {
 };
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, triggerId, userId} = JSON.parse(event.Records[0].Sns.Message);
+  const {teamId, channelId, viewId, userId} = JSON.parse(event.Records[0].Sns.Message);
   try {
-    const {authBlock, authError} = await getAuthBlock(teamId, channelId, triggerId);
+    const {authBlock, authError} = await getAuthBlock(teamId, channelId, viewId);
     // Do not load settings blocks if Spotify is not authenticated
     const blocks = [
       ...authBlock,
@@ -24,7 +24,7 @@ module.exports.handler = async (event, context) => {
     ];
 
     const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, channelId);
-    await sendModal(triggerId, modal);
+    await updateModal(viewId, modal);
   } catch (error) {
     logger.error('Open Settings Failed');
     logger.error(error);

@@ -35,16 +35,11 @@ module.exports = ( prefix, Router ) => {
               switch (payload.actions[0].action_id) {
                 // AUTH
                 case AUTH.auth_url:
-                  params = {
-                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, triggerId: payload.trigger_id, viewId: payload.view.id}),
-                    TopicArn: process.env.SETTINGS_AUTH_SAVE_VIEW,
-                  };
-                  await sns.publish(params).promise();
                   ctx.body = '';
                   break;
                 case AUTH.reauth:
                   params = {
-                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, triggerId: payload.trigger_id, viewId: payload.view.id}),
+                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, viewId: payload.view.id}),
                     TopicArn: process.env.SETTINGS_AUTH_CHANGE,
                   };
                   await sns.publish(params).promise();

@@ -1,7 +1,6 @@
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
 
-const {loadView} = require('/opt/spotify/spotify-auth/spotify-auth-dal');
 const {updateModal} = require('/opt/slack/slack-api');
 const {slackModal} = require('/opt/slack/format/slack-format-modal');
 const {getAuthBlock} = require('/opt/settings-blocks/settings-auth-blocks');
@@ -11,15 +10,8 @@ const SETTINGS_MODAL = config.slack.actions.settings_modal;
 
 module.exports.handler = async (event, context) => {
   try {
-    let {teamId, channelId, triggerId, viewId} = JSON.parse(event.Records[0].Sns.Message);
-    // If View ID is supplied, this is an authentication request
-    // else it is a reauthentication request
-    if (!viewId) {
-      const view = await loadView(teamId, channelId );
-      viewId = view.viewId;
-      triggerId = view.triggerId;
-    }
-    const {authBlock, authError} = await getAuthBlock(teamId, channelId, triggerId);
+    const {teamId, channelId, viewId} = JSON.parse(event.Records[0].Sns.Message);
+    const {authBlock, authError} = await getAuthBlock(teamId, channelId, viewId);
     // Do not load settings blocks if Spotify is not authenticated
     const blocks = [
       ...authBlock,

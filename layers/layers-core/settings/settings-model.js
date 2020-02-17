@@ -21,18 +21,11 @@ const modelProfile = (id, country) => {
   };
 };
 
-const modelView = (viewId, triggerId) => {
-  return {
-    viewId: viewId,
-    triggerId: triggerId,
-  };
-};
-
-const modelState = (teamId, channelId, triggerId) => {
+const modelState = (teamId, channelId, viewId) => {
   return {
     teamId: teamId,
     channelId: channelId,
-    triggerId: triggerId,
+    viewId: viewId,
   };
 };
 
@@ -41,5 +34,4 @@ module.exports = {
   modelPlaylist,
   modelProfile,
   modelState,
-  modelView,
 };

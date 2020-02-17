@@ -3,7 +3,7 @@ const logger = require(process.env.LOGGER);
 const {loadDefaultDevice} = require('/opt/settings/settings-interface');
 const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
-const {sendModal, postEphemeral} = require('/opt/slack/slack-api');
+const {updateModal, postEphemeral} = require('/opt/slack/slack-api');
 const {textSection} = require('/opt/slack/format/slack-format-blocks');
 const {selectStatic, option, slackModal} = require('/opt/slack/format/slack-format-modal');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
@@ -13,7 +13,7 @@ const DEVICE_MODAL = config.slack.actions.device_modal;
 const DEVICE_RESPONSE = {
   default: (deviceName) => `Spotbot will try to keep playing on the current device despite what the default device is set as in the settings. When Spotify is not reporting a device, Spotbot will attempt to fallback onto the default. To change the default, please go to \`/spotbot settings\`.\n\n *Current Default Device:* ${deviceName}`,
   fail: ':x: Something went wrong! Could not open devices menu. Please try again.',
-  hint: 'The device which you will be playing music through',
+  hint: 'The device which you will be playing music through.',
   no_device: `:information_source: No devices currently open.`,
   title: 'Select a device',
 };
@@ -52,13 +52,13 @@ async function getBlocks(teamId, channelId, devices) {
 }
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, userId, triggerId} = JSON.parse(event.Records[0].Sns.Message);
+  const {teamId, channelId, userId, viewId} = JSON.parse(event.Records[0].Sns.Message);
   try {
     const spotifyDevices = await fetchDevices(teamId, channelId);
     if (spotifyDevices.devices.length) {
       const blocks = await getBlocks(teamId, channelId, spotifyDevices.devices);
-      await sendModal(
-          triggerId,
+      await updateModal(
+          viewId,
           slackModal(DEVICE_MODAL, `Spotify Devices`, `Switch to Device`, `Cancel`, blocks, false, channelId),
       );
     } else {

@@ -49,7 +49,7 @@ module.exports.handler = async (event, context) => {
     const profile = await fetchProfile(stateJson.teamId, stateJson.channelId);
 
     const params = {
-      Message: JSON.stringify({teamId: stateJson.teamId, channelId: stateJson.channelId}),
+      Message: JSON.stringify({teamId: stateJson.teamId, channelId: stateJson.channelId, viewId: stateJson.viewId}),
       TopicArn: process.env.SETTINGS_AUTH_UPDATE_VIEW,
     };
     await Promise.all([

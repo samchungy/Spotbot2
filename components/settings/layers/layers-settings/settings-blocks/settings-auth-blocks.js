@@ -35,10 +35,10 @@ const AUTH_RESPONSE = {
  * Geenerate the authentication block in Settings modal.
  * @param {string} teamId
  * @param {string} channelId
- * @param {string} triggerId
+ * @param {string} viewId
  * @param {boolean} failState
  */
-async function getAuthBlock(teamId, channelId, triggerId) {
+async function getAuthBlock(teamId, channelId, viewId) {
   let authError;
   const authBlock = [];
 
@@ -60,7 +60,7 @@ async function getAuthBlock(teamId, channelId, triggerId) {
     if (error instanceof AuthError) {
       authError = true;
       // We are not authenticated - push non-authenticated blocks
-      const url = await getAuthorizationURL(teamId, channelId, triggerId);
+      const url = await getAuthorizationURL(teamId, channelId, viewId);
       authBlock.push(
           buttonSection(SETTINGS_AUTH.auth_url, LABELS.auth_url, HINTS.auth_url_button, null, url, null),
       );
@@ -84,12 +84,12 @@ async function getAuthBlock(teamId, channelId, triggerId) {
  * Generates a Spotify Authorization URL and stores a state in our db
  * @param {string} teamId
  * @param {string} channelId
- * @param {string} triggerId
+ * @param {string} viewId
  */
-async function getAuthorizationURL(teamId, channelId, triggerId) {
+async function getAuthorizationURL(teamId, channelId, viewId) {
   try {
     // TODO Store triggerId as Spotify Auth state.
-    const state = modelState(teamId, channelId, triggerId);
+    const state = modelState(teamId, channelId, viewId);
     const [, authUrl] = await Promise.all([storeState(teamId, channelId, state), fetchAuthorizeURL(teamId, channelId, encodeURI(JSON.stringify(state)))]);
     return authUrl;
   } catch (error) {

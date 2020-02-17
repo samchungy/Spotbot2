@@ -8,7 +8,7 @@ const slackClient = require('./slack-initialise');
  */
 async function sendModal(triggerId, view) {
   try {
-    await slackClient.views.open({trigger_id: triggerId, view: view});
+    return await slackClient.views.open({trigger_id: triggerId, view: view});
   } catch (error) {
     logger.error(`Slack API: Opening Modal failed`, error);
     logger.error(error.data.response_metadata);

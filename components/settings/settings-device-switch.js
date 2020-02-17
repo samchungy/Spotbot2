@@ -10,7 +10,7 @@ const DEVICE_MODAL = config.slack.actions.device_modal;
 
 const DEVICE_RESPONSE = {
   select: (device, user) => `:arrows_clockwise: Playback on Spotbot was switched to ${device} by <@${user}>.`,
-  select_fail: `:information_source: The selected device is no longer available to switch to`,
+  select_fail: `:information_source: The selected device is no longer available to switch to.`,
   fail: ':x: Something went wrong! Could not switch devices. Please try again.',
 };
 
