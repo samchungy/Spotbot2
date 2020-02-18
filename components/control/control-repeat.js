@@ -7,6 +7,7 @@ const {responseUpdate} = require('/opt/control-panel/control-panel');
 const REPEAT_RESPONSE = {
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   cannot: ':information_source: Spotify cannot toggle repeating right now.',
+  fail: ':warning: Spotify failed to toggle repeat on the playlist.',
   on: (userId) => `:information_source: Repeat was enabled by <@${userId}>.`,
   off: (userId) => `:information_source: Repeat was enabled by <@${userId}>.`,
 };
@@ -36,7 +37,13 @@ module.exports.handler = async (event, context) => {
     }
   } catch (error) {
     logger.error(error);
-    throw error;
+    logger.error('Failed to toggle repeat');
+    try {
+      return await responseUpdate(teamId, channelId, timestamp, false, REPEAT_RESPONSE.fail, null);
+    } catch (error) {
+      logger.error(error);
+      logger.error('Failed to report control repeat fail');
+    }
   }
 };
 

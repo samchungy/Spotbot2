@@ -7,6 +7,7 @@ const {responseUpdate} = require('/opt/control-panel/control-panel');
 const SHUFFLE_RESPONSE = {
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   cannot: ':information_source: Spotify cannot toggle shuffling right now.',
+  fail: ':warning: Spotify failed to toggle shuffle on the playlist.',
   on: (userId) => `:information_source: Shuffle was enabled by <@${userId}>.`,
   off: (userId) => `:information_source: Shuffle was disabled by <@${userId}>.`,
 };
@@ -36,6 +37,12 @@ module.exports.handler = async (event, context) => {
     }
   } catch (error) {
     logger.error(error);
-    throw error;
+    logger.error('Failed to toggle shuffle');
+    try {
+      return await responseUpdate(teamId, channelId, timestamp, false, SHUFFLE_RESPONSE.fail, null);
+    } catch (error) {
+      logger.error(error);
+      logger.error('Failed to report control shuffle fail');
+    }
   }
 };
