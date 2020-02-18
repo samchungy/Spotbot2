@@ -1,8 +1,9 @@
-const logger = require('../../../layers/config/util-logger');
-const {fetchDevices} = require('../spotify-api/spotify-api-devices');
-const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
-const {sleep} = require('../../../layers/configs-utils/util-timeout');
-const {pause} = require('../spotify-api/spotify-api-playback');
+const logger = require(process.env.LOGGER);
+const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {sleep} = require('/opt/utils/util-timeout');
+const {pause} = require('/opt/spotify/spotify-api/spotify-api-playback');
+const {responseUpdate} = require('/opt/control-panel/control-panel');
 
 const PAUSE_RESPONSE = {
   success: (userId) => `:double_vertical_bar: Spotify was paused by <@${userId}>.`,
@@ -11,38 +12,35 @@ const PAUSE_RESPONSE = {
   error: ':warning: An error occured.',
 };
 
-/**
- * Pauses playback on Spotify
- * @param {string} teamId
- * @param {string} channelId
- * @param {string} userId
- */
-async function setPause(teamId, channelId, userId) {
+module.exports.handler = async (event, context) => {
+  const {teamId, channelId, userId, timestamp} = JSON.parse(event.Records[0].Sns.Message);
   try {
     const [status, spotifyDevices] = await Promise.all([fetchCurrentPlayback(teamId, channelId ), fetchDevices(teamId, channelId )]);
 
     if (!spotifyDevices.devices.length) {
-      return {success: false, response: PAUSE_RESPONSE.no_devices, status: status};
+      return await responseUpdate(teamId, channelId, timestamp, false, PAUSE_RESPONSE.no_devices, status);
     }
     // Check if Spotify is already paused
     if (!status.is_playing) {
-      return {success: false, response: PAUSE_RESPONSE.already, status: status};
+      return await responseUpdate(teamId, channelId, timestamp, false, PAUSE_RESPONSE.already, status);
     }
 
     // Try Pause
     await pause(teamId, channelId, status.device.id);
-    await sleep(100);
+    await sleep(400);
     const newStatus = await fetchCurrentPlayback(teamId, channelId );
     if (!newStatus.is_playing) {
-      return {success: true, response: PAUSE_RESPONSE.success(userId), status: newStatus};
+      return await responseUpdate(teamId, channelId, timestamp, true, PAUSE_RESPONSE.success(userId), newStatus);
     }
+    return await responseUpdate(teamId, channelId, timestamp, false, PAUSE_RESPONSE.error, null);
   } catch (error) {
+    logger.error('Control pause failed');
     logger.error(error);
+    try {
+      return await responseUpdate(teamId, channelId, timestamp, false, PAUSE_RESPONSE.error, null);
+    } catch (error) {
+      logger.error('Reporting back to Slack failed');
+      logger.error(error);
+    }
   }
-  return {success: false, response: PAUSE_RESPONSE.error, status: null};
-}
-
-module.exports = {
-  PAUSE_RESPONSE,
-  setPause,
 };
