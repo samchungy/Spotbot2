@@ -53,7 +53,7 @@ async function attemptPlay(teamId, channelId, timestamp, deviceId, status, playl
     await play(teamId, channelId, deviceId);
   }
   // Wait before verifying that Spotify is playing
-  await sleep(400);
+  await sleep(450);
   const newStatus = await fetchCurrentPlayback(teamId, channelId );
   return await attemptPlay(teamId, channelId, timestamp, deviceId, newStatus, playlist, attempt+1, userId);
 }
