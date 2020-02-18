@@ -100,6 +100,8 @@ functions:
   router:
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+      CONTROL_PAUSE: ${self:custom.topic}-control-pause
+      CONTROL_OPEN: ${self:custom.topic}-control-open
       CONTROL_PLAY: ${self:custom.topic}-control-play
       SETTINGS_AUTH_CHANGE: ${self:custom.topic}-settings-auth-change
       SETTINGS_AUTH_UPDATE_VIEW: ${self:custom.topic}-settings-auth-update-view
@@ -134,9 +136,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
 
-      # - http: 
-      #     path: /spotify-auth-callback
-      #     method: get
   #Settings
   settings-auth-change:
     environment:
@@ -289,7 +288,23 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
+  
   #Control
+  control-pause:
+    events:
+      - sns: ${self:custom.prefix}-control-pause
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-pause.js
+      exclude:
+        - ./**
+    handler: components/control/control-pause.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlLambdaLayer }
   control-play:
     events:
       - sns: ${self:custom.prefix}-control-play
@@ -300,6 +315,21 @@ functions:
       exclude:
         - ./**
     handler: components/control/control-play.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlLambdaLayer }
+  control-open:
+    events:
+      - sns: ${self:custom.prefix}-control-open
+    memorySize: 128
+    package:
+      include:
+        - ./components/control/control-open.js
+      exclude:
+        - ./**
+    handler: components/control/control-open.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
