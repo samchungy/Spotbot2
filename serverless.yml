@@ -100,6 +100,7 @@ functions:
   router:
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+      CONTROL_JUMP: ${self:custom.topic}-control-jump
       CONTROL_PAUSE: ${self:custom.topic}-control-pause
       CONTROL_OPEN: ${self:custom.topic}-control-open
       CONTROL_PLAY: ${self:custom.topic}-control-play
@@ -292,6 +293,21 @@ functions:
       - { Ref: SlackLambdaLayer }
   
   #Control
+  control-jump:
+    events:
+      - sns: ${self:custom.prefix}-control-jump
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-jump.js
+      exclude:
+        - ./**
+    handler: components/control/control-jump.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlLambdaLayer }
   control-pause:
     events:
       - sns: ${self:custom.prefix}-control-pause
