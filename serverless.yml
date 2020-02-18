@@ -313,14 +313,14 @@ resources:
       Properties:
         BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
-          - AttributeName: name
-            AttributeType: S
           - AttributeName: team_channel
+            AttributeType: S
+          - AttributeName: name
             AttributeType: S
         KeySchema:
-          - AttributeName: name
-            KeyType: HASH
           - AttributeName: team_channel
+            KeyType: HASH
+          - AttributeName: name
             KeyType: RANGE
         SSESpecification:
           SSEEnabled: true
@@ -332,14 +332,14 @@ resources:
       Properties:
         BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
-          - AttributeName: name
-            AttributeType: S
           - AttributeName: team_channel
+            AttributeType: S
+          - AttributeName: name
             AttributeType: S
         KeySchema:
-          - AttributeName: name
-            KeyType: HASH
           - AttributeName: team_channel
+            KeyType: HASH
+          - AttributeName: name
             KeyType: RANGE
         TableName: ${self:provider.environment.SETTINGS_TABLE}
     SpotbotSearchTable:
@@ -348,14 +348,14 @@ resources:
       Properties:
         BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
-          - AttributeName: triggerId
-            AttributeType: S
           - AttributeName: team_channel
+            AttributeType: S
+          - AttributeName: triggerId
             AttributeType: S
         KeySchema:
-          - AttributeName: triggerId
-            KeyType: HASH
           - AttributeName: team_channel
+            KeyType: HASH
+          - AttributeName: triggerId
             KeyType: RANGE
         TableName: ${self:provider.environment.SEARCH_TABLE}
         TimeToLiveSpecification:
