@@ -103,6 +103,8 @@ functions:
       CONTROL_PAUSE: ${self:custom.topic}-control-pause
       CONTROL_OPEN: ${self:custom.topic}-control-open
       CONTROL_PLAY: ${self:custom.topic}-control-play
+      CONTROL_REPEAT: ${self:custom.topic}-control-repeat
+      CONTROL_SHUFFLE: ${self:custom.topic}-control-shuffle
       SETTINGS_AUTH_CHANGE: ${self:custom.topic}-settings-auth-change
       SETTINGS_AUTH_UPDATE_VIEW: ${self:custom.topic}-settings-auth-update-view
       SETTINGS_AUTH_VALIDATE: ${self:custom.lambda}-settings-auth-validate
@@ -323,13 +325,43 @@ functions:
   control-open:
     events:
       - sns: ${self:custom.prefix}-control-open
-    memorySize: 128
+    memorySize: 192
     package:
       include:
         - ./components/control/control-open.js
       exclude:
         - ./**
     handler: components/control/control-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlLambdaLayer }
+  control-repeat:
+    events:
+      - sns: ${self:custom.prefix}-control-repeat
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-repeat.js
+      exclude:
+        - ./**
+    handler: components/control/control-repeat.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlLambdaLayer }
+  control-shuffle:
+    events:
+      - sns: ${self:custom.prefix}-control-shuffle
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-shuffle.js
+      exclude:
+        - ./**
+    handler: components/control/control-shuffle.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }

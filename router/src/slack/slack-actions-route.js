@@ -8,8 +8,8 @@ const {isEmpty} = require('/opt/utils/util-objects');
 
 const SLACK_ACTIONS = config.slack.actions;
 const AUTH = config.dynamodb.settings_auth;
-// const CONTROLS = SLACK_ACTIONS.controls;
-// const OVERFLOW = SLACK_ACTIONS.controller_overflow;
+const CONTROLS = SLACK_ACTIONS.controls;
+const OVERFLOW = SLACK_ACTIONS.controller_overflow;
 // const TRACKS = SLACK_ACTIONS.tracks;
 // const ARTISTS = SLACK_ACTIONS.artists;
 
@@ -50,7 +50,7 @@ module.exports = ( prefix, Router ) => {
                   //   ctx.body = '';
                   //   break;
                   // }
-                  // switch (payload.actions[0].action_id) {
+                  switch (payload.actions[0].action_id) {
                   //   // ARTISTS
                   //   case ARTISTS.view_artist_tracks:
                   //     viewArtist(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url, payload.trigger_id);
@@ -74,47 +74,63 @@ module.exports = ( prefix, Router ) => {
                   //     ctx.body = '';
                   //     break;
                   //     // CONTROLS
-                  //   case CONTROLS.play:
-                  //     play(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
-                  //     ctx.body = '';
-                  //     break;
-                  //   case CONTROLS.pause:
-                  //     pause(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
-                  //     ctx.body = '';
-                  //     break;
-                  //   case CONTROLS.skip:
-                  //     skip(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
-                  //     ctx.body = '';
-                  //     break;
-                  //   case SLACK_ACTIONS.skip_vote:
-                  //     voteToSkip(payload.team.id, payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
-                  //     ctx.body = '';
-                  //     break;
-                  //   case OVERFLOW:
-                  //     switch (payload.actions[0].selected_option.value) {
-                  //       case CONTROLS.jump_to_start:
-                  //         jumpToStart(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
-                  //         ctx.body = '';
-                  //         break;
-                  //       case CONTROLS.shuffle:
-                  //         toggleShuffle(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
-                  //         ctx.body = '';
-                  //         break;
-                  //       case CONTROLS.repeat:
-                  //         toggleRepeat(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
-                  //         ctx.body = '';
-                  //         break;
-                  //       case CONTROLS.reset:
-                  //         reset(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id, payload.trigger_id);
-                  //         ctx.body = '';
-                  //         break;
-                  //       case CONTROLS.clear_one:
-                  //         clearOneDay(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
-                  //         ctx.body = '';
-                  //         break;
-                  //     }
-                  //     break;
-                  // }
+                    case CONTROLS.play:
+                      params = {
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
+                        TopicArn: process.env.CONTROL_PLAY,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
+                    case CONTROLS.pause:
+                      params = {
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
+                        TopicArn: process.env.CONTROL_PAUSE,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
+                      //   case CONTROLS.skip:
+                      //     skip(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
+                      //     ctx.body = '';
+                      //     break;
+                      //   case SLACK_ACTIONS.skip_vote:
+                      //     voteToSkip(payload.team.id, payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
+                      //     ctx.body = '';
+                      //     break;
+                    case OVERFLOW:
+                      switch (payload.actions[0].selected_option.value) {
+                        //       case CONTROLS.jump_to_start:
+                        //         jumpToStart(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
+                        //         ctx.body = '';
+                        //         break;
+                        case CONTROLS.shuffle:
+                          params = {
+                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
+                            TopicArn: process.env.CONTROL_SHUFFLE,
+                          };
+                          await sns.publish(params).promise();
+                          ctx.body = '';
+                          break;
+                        case CONTROLS.repeat:
+                          params = {
+                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
+                            TopicArn: process.env.CONTROL_REPEAT,
+                          };
+                          await sns.publish(params).promise();
+                          ctx.body = '';
+                          break;
+                        //       case CONTROLS.reset:
+                        //         reset(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id, payload.trigger_id);
+                        //         ctx.body = '';
+                        //         break;
+                        //       case CONTROLS.clear_one:
+                        //         clearOneDay(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
+                        //         ctx.body = '';
+                        //         break;
+                      }
+                      break;
+                  }
                   break;
               }
               break;
