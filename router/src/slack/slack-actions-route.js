@@ -46,10 +46,10 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                   break;
                 default:
-                  // if (!await checkSettings(payload.team.id, payload.channel.id, null, payload.user.id)) {
-                  //   ctx.body = '';
-                  //   break;
-                  // }
+                  if (!await checkSettings(payload.team.id, payload.channel.id, payload.user.id)) {
+                    ctx.body = '';
+                    break;
+                  }
                   switch (payload.actions[0].action_id) {
                   //   // ARTISTS
                   //   case ARTISTS.view_artist_tracks:
@@ -100,10 +100,14 @@ module.exports = ( prefix, Router ) => {
                       //     break;
                     case OVERFLOW:
                       switch (payload.actions[0].selected_option.value) {
-                        //       case CONTROLS.jump_to_start:
-                        //         jumpToStart(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
-                        //         ctx.body = '';
-                        //         break;
+                        case CONTROLS.jump_to_start:
+                          params = {
+                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
+                            TopicArn: process.env.CONTROL_JUMP,
+                          };
+                          await sns.publish(params).promise();
+                          ctx.body = '';
+                          break;
                         case CONTROLS.shuffle:
                           params = {
                             Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
