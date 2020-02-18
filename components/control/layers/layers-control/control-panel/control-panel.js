@@ -1,16 +1,17 @@
-const config = require('config');
-const logger = require('../../../layers/config/util-logger');
-const {loadBackToPlaylist, loadPlaylist} = require('../settings/settings-interface');
-const {actionSection, buttonActionElement, confirmObject, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('../slack/format/slack-format-blocks');
-const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
-const {inChannelPost, messageUpdate} = require('../slack/format/slack-format-reply');
-const {post, updateChat} = require('../slack/slack-api');
+const config = require(process.env.CONFIG);
+const logger = require(process.env.LOGGER);
 
-const Track = require('../../../layers/spotifyObjects/util-spotify-track');
+const {loadBackToPlaylist, loadPlaylist} = require('/opt/settings/settings-interface');
+const {actionSection, buttonActionElement, confirmObject, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('/opt/slack/format/slack-format-blocks');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {inChannelPost, messageUpdate} = require('/opt/slack/format/slack-format-reply');
+const {post, updateChat} = require('/opt/slack/slack-api');
 
-const CONTROLLER = config.get('slack.actions.controller');
-const CONTROLLER_OVERFLOW = config.get('slack.actions.controller_overflow');
-const CONTROLS = config.get('slack.actions.controls');
+const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
+
+const CONTROLLER = config.slack.actions.controller;
+const CONTROLLER_OVERFLOW = config.slack.actions.controller_overflow;
+const CONTROLS = config.slack.actions.controls;
 
 const PANEL_RESPONSE = {
   context_off: (playlist, back) => `:information_source: Not playing from the Spotbot playlist: ${playlist}. ${back ? ` Spotbot will return when you add songs to the playlist.`: ``}`,
@@ -24,6 +25,32 @@ const PANEL_RESPONSE = {
 };
 
 /**
+ * Updates the panel with success status, posts if successful.
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {String} timestamp
+ * @param {string} success
+ * @param {string} response
+ * @param {Object} status
+ */
+async function responseUpdate(teamId, channelId, timestamp, success, response, status) {
+  try {
+    if (!success) {
+      await updatePanel(teamId, channelId, timestamp, response, status);
+    } else {
+      await Promise.all([
+        updatePanel(teamId, channelId, timestamp, null, status),
+        post(
+            inChannelPost(channelId, response, null),
+        ),
+      ]);
+    }
+  } catch (error) {
+    logger.error(error);
+  }
+}
+
+/**
  * Get Current Track Panel
  * @param {string} teamId
  * @param {string} channelId
@@ -35,7 +62,7 @@ async function getCurrentTrackPanel(teamId, channelId, status, response) {
   // If we have a song playing push the currently playing stack on
   let altText; let context;
   const currentPanel = [];
-  if (status.item) {
+  if (status && status.item) {
     const track = new Track(status.item);
     const text = PANEL_RESPONSE.currently_playing_mrkdwn(track.name, track.url, track.artists, track.album);
     altText = PANEL_RESPONSE.currently_playing(track.name, track.artists, track.album);
@@ -162,5 +189,6 @@ module.exports = {
   getControlsPanel,
   getShuffleRepeatPanel,
   PANEL_RESPONSE,
+  responseUpdate,
   updatePanel,
 };

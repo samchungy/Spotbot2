@@ -1,4 +1,4 @@
-const moment = require('moment-timezone');
+const moment = require(process.env.MOMENT);
 /**
  * Track Object
  */

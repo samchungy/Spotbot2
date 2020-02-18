@@ -82,9 +82,11 @@ layers:
     path: layers/layers-spotify
   # Other Layers
   settings-blocks:
-    name: ${self:custom.prefix}-settingsblocks
+    name: ${self:custom.prefix}-settings-blocks
     path: components/settings/layers/layers-settings
-
+  control:
+    name: ${self:custom.prefix}-control-panel
+    path: components/control/layers/layers-control
 functions:
   #Router
   authorizer-slack-headers:
@@ -98,8 +100,8 @@ functions:
   router:
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+      CONTROL_PLAY: ${self:custom.topic}-control-play
       SETTINGS_AUTH_CHANGE: ${self:custom.topic}-settings-auth-change
-      SETTINGS_AUTH_SAVE_VIEW: ${self:custom.topic}-settings-auth-save-view
       SETTINGS_AUTH_UPDATE_VIEW: ${self:custom.topic}-settings-auth-update-view
       SETTINGS_AUTH_VALIDATE: ${self:custom.lambda}-settings-auth-validate
       SETTINGS_DEVICE_SELECT: ${self:custom.topic}-settings-device-select
@@ -109,7 +111,7 @@ functions:
       SETTINGS_GET_OPTIONS_TIMEZONES: ${self:custom.lambda}-settings-get-options-timezones
       SETTINGS_OPEN: ${self:custom.topic}-settings-open
       SETTINGS_SUBMIT_VERIFY: ${self:custom.lambda}-settings-submit-verify
-    memorySize: 512
+    memorySize: 256
     package:
       include:
         - ./router/**
@@ -153,19 +155,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
       - { Ref: SettingsDashblocksLambdaLayer }
-  settings-auth-save-view:
-    events:
-      - sns: ${self:custom.prefix}-settings-auth-save-view
-    memorySize: 128
-    package:
-      include:
-        - ./components/settings/settings-auth-save-view.js
-      exclude:
-        - ./**
-    handler: components/settings/settings-auth-save-view.handler
-    layers:
-      - { Ref: CoreLambdaLayer }
-      - { Ref: SpotifyLambdaLayer }
   settings-auth-update-view:
     events:
       - sns: ${self:custom.prefix}-settings-auth-update-view
@@ -184,7 +173,7 @@ functions:
   settings-auth-validate:
     environment:
       SETTINGS_AUTH_UPDATE_VIEW: arn:aws:sns:ap-southeast-2:897201036940:spotbot-dev-settings-auth-update-view
-    memorySize: 256
+    memorySize: 128
     package:
       include:
         - ./components/settings/settings-auth-validate.js
@@ -197,7 +186,7 @@ functions:
   settings-device-select:
     events:
       - sns: ${self:custom.prefix}-settings-device-select
-    memorySize: 448
+    memorySize: 128
     package:
       include:
         - ./components/settings/settings-device-select.js
@@ -211,7 +200,7 @@ functions:
   settings-device-switch:
     events:
       - sns: ${self:custom.prefix}-settings-device-switch
-    memorySize: 256
+    memorySize: 128
     package:
       include:
         - ./components/settings/settings-device-switch.js
@@ -235,7 +224,7 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
   settings-get-options-playlists:
-    memorySize: 320
+    memorySize: 128
     package:
       include:
         - ./components/settings/settings-get-options-playlists.js
@@ -260,7 +249,7 @@ functions:
   settings-open:
     events:
       - sns: ${self:custom.prefix}-settings-open
-    memorySize: 448
+    memorySize: 128
     package:
       include:
         - ./components/settings/settings-open.js
@@ -275,7 +264,7 @@ functions:
   settings-submit-save:
     events:
       - sns: ${self:custom.prefix}-settings-submit-save
-    memorySize: 384
+    memorySize: 128
     package:
       include:
         - ./components/settings/settings-submit-save.js
@@ -300,6 +289,22 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
+  #Control
+  control-play:
+    events:
+      - sns: ${self:custom.prefix}-control-play
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-play.js
+      exclude:
+        - ./**
+    handler: components/control/control-play.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlLambdaLayer }
 resources:
   Resources:
     SpotbotAuthTable:
