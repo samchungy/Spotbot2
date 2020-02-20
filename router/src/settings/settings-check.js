@@ -1,7 +1,12 @@
-const logger = require(process.env.CONFIG);
-const {loadAdmins, loadPlaylist} = require('/opt/settings/settings-interface');
+const config = require(process.env.CONFIG);
+const logger = require(process.env.LOGGER);
+const {loadSettings} = require('/opt/settings/settings-interface');
 const {postEphemeral, reply} = require('/opt/slack/slack-api');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
+
+const PLAYLIST = config.dynamodb.settings.playlist;
+const CHANNEL_ADMINS = config.dynamodb.settings.channel_admins;
+
 const MIDDLEWARE_RESPONSE = {
   admin_error: ':information_source: You must be a Spotbot admin for this channel to use this command.',
   settings_error: ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.',
@@ -14,7 +19,8 @@ const MIDDLEWARE_RESPONSE = {
  */
 async function checkIsSetup(teamId, channelId) {
   try {
-    return await loadPlaylist(teamId, channelId) ? true : false;
+    const settings = await loadSettings(teamId, channelId);
+    return (settings && settings[PLAYLIST]);
   } catch (error) {
     logger.error(error);
     return false;
@@ -49,8 +55,8 @@ async function checkSettings(teamId, channelId, userId) {
  */
 async function checkIsAdmin(teamId, channelId, userId) {
   try {
-    const admins = await loadAdmins(teamId, channelId);
-    if (admins && admins.includes(userId)) {
+    const settings = await loadSettings(teamId, channelId);
+    if (settings && settings[CHANNEL_ADMINS].includes(userId)) {
       return true;
     };
     await reply(

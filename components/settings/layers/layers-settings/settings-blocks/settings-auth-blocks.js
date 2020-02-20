@@ -1,9 +1,11 @@
 const config = require(process.env.CONFIG);
+const moment = require(process.env.MOMENT);
+const logger = require(process.env.LOGGER);
 
 const {fetchProfile} = require('/opt/spotify/spotify-api/spotify-api-profile');
 const {fetchAuthorizeURL} = require('/opt/spotify/spotify-api/spotify-api-auth');
-const {storeState} = require('/opt/spotify/spotify-auth/spotify-auth-dal');
-const {isAuthenticated} = require('/opt/spotify/spotify-auth/spotify-auth-check');
+const {storeState} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {AuthError, PremiumError} = require('/opt/errors/errors-auth');
 const {buttonSection} = require('/opt/slack/format/slack-format-modal');
 const {contextSection, confirmObject} = require('/opt/slack/format/slack-format-blocks');
@@ -43,10 +45,11 @@ async function getAuthBlock(teamId, channelId, viewId) {
   const authBlock = [];
 
   try {
-    if (!await isAuthenticated(teamId, channelId)) {
+    const auth = await authSession(teamId, channelId);
+    if (!auth.getAccess()) {
       throw new AuthError();
     }
-    const profile = await fetchProfile(teamId, channelId );
+    const profile = await fetchProfile(teamId, channelId, auth);
     if (profile.product !== 'premium') {
       throw new PremiumError();
     } else {
@@ -60,15 +63,20 @@ async function getAuthBlock(teamId, channelId, viewId) {
     if (error instanceof AuthError) {
       authError = true;
       // We are not authenticated - push non-authenticated blocks
-      const url = await getAuthorizationURL(teamId, channelId, viewId);
-      authBlock.push(
-          buttonSection(SETTINGS_AUTH.auth_url, LABELS.auth_url, HINTS.auth_url_button, null, url, null),
-      );
-      if (error instanceof PremiumError) {
-        // If the user is not premium
+      try {
+        const noAuth = await authSession(teamId, channelId);
+        const url = await getAuthorizationURL(teamId, channelId, noAuth, viewId);
         authBlock.push(
-            contextSection(SETTINGS_AUTH.auth_error, AUTH_RESPONSE.premium_error),
+            buttonSection(SETTINGS_AUTH.auth_url, LABELS.auth_url, HINTS.auth_url_button, null, url, null),
         );
+        if (error instanceof PremiumError) {
+          // If the user is not premium
+          authBlock.push(
+              contextSection(SETTINGS_AUTH.auth_error, AUTH_RESPONSE.premium_error),
+          );
+        }
+      } catch (realError) {
+        throw realError;
       }
     } else {
       throw error;
@@ -84,13 +92,14 @@ async function getAuthBlock(teamId, channelId, viewId) {
  * Generates a Spotify Authorization URL and stores a state in our db
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
  * @param {string} viewId
  */
-async function getAuthorizationURL(teamId, channelId, viewId) {
+async function getAuthorizationURL(teamId, channelId, auth, viewId) {
   try {
     // TODO Store triggerId as Spotify Auth state.
     const state = modelState(teamId, channelId, viewId);
-    const [, authUrl] = await Promise.all([storeState(teamId, channelId, state), fetchAuthorizeURL(teamId, channelId, encodeURI(JSON.stringify(state)))]);
+    const [, authUrl] = await Promise.all([storeState(teamId, channelId, {state: state}, moment().add(1, 'hour').unix()), fetchAuthorizeURL(teamId, channelId, auth, encodeURI(JSON.stringify(state)))]);
     return authUrl;
   } catch (error) {
     logger.error(error);

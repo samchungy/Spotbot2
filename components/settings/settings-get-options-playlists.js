@@ -1,14 +1,16 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
+const moment = require(process.env.MOMENT);
 const {fetchPlaylists} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const {storePlaylists} = require('/opt/settings/settings-helper');
-const {loadPlaylist, loadProfile} = require('/opt/settings/settings-interface');
+const {loadSettings, storePlaylists} = require('/opt/settings/settings-interface');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {modelPlaylist} = require('/opt/settings/settings-model');
 const {option, optionGroup} = require('/opt/slack/format/slack-format-modal');
 
 const LIMIT = config.spotify_api.playlists.limit;
 const SETTINGS_HELPER = config.dynamodb.settings_helper;
 const NEW_PLAYLIST = SETTINGS_HELPER.create_new_playlist;
+const PLAYLIST = config.dynamodb.settings.playlist;
 
 /**
  * Fetch all compatible Spotify playlists
@@ -18,11 +20,12 @@ const NEW_PLAYLIST = SETTINGS_HELPER.create_new_playlist;
  */
 async function getCompatiblePlaylists(teamId, channelId, currentPlaylist) {
   try {
+    const auth = await authSession(teamId, channelId);
+    const profile = auth.getProfile();
     const compatiblePlaylists = [...currentPlaylist ? [currentPlaylist] : []];
     let count = 0;
-    const profile = await loadProfile(teamId, channelId );
     while (true) {
-      const playlists = await fetchPlaylists(teamId, channelId, count, LIMIT);
+      const playlists = await fetchPlaylists(teamId, channelId, auth, count, LIMIT);
       // Only if it is a collaborative playlist or the owner is ourselves - a playlist compatible.
       // and current playlist is not in the list
       compatiblePlaylists.push(
@@ -56,11 +59,11 @@ module.exports.handler = async (event, context) => {
   try {
     // LAMBDA FUNCTION
     const {teamId, channelId, query} = event;
-
-    const currentPlaylist = await loadPlaylist(teamId, channelId);
+    const settings = await loadSettings(teamId, channelId);
+    const {[PLAYLIST]: currentPlaylist} = (settings ? settings : {});
     const playlists = await getCompatiblePlaylists(teamId, channelId, currentPlaylist);
     const [, searchPlaylists, other] = await Promise.all([
-      storePlaylists(teamId, channelId, playlists),
+      storePlaylists(teamId, channelId, {value: playlists}, moment().add(1, 'hour').unix()),
       // Converts into Slack Option if it matches the search query
       (() => playlists
           .filter((playlist) => playlist.name.toLowerCase().includes(query.toLowerCase()))

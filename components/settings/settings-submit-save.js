@@ -1,17 +1,17 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
-const {loadProfile} = require('/opt/settings/settings-interface');
-const {loadSettings, storeSettings} = require('/opt/settings/settings-dal');
+const {changeSettings, loadSettings, storeSettings} = require('/opt/settings/settings-interface');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const {postEphemeral} = require('/opt/slack/slack-api');
 const {isEqual, isEmpty} = require('/opt/utils/util-objects');
-const {storeState} = require('/opt/spotify/spotify-auth/spotify-auth-dal');
 
 // Transform Device and Playlist values
 const {loadDevices, loadPlaylists} = require('/opt/settings/settings-helper');
-const {modelDevice, modelPlaylist, modelState} = require('/opt/settings/settings-model');
+const {modelDevice, modelPlaylist} = require('/opt/settings/settings-model');
 const {createPlaylist} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {removeState} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
 
 const SETTINGS = config.dynamodb.settings;
 const SETTINGS_HELPER = config.dynamodb.settings_helper;
@@ -27,7 +27,15 @@ module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, submissions} = JSON.parse(event.Records[0].Sns.Message);
   try {
     // No Errors - proceed with saving the settings
-    const settings = await loadSettings(teamId, channelId);
+    const dbSettings = await loadSettings(teamId, channelId);
+    let settings;
+    if (!dbSettings) {
+      // Create a default set of values
+      settings = {...SETTINGS};
+      Object.keys(settings).forEach((key) => settings[key] = null);
+    } else {
+      settings = {...dbSettings};
+    }
     for (const key in settings) {
       if ({}.hasOwnProperty.call(settings, key)) {
         const oldValue = settings[key];
@@ -42,19 +50,25 @@ module.exports.handler = async (event, context) => {
         }
       }
     }
-
     // Only save if we have something to update.
     if (!isEmpty(settings)) {
-      await storeSettings(teamId, channelId, settings);
+      // If new DB
+      if (!dbSettings) {
+        await storeSettings(teamId, channelId, settings);
+      } else {
+        await changeSettings(teamId, channelId, Object.entries(settings).map(([key, value]) => {
+          return {key: key, value: value};
+        }));
+      }
     }
-    const emptyState = modelState(teamId, channelId, null);
 
     // Report back to Slack
     await Promise.all([
+      // DELETE STATE
+      removeState(teamId, channelId),
       postEphemeral(
           ephemeralPost(channelId, userId, SETTINGS_RESPONSE.success, null),
       ),
-      storeState(teamId, channelId, emptyState),
     ]);
   } catch (error) {
     logger.error('Failed to save settings');
@@ -101,15 +115,16 @@ async function transformValue(teamId, channelId, attribute, newValue, oldValue) 
  */
 async function getPlaylistValue(teamId, channelId, newValue) {
   try {
+    const auth = await authSession(teamId, channelId);
     if (newValue.includes(NEW_PLAYLIST)) {
       newValue = newValue.replace(NEW_PLAYLIST_REGEX, '');
       // Create a new playlist using Spotify API
-      const {id} = await loadProfile(teamId, channelId );
-      const newPlaylist = await createPlaylist(teamId, channelId, id, newValue);
+      const {id} = auth.getProfile();
+      const newPlaylist = await createPlaylist(teamId, channelId, auth, id, newValue);
       return modelPlaylist(newValue, newPlaylist.id, newPlaylist.uri, newPlaylist.external_urls.spotify);
     } else {
       // Grab the playlist object from our earlier Database playlist fetch
-      const playlists = await loadPlaylists(teamId, channelId );
+      const {value: playlists} = await loadPlaylists(teamId, channelId);
       return playlists.find((playlist) => playlist.id === newValue);
     }
   } catch (error) {
@@ -133,7 +148,7 @@ async function getDeviceValue(teamId, channelId, newValue, oldValue) {
       case SETTINGS_HELPER.no_devices:
         return modelDevice(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices);
       default:
-        const spotifyDevices = await loadDevices(teamId, channelId);
+        const {value: spotifyDevices} = await loadDevices(teamId, channelId);
         return spotifyDevices.find((device) => device.id === newValue);
     }
   } catch (error) {

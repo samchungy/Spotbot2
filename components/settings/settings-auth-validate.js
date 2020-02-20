@@ -1,14 +1,17 @@
 const logger = require(process.env.LOGGER);
+const config = require(process.env.CONFIG);
 const moment = require(process.env.MOMENT);
 const SNS = require('aws-sdk/clients/sns');
 const sns = new SNS();
 
-const {storeProfile} = require('/opt/settings/settings-interface');
-const {loadState, storeTokens} = require('/opt/spotify/spotify-auth/spotify-auth-dal');
+const {loadState, storeSpotifyAuth, changeSpotifyAuth} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {modelSpotifyAuth, modelProfile} = require('/opt/spotify/spotify-auth/spotify-auth-model');
 const {fetchTokens} = require('/opt/spotify/spotify-api/spotify-api-auth');
 const {fetchProfile} = require('/opt/spotify/spotify-api/spotify-api-profile');
-const {modelProfile} = require('/opt/settings/settings-model');
 const {isEqual} = require('/opt/utils/util-objects');
+
+const PROFILE = config.dynamodb.auth.profile;
 
 /**
  * Check that the state for Authorization is valid
@@ -19,8 +22,8 @@ async function verifyState(state) {
     const stateJson = JSON.parse(state);
     // Check state is valid, else redirect.
     const currentState = await loadState(stateJson.teamId, stateJson.channelId);
-    if (isEqual(stateJson, currentState)) {
-      return currentState;
+    if (currentState && isEqual(stateJson, currentState.state)) {
+      return currentState.state;
     }
   } catch (error) {
     logger.error('Verify state failed');
@@ -40,22 +43,24 @@ module.exports.handler = async (event, context) => {
     const {code, state} = event;
     const stateJson = await verifyState(state);
     if (!stateJson) {
-      return {success: false, failReason: 'Invalid State'};
+      return {success: false, failReason: 'Invalid State, please close the window and run /spotbot settings again.'};
     }
     // Get Tokens from Spotify
-    const {access_token: accessToken, refresh_token: refreshToken} = await fetchTokens(stateJson.teamId, stateJson.channelId, code);
+    let auth = await authSession(stateJson.teamId, stateJson.channelId);
+    const {access_token: accessToken, refresh_token: refreshToken} = await fetchTokens(stateJson.teamId, stateJson.channelId, auth, code);
     // Store our tokens in our DB & Get Spotify URI for authenticator
-    await storeTokens(stateJson.teamId, stateJson.channelId, accessToken, refreshToken, moment().add(55, 'm').toISOString());
-    const profile = await fetchProfile(stateJson.teamId, stateJson.channelId);
-
+    const authModel = modelSpotifyAuth(accessToken, refreshToken, moment().add(55, 'm').toISOString(), null);
+    await storeSpotifyAuth(stateJson.teamId, stateJson.channelId, authModel);
+    auth = await authSession(stateJson.teamId, stateJson.channelId);
+    const profile = await fetchProfile(stateJson.teamId, stateJson.channelId, auth);
+    await changeSpotifyAuth(stateJson.teamId, stateJson.channelId, [
+      {key: PROFILE, value: modelProfile(profile)},
+    ]);
     const params = {
       Message: JSON.stringify({teamId: stateJson.teamId, channelId: stateJson.channelId, viewId: stateJson.viewId}),
       TopicArn: process.env.SETTINGS_AUTH_UPDATE_VIEW,
     };
-    await Promise.all([
-      storeProfile(stateJson.teamId, stateJson.channelId, modelProfile(profile.id, profile.country)),
-      sns.publish(params).promise(),
-    ]);
+    await sns.publish(params).promise();
     return {success: true, failReason: null};
   } catch (error) {
     logger.error(error);

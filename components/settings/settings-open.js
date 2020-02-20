@@ -22,7 +22,6 @@ module.exports.handler = async (event, context) => {
       ...authBlock,
       ...!authError ? await getSettingsBlocks(teamId, channelId ) : [],
     ];
-
     const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, channelId);
     await updateModal(viewId, modal);
   } catch (error) {

@@ -1,7 +1,7 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 const moment = require(process.env.MOMENT);
-const {loadSettings} = require('/opt/settings/settings-dal');
+const {loadSettings} = require('/opt/settings/settings-interface');
 const {multiSelectUsers, option, selectExternal, selectStatic, textInput, yesOrNo} = require('/opt/slack/format/slack-format-modal');
 const LIMITS = config.settings.limits;
 const QUERY = config.settings.query_lengths;
@@ -45,7 +45,12 @@ const PLACE = {
  */
 async function getSettingsBlocks(teamId, channelId ) {
   try {
-    const settings = await loadSettings(teamId, channelId );
+    let settings = await loadSettings(teamId, channelId );
+    if (!settings) {
+      // Create a default set of values
+      settings = {...SETTINGS};
+      Object.keys(settings).forEach((key) => settings[key] = null);
+    }
     return [
       multiSelectUsers(SETTINGS.channel_admins, LABELS.channel_admins, HINTS.channel_admins, settings.channel_admins),
       selectExternal(SETTINGS.playlist, LABELS.playlist, HINTS.playlist, settings.playlist ? option(settings.playlist.name, settings.playlist.id) : null, QUERY.playlist, PLACE.playlist),

@@ -1,58 +1,6 @@
-const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
-const {batchGetSettings, batchPutSettings, getSetting, putSetting, putRequest, settingModel} = require('/opt/db/settings');
-
-const SETTINGS = config.dynamodb.settings;
-
-/**
- * Load saved Settings from the db
- * @param {string} teamId
- * @param {string} channelId
- */
-async function loadSettings(teamId, channelId ) {
-  try {
-    const settings = {...SETTINGS};
-    // Create a default set of values
-    Object.keys(settings).forEach((key) => settings[key] = null);
-    if (!teamId || !channelId) {
-      return settings;
-    }
-
-    const settingsList = Object.keys(SETTINGS).map((key) => settingModel(teamId, channelId, SETTINGS[key], null));
-    const batchSettings = await batchGetSettings(settingsList);
-    // Read values into settings, should be only 1 table
-    for (const table in batchSettings.Responses) {
-      if ({}.hasOwnProperty.call(batchSettings.Responses, table)) {
-        batchSettings.Responses[table].forEach((key) => settings[key.name] = key.value);
-      }
-    }
-
-    return settings;
-  } catch (error) {
-    logger.error('Load Settings from Dynamodb failed');
-    throw error;
-  }
-}
-
-
-// Store Functions
-
-/**
- * Stores the settings object in db
- * @param {string} teamId
- * @param {string} channelId
- * @param {object} newSettings
- */
-async function storeSettings(teamId, channelId, newSettings) {
-  try {
-    const settings = Object.keys(newSettings).map((key) => putRequest(teamId, channelId, key, newSettings[key]));
-    await batchPutSettings(settings);
-  } catch (error) {
-    logger.error('Storing Settings in Dynamodb failed');
-    throw error;
-  }
-}
+const {getSetting, putSetting, settingModel, settingUpdateModel, updateSetting, settingValues} = require('/opt/db/settings');
 
 /**
  * Load state for getting back to playlist
@@ -64,7 +12,7 @@ async function loadSetting(teamId, channelId, settingKey) {
   try {
     const setting = settingModel(teamId, channelId, settingKey, null);
     const item = await getSetting(setting);
-    return item.Item ? item.Item.value : null;
+    return item.Item ? settingValues(item.Item) : null;
   } catch (error) {
     logger.error(`Loading ${settingKey} from Dynamodb failed`);
     throw error;
@@ -77,10 +25,11 @@ async function loadSetting(teamId, channelId, settingKey) {
  * @param {string} channelId
  * @param {string} settingKey
  * @param {*} value
+ * @param {string} expiry
  */
-async function storeSetting(teamId, channelId, settingKey, value) {
+async function storeSetting(teamId, channelId, settingKey, value, expiry) {
   try {
-    const setting = settingModel(teamId, channelId, settingKey, value);
+    const setting = settingModel(teamId, channelId, settingKey, value, expiry);
     return await putSetting(setting);
   } catch (error) {
     logger.error(`Storing ${settingKey} from Dynamodb failed`);
@@ -88,9 +37,25 @@ async function storeSetting(teamId, channelId, settingKey, value) {
   }
 }
 
+/**
+ * Change Setting
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {string} settingKey
+ * @param {*} values
+ */
+async function changeSetting(teamId, channelId, settingKey, values) {
+  try {
+    const setting = settingUpdateModel(teamId, channelId, settingKey, values);
+    return await updateSetting(setting);
+  } catch (error) {
+    logger.error(`Changing ${settingKey} in Dynamodb failed`);
+    throw error;
+  }
+}
+
 module.exports = {
+  changeSetting,
   loadSetting,
-  loadSettings,
   storeSetting,
-  storeSettings,
 };

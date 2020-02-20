@@ -1,5 +1,6 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {transferDevice} = require('/opt/spotify/spotify-api/spotify-api-playback');
 const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
@@ -22,17 +23,18 @@ const DEVICE_RESPONSE = {
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, view} = JSON.parse(event.Records[0].Sns.Message);
   try {
+    const auth = await authSession(teamId, channelId);
     const submission = extractSubmission(view);
     if (submission) {
-      const status = await fetchCurrentPlayback(teamId, channelId);
+      const status = await fetchCurrentPlayback(teamId, channelId, auth);
       if (status && status.device && status.device.id == submission.value) {
         return;
       }
-      const spotifyDevices = await fetchDevices(teamId, channelId);
+      const spotifyDevices = await fetchDevices(teamId, channelId, auth);
       const device = spotifyDevices.devices.find((device) => device.id === submission.value);
       if (device) {
         const deviceObj = new Device(device);
-        await transferDevice(teamId, channelId, submission.value);
+        await transferDevice(teamId, channelId, auth, submission.value);
         await post(
             inChannelPost(channelId, DEVICE_RESPONSE.select(deviceObj.name, userId), null),
         );

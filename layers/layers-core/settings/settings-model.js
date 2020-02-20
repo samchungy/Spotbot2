@@ -14,13 +14,6 @@ const modelPlaylist = (name, id, uri, url) => {
   };
 };
 
-const modelProfile = (id, country) => {
-  return {
-    country: country,
-    id: id,
-  };
-};
-
 const modelState = (teamId, channelId, viewId) => {
   return {
     teamId: teamId,
@@ -32,6 +25,5 @@ const modelState = (teamId, channelId, viewId) => {
 module.exports = {
   modelDevice,
   modelPlaylist,
-  modelProfile,
   modelState,
 };

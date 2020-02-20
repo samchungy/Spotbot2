@@ -1,38 +1,30 @@
 const config = require(process.env.CONFIG);
-const {loadSetting, storeSetting} = require('./settings-dal');
+const {changeSetting, loadSetting, storeSetting} = require('./settings-dal');
 
-const SETTINGS = config.dynamodb.settings;
 const SETTINGS_EXTRA = config.dynamodb.settings_extra;
+const ALL_SETTINGS = config.dynamodb.all_settings;
 
 // Functions for other modules to use
-const loadAdmins = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS.channel_admins);
-const loadBackToPlaylist = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS.back_to_playlist);
+const changeSettings = (teamId, channelId, values) => changeSetting(teamId, channelId, ALL_SETTINGS, values);
+
 const loadBackToPlaylistState = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS_EXTRA.back_to_playlist_state);
-const loadDefaultDevice = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS.default_device);
-const loadPlaylist = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS.playlist);
-const loadProfile = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS_EXTRA.profile);
-const loadRepeat = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS.disable_repeats_duration);
-const loadSkipVotes = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS.skip_votes);
-const loadSkipVotesAfterHours = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS.skip_votes_ah);
-const loadTimezone = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS.timezone);
+const loadDevices = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS_EXTRA.spotify_devices);
+const loadPlaylists = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS_EXTRA.spotify_playlists);
+const loadSettings = (teamId, channelId) => loadSetting(teamId, channelId, ALL_SETTINGS);
+
 const storeBackToPlaylistState = (teamId, channelId, value) => storeSetting(teamId, channelId, SETTINGS_EXTRA.back_to_playlist_state, value);
-const storeDefaultDevice = (teamId, channelId, value) => storeSetting(teamId, channelId, SETTINGS.default_device, value);
-const storePlaylist = (teamId, channelId, value) => storeSetting(teamId, channelId, SETTINGS.playlist, value);
-const storeProfile = (teamId, channelId, value) => storeSetting(teamId, channelId, SETTINGS_EXTRA.profile, value);
+const storeDevices = (teamId, channelId, value, expiry) => storeSetting(teamId, channelId, SETTINGS_EXTRA.spotify_devices, value, expiry);
+const storePlaylists = (teamId, channelId, value, expiry) => storeSetting(teamId, channelId, SETTINGS_EXTRA.spotify_playlists, value, expiry);
+const storeSettings = (teamId, channelId, value) => storeSetting(teamId, channelId, ALL_SETTINGS, value);
 
 module.exports = {
-  loadAdmins,
-  loadBackToPlaylist,
+  changeSettings,
   loadBackToPlaylistState,
-  loadDefaultDevice,
-  loadPlaylist,
-  loadProfile,
-  loadRepeat,
-  loadSkipVotes,
-  loadSkipVotesAfterHours,
-  loadTimezone,
+  loadDevices,
+  loadPlaylists,
+  loadSettings,
   storeBackToPlaylistState,
-  storeDefaultDevice,
-  storePlaylist,
-  storeProfile,
+  storeDevices,
+  storePlaylists,
+  storeSettings,
 };
