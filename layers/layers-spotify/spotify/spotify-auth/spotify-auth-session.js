@@ -6,8 +6,10 @@ const REFRESH = config.dynamodb.auth.refresh;
 const EXPIRES = config.dynamodb.auth.expires;
 const PROFILE = config.dynamodb.auth.profile;
 
-const authSession = async (teamId, channelId) => {
-  const auth = await loadSpotifyAuth(teamId, channelId);
+const authSession = async (teamId, channelId, profile) => {
+  const auth = await loadSpotifyAuth(teamId, channelId,
+      [ACCESS, REFRESH, EXPIRES, ...profile ? [PROFILE] : []],
+  );
   const updateAuth = (access, expires) => {
     auth[ACCESS] = access;
     auth[EXPIRES] = expires;

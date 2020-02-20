@@ -29,7 +29,7 @@ const DEVICE_RESPONSE = {
  */
 async function getBlocks(teamId, channelId, auth, devices) {
   try {
-    const settings = await loadSettings(teamId, channelId);
+    const settings = await loadSettings(teamId, channelId, [DEFAULT_DEVICE]);
     const defaultDevice = settings[DEFAULT_DEVICE];
     const blocks = [textSection(DEVICE_RESPONSE.default(defaultDevice.name))];
     let options;

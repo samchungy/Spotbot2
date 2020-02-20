@@ -6,7 +6,7 @@ const AUTH = config.dynamodb.auth;
 // Loading Functions
 const changeSpotifyAuth = (teamId, channelId, values) => changeAuth(teamId, channelId, AUTH.auth, values);
 
-const loadSpotifyAuth = (teamId, channelId) => loadAuth(teamId, channelId, AUTH.auth);
+const loadSpotifyAuth = (teamId, channelId, keys) => loadAuth(teamId, channelId, AUTH.auth, keys);
 const loadState = (teamId, channelId) => loadAuth(teamId, channelId, AUTH.state);
 
 const removeSpotifyAuth = (teamId, channelId) => removeAuth(teamId, channelId, AUTH.auth);

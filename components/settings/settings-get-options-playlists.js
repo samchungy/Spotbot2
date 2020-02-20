@@ -20,7 +20,7 @@ const PLAYLIST = config.dynamodb.settings.playlist;
  */
 async function getCompatiblePlaylists(teamId, channelId, currentPlaylist) {
   try {
-    const auth = await authSession(teamId, channelId);
+    const auth = await authSession(teamId, channelId, true);
     const profile = auth.getProfile();
     const compatiblePlaylists = [...currentPlaylist ? [currentPlaylist] : []];
     let count = 0;
@@ -59,7 +59,8 @@ module.exports.handler = async (event, context) => {
   try {
     // LAMBDA FUNCTION
     const {teamId, channelId, query} = event;
-    const settings = await loadSettings(teamId, channelId);
+    const settings = await loadSettings(teamId, channelId, [PLAYLIST]);
+    console.log(settings);
     const {[PLAYLIST]: currentPlaylist} = (settings ? settings : {});
     const playlists = await getCompatiblePlaylists(teamId, channelId, currentPlaylist);
     const [, searchPlaylists, other] = await Promise.all([

@@ -7,11 +7,12 @@ const {getSetting, putSetting, settingModel, settingUpdateModel, updateSetting, 
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} settingKey
+ * @param {string} keys
  */
-async function loadSetting(teamId, channelId, settingKey) {
+async function loadSetting(teamId, channelId, settingKey, keys) {
   try {
-    const setting = settingModel(teamId, channelId, settingKey, null);
-    const item = await getSetting(setting);
+    const setting = settingModel(teamId, channelId, settingKey, null, null);
+    const item = await getSetting(setting, keys);
     return item.Item ? settingValues(item.Item) : null;
   } catch (error) {
     logger.error(`Loading ${settingKey} from Dynamodb failed`);

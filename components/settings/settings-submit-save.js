@@ -115,7 +115,7 @@ async function transformValue(teamId, channelId, attribute, newValue, oldValue) 
  */
 async function getPlaylistValue(teamId, channelId, newValue) {
   try {
-    const auth = await authSession(teamId, channelId);
+    const auth = await authSession(teamId, channelId, true);
     if (newValue.includes(NEW_PLAYLIST)) {
       newValue = newValue.replace(NEW_PLAYLIST_REGEX, '');
       // Create a new playlist using Spotify API

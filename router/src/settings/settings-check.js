@@ -19,7 +19,7 @@ const MIDDLEWARE_RESPONSE = {
  */
 async function checkIsSetup(teamId, channelId) {
   try {
-    const settings = await loadSettings(teamId, channelId);
+    const settings = await loadSettings(teamId, channelId, [PLAYLIST]);
     return (settings && settings[PLAYLIST]);
   } catch (error) {
     logger.error(error);
@@ -55,7 +55,7 @@ async function checkSettings(teamId, channelId, userId) {
  */
 async function checkIsAdmin(teamId, channelId, userId) {
   try {
-    const settings = await loadSettings(teamId, channelId);
+    const settings = await loadSettings(teamId, channelId, [CHANNEL_ADMINS]);
     if (settings && settings[CHANNEL_ADMINS].includes(userId)) {
       return true;
     };

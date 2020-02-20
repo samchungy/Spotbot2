@@ -19,7 +19,7 @@ const DEFAULT_DEVICE = config.dynamodb.settings.default_device;
 async function getAllDevices(teamId, channelId) {
   try {
     const auth = await authSession(teamId, channelId);
-    const [settings, spotifyDevices] = await Promise.all([loadSettings(teamId, channelId), fetchDevices(teamId, channelId, auth)]);
+    const [settings, spotifyDevices] = await Promise.all([loadSettings(teamId, channelId, [DEFAULT_DEVICE]), fetchDevices(teamId, channelId, auth)]);
     const {[DEFAULT_DEVICE]: defaultDevice} = settings ? settings : {};
     const devices = [
       ...defaultDevice ? [defaultDevice] : [], // If default device, add to list

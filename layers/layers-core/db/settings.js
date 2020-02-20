@@ -54,9 +54,10 @@ const putRequest = (team, channel, name, value) => {
   };
 };
 
-const getSettingInfo = (key) => {
+const getSettingInfo = (key, keys) => {
   return settingTable({
     Key: key,
+    ...keys ? {ProjectionExpression: keys.join(', ')}: {},
   });
 };
 
@@ -82,8 +83,8 @@ const putSetting = (setting) => {
   return dynamoDb.put(settingInfo(setting)).promise();
 };
 
-const getSetting = (setting) => {
-  return dynamoDb.get(getSettingInfo(setting)).promise();
+const getSetting = (setting, keys) => {
+  return dynamoDb.get(getSettingInfo(setting, keys)).promise();
 };
 
 const batchGetSettings = (settings) => {

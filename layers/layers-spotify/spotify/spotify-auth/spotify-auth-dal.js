@@ -8,11 +8,12 @@ const {authValues, getAuth, putAuth, authModel, authUpdateModel, updateAuth, aut
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} authKey
+ * @param {Array} keys
  */
-async function loadAuth(teamId, channelId, authKey) {
+async function loadAuth(teamId, channelId, authKey, keys) {
   try {
-    const auth = authModel(teamId, channelId, authKey, null);
-    const item = await getAuth(auth);
+    const auth = authModel(teamId, channelId, authKey, null, null);
+    const item = await getAuth(auth, keys);
     return item.Item ? authValues(item.Item) : null;
   } catch (error) {
     logger.error(`Get ${authKey} failed`);

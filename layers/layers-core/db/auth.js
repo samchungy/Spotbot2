@@ -15,9 +15,10 @@ const authInfo = (item) => {
       });
 };
 
-const getAuthInfo = (key) => {
+const getAuthInfo = (key, keys) => {
   return authTable({
     Key: key,
+    ...keys ? {ProjectionExpression: keys.join(', ')}: {},
   });
 };
 
@@ -65,8 +66,8 @@ const putAuth = (auth) => {
   return dynamoDb.put(authInfo(auth)).promise();
 };
 
-const getAuth = (auth) => {
-  return dynamoDb.get(getAuthInfo(auth)).promise();
+const getAuth = (auth, keys) => {
+  return dynamoDb.get(getAuthInfo(auth, keys)).promise();
 };
 
 const updateAuth = (auth) => {
