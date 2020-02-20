@@ -100,6 +100,7 @@ functions:
   router:
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+      CONTROL_CLEAR_ONE: ${self:custom.topic}-control-clear-one
       CONTROL_JUMP: ${self:custom.topic}-control-jump
       CONTROL_PAUSE: ${self:custom.topic}-control-pause
       CONTROL_OPEN: ${self:custom.topic}-control-open
@@ -293,6 +294,21 @@ functions:
       - { Ref: SlackLambdaLayer }
   
   #Control
+  control-clear-one:
+    events:
+      - sns: ${self:custom.prefix}-control-clear-one
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-clear-one.js
+      exclude:
+        - ./**
+    handler: components/control/control-clear-one.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlLambdaLayer }
   control-jump:
     events:
       - sns: ${self:custom.prefix}-control-jump

@@ -5,14 +5,15 @@ const requester = require('./spotify-api-requester');
  * Hits play on Spotify
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
  * @param {string} deviceId
  * @param {string} context
  * @param {String} offset
  * @param {String} ms
  */
-async function play(teamId, channelId, deviceId, context, offset, ms) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId);
-  return await requester(teamId, channelId, 'Play', async () => {
+async function play(teamId, channelId, auth, deviceId, context, offset, ms) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+  return await requester(teamId, channelId, auth, 'Play', async () => {
     await spotifyApi.play({
       device_id: deviceId,
       ...context ? {context_uri: context} : {},
@@ -26,11 +27,12 @@ async function play(teamId, channelId, deviceId, context, offset, ms) {
  * Hits pause on Spotify
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
  * @param {string} deviceId
  */
-async function pause(teamId, channelId, deviceId) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId);
-  return await requester(teamId, channelId, 'Pause', async () => {
+async function pause(teamId, channelId, auth, deviceId) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+  return await requester(teamId, channelId, auth, 'Pause', async () => {
     await spotifyApi.pause({device_id: deviceId});
   });
 }
@@ -39,10 +41,11 @@ async function pause(teamId, channelId, deviceId) {
  * Hits skip on Spotify
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
  */
-async function skip(teamId, channelId ) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId);
-  return await requester(teamId, channelId, 'Skip', async () => {
+async function skip(teamId, channelId, auth ) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+  return await requester(teamId, channelId, auth, 'Skip', async () => {
     await spotifyApi.skipToNext();
   });
 }
@@ -51,11 +54,12 @@ async function skip(teamId, channelId ) {
  * Shuffle Toggle
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
  * @param {string} state
  */
-async function shuffle(teamId, channelId, state) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId);
-  return await requester(teamId, channelId, 'Shuffle', async () =>{
+async function shuffle(teamId, channelId, auth, state) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+  return await requester(teamId, channelId, auth, 'Shuffle', async () =>{
     await spotifyApi.setShuffle({state: state});
   });
 }
@@ -64,11 +68,12 @@ async function shuffle(teamId, channelId, state) {
  * Repeat Toggle
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
  * @param {string} state
  */
-async function repeat(teamId, channelId, state) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId );
-  return await requester(teamId, channelId, 'Repeat', async () =>{
+async function repeat(teamId, channelId, auth, state) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
+  return await requester(teamId, channelId, auth, 'Repeat', async () =>{
     await spotifyApi.setRepeat({state: state});
   });
 }
@@ -77,11 +82,12 @@ async function repeat(teamId, channelId, state) {
  * Transfer Device
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
  * @param {string} deviceId
  */
-async function transferDevice(teamId, channelId, deviceId) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId );
-  return await requester(teamId, channelId, 'Transfer Device', async () =>{
+async function transferDevice(teamId, channelId, auth, deviceId) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+  return await requester(teamId, channelId, auth, 'Transfer Device', async () =>{
     await spotifyApi.transferMyPlayback({device_ids: [deviceId], play: true});
   });
 }

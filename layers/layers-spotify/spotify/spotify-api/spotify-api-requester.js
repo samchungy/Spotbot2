@@ -8,10 +8,11 @@ const {sleep} = require('/opt/utils/util-timeout');
  * Our API Caller for Spotify
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
  * @param {string} name
  * @param {function} api Spotify API function to run
  */
-async function apiCall(teamId, channelId, name, api) {
+async function apiCall(teamId, channelId, auth, name, api) {
   let attempts = 3;
   while (attempts) {
     try {
@@ -32,7 +33,7 @@ async function apiCall(teamId, channelId, name, api) {
             throw error;
           }
           try {
-            await refreshAccessToken(teamId, channelId);
+            await refreshAccessToken(teamId, channelId, auth);
           } catch (error) {
             throw new AuthError();
           }

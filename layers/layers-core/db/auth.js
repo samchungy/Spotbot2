@@ -21,12 +21,44 @@ const getAuthInfo = (key) => {
   });
 };
 
-const authModel = (team, channel, name, value) => {
+const authModel = (team, channel, name, value, expiry) => {
   return {
     name: name,
     team_channel: `${team}-${channel}`,
-    ...value ? {value: value} : {},
+    ...value ? value : {},
+    ...expiry ? {ttl: expiry} : {},
   };
+};
+
+const authValues = (item) => {
+  // eslint-disable-next-line no-unused-vars, camelcase
+  const {name, team_channel, ...results} = item;
+  return results;
+};
+
+const authUpdateModel = (team, channel, name, values) => {
+  expressionValues = {};
+  updateExpressions = values.map(({key, value}) => {
+    expressionValues[`:${key}`] = value;
+    return `${key} = :${key}`;
+  });
+  return authTable({
+    Key: {
+      name: name,
+      team_channel: `${team}-${channel}`,
+    },
+    UpdateExpression: `set ${updateExpressions.join(', ')}`,
+    ExpressionAttributeValues: expressionValues,
+  });
+};
+
+const authDeleteModel = (team, channel, name) => {
+  return authTable({
+    Key: {
+      name: name,
+      team_channel: `${team}-${channel}`,
+    },
+  });
 };
 
 const putAuth = (auth) => {
@@ -37,8 +69,21 @@ const getAuth = (auth) => {
   return dynamoDb.get(getAuthInfo(auth)).promise();
 };
 
+const updateAuth = (auth) => {
+  return dynamoDb.update(auth).promise();
+};
+
+const deleteAuth = (auth) =>{
+  return dynamoDb.delete(auth).promise();
+};
+
 module.exports = {
   authModel,
+  authDeleteModel,
+  authValues,
+  authUpdateModel,
+  deleteAuth,
   getAuth,
   putAuth,
+  updateAuth,
 };

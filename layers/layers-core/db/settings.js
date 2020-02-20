@@ -15,12 +15,35 @@ const settingInfo = (item) => {
       });
 };
 
-const settingModel = (team, channel, name, value) => {
+const settingModel = (team, channel, name, value, expiry) => {
   return {
     name: name,
     team_channel: `${team}-${channel}`,
-    ...value ? {value: value} : {},
+    ...value ? value : {},
+    ...expiry ? {ttl: expiry} : {},
   };
+};
+
+const settingUpdateModel = (team, channel, name, values) => {
+  expressionValues = {};
+  updateExpressions = values.map(({key, value}) => {
+    expressionValues[`:${key}`] = value;
+    return `${key} = :${key}`;
+  });
+  return settingTable({
+    Key: {
+      name: name,
+      team_channel: `${team}-${channel}`,
+    },
+    UpdateExpression: `set ${updateExpressions.join(', ')}`,
+    ExpressionAttributeValues: expressionValues,
+  });
+};
+
+const settingValues = (item) => {
+  // eslint-disable-next-line no-unused-vars, camelcase
+  const {name, team_channel, ...results} = item;
+  return results;
 };
 
 const putRequest = (team, channel, name, value) => {
@@ -71,6 +94,10 @@ const batchPutSettings = (settings) => {
   return dynamoDb.batchWrite(batchPutInfo(settings)).promise();
 };
 
+const updateSetting = (setting) => {
+  return dynamoDb.update(setting).promise();
+};
+
 module.exports = {
   batchGetSettings,
   batchPutSettings,
@@ -78,4 +105,7 @@ module.exports = {
   putSetting,
   putRequest,
   settingModel,
+  settingUpdateModel,
+  settingValues,
+  updateSetting,
 };
