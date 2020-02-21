@@ -46,7 +46,8 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                   break;
                 default:
-                  if (!await checkSettings(payload.team.id, payload.channel.id, payload.user.id)) {
+                  const settings = await checkSettings(payload.team.id, payload.channel.id, payload.user.id);
+                  if (!settings) {
                     ctx.body = '';
                     break;
                   }
@@ -76,7 +77,7 @@ module.exports = ( prefix, Router ) => {
                   //     // CONTROLS
                     case CONTROLS.play:
                       params = {
-                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                         TopicArn: process.env.CONTROL_PLAY,
                       };
                       await sns.publish(params).promise();
@@ -84,7 +85,7 @@ module.exports = ( prefix, Router ) => {
                       break;
                     case CONTROLS.pause:
                       params = {
-                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                         TopicArn: process.env.CONTROL_PAUSE,
                       };
                       await sns.publish(params).promise();
@@ -102,7 +103,7 @@ module.exports = ( prefix, Router ) => {
                       switch (payload.actions[0].selected_option.value) {
                         case CONTROLS.jump_to_start:
                           params = {
-                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
+                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                             TopicArn: process.env.CONTROL_JUMP,
                           };
                           await sns.publish(params).promise();
@@ -110,7 +111,7 @@ module.exports = ( prefix, Router ) => {
                           break;
                         case CONTROLS.shuffle:
                           params = {
-                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
+                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                             TopicArn: process.env.CONTROL_SHUFFLE,
                           };
                           await sns.publish(params).promise();
@@ -118,7 +119,7 @@ module.exports = ( prefix, Router ) => {
                           break;
                         case CONTROLS.repeat:
                           params = {
-                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, timestamp: payload.message.ts, userId: payload.user.id}),
+                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                             TopicArn: process.env.CONTROL_REPEAT,
                           };
                           await sns.publish(params).promise();
@@ -128,10 +129,14 @@ module.exports = ( prefix, Router ) => {
                         //         reset(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id, payload.trigger_id);
                         //         ctx.body = '';
                         //         break;
-                        //       case CONTROLS.clear_one:
-                        //         clearOneDay(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
-                        //         ctx.body = '';
-                        //         break;
+                        case CONTROLS.clear_one:
+                          params = {
+                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                            TopicArn: process.env.CONTROL_CLEAR_ONE,
+                          };
+                          await sns.publish(params).promise();
+                          ctx.body = '';
+                          break;
                       }
                       break;
                   }

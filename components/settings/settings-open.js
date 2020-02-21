@@ -14,13 +14,13 @@ const OPEN_RESPONSE = {
 };
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, viewId, userId} = JSON.parse(event.Records[0].Sns.Message);
+  const {teamId, channelId, settings, viewId, userId} = JSON.parse(event.Records[0].Sns.Message);
   try {
     const {authBlock, authError} = await getAuthBlock(teamId, channelId, viewId);
     // Do not load settings blocks if Spotify is not authenticated
     const blocks = [
       ...authBlock,
-      ...!authError ? await getSettingsBlocks(teamId, channelId ) : [],
+      ...!authError ? await getSettingsBlocks(settings) : [],
     ];
     const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, channelId);
     await updateModal(viewId, modal);

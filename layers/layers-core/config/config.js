@@ -30,12 +30,14 @@ module.exports = {
     'recent_limit': 5,
   },
   'dynamodb': {
+    'all_settings': 'all_settings',
     'auth': {
-      'object': 'auth',
-      'state': 'state',
+      'auth': 'auth',
       'access': 'access_token',
-      'refresh': 'refresh_token',
       'expires': 'expires',
+      'profile': 'profile',
+      'refresh': 'refresh_token',
+      'state': 'state',
       'view_id': 'view_id',
     },
     'settings': {
@@ -50,7 +52,6 @@ module.exports = {
     },
     'settings_extra': {
       'back_to_playlist_state': 'back_to_playlist_state',
-      'profile': 'profile',
       'spotify_playlists': 'spotify_playlists',
       'spotify_devices': 'spotify_devices',
       'skip': 'skip',

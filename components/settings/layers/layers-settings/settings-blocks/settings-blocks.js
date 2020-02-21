@@ -1,7 +1,6 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 const moment = require(process.env.MOMENT);
-const {loadSettings} = require('/opt/settings/settings-interface');
 const {multiSelectUsers, option, selectExternal, selectStatic, textInput, yesOrNo} = require('/opt/slack/format/slack-format-modal');
 const LIMITS = config.settings.limits;
 const QUERY = config.settings.query_lengths;
@@ -40,12 +39,10 @@ const PLACE = {
 
 /**
  * Loads old config and returns setting blocks
- * @param {string} teamId
- * @param {string} channelId
+ * @param {Object} settings
  */
-async function getSettingsBlocks(teamId, channelId ) {
+async function getSettingsBlocks(settings) {
   try {
-    let settings = await loadSettings(teamId, channelId );
     if (!settings) {
       // Create a default set of values
       settings = {...SETTINGS};

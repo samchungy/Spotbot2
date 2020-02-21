@@ -11,8 +11,9 @@ module.exports = ( prefix, Router ) => {
       .use(checkSettingsMiddleware)
       .post('/', async (ctx, next) => {
         const payload = ctx.request.body;
+        const settings = ctx.state.settings;
         const params = {
-          Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, timestamp: null}),
+          Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings, timestamp: null}),
           TopicArn: process.env.CONTROL_OPEN,
         };
         await sns.publish(params).promise();
@@ -25,8 +26,9 @@ module.exports = ( prefix, Router ) => {
       // })
       .post('/play', async (ctx, next) => {
         const payload = ctx.request.body;
+        const settings = ctx.state.settings;
         const params = {
-          Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, timestamp: null, userId: payload.user_id}),
+          Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings, timestamp: null, userId: payload.user_id}),
           TopicArn: process.env.CONTROL_PLAY,
         };
         await sns.publish(params).promise();
@@ -34,8 +36,9 @@ module.exports = ( prefix, Router ) => {
       })
       .post('/pause', async (ctx, next) => {
         const payload = ctx.request.body;
+        const settings = ctx.state.settings;
         const params = {
-          Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, timestamp: null, userId: payload.user_id}),
+          Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings, timestamp: null, userId: payload.user_id}),
           TopicArn: process.env.CONTROL_PAUSE,
         };
         await sns.publish(params).promise();

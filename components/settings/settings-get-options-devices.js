@@ -3,7 +3,7 @@ const logger = require(process.env.LOGGER);
 const moment = require(process.env.MOMENT);
 const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {loadSettings, storeDevices} = require('/opt/settings/settings-interface');
+const {storeDevices} = require('/opt/settings/settings-interface');
 const {option} = require('/opt/slack/format/slack-format-modal');
 const {modelDevice} = require('/opt/settings/settings-model');
 const Device = require('/opt/spotify/spotify-objects/util-spotify-device');
@@ -15,12 +15,14 @@ const DEFAULT_DEVICE = config.dynamodb.settings.default_device;
  * Fetch all spotifyDevices from Spotify
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} settings
  */
-async function getAllDevices(teamId, channelId) {
+async function getAllDevices(teamId, channelId, settings) {
   try {
     const auth = await authSession(teamId, channelId);
-    const [settings, spotifyDevices] = await Promise.all([loadSettings(teamId, channelId, [DEFAULT_DEVICE]), fetchDevices(teamId, channelId, auth)]);
     const {[DEFAULT_DEVICE]: defaultDevice} = settings ? settings : {};
+    const spotifyDevices = await fetchDevices(teamId, channelId, auth);
+
     const devices = [
       ...defaultDevice ? [defaultDevice] : [], // If default device, add to list
       ...spotifyDevices.devices
@@ -46,9 +48,9 @@ async function getAllDevices(teamId, channelId) {
 module.exports.handler = async (event, context) => {
   try {
     // LAMBDA FUNCTION
-    const {teamId, channelId} = event;
+    const {teamId, channelId, settings} = event;
 
-    const spotifyDevices = await getAllDevices(teamId, channelId);
+    const spotifyDevices = await getAllDevices(teamId, channelId, settings);
     const [, devices] = await Promise.all([
       storeDevices(teamId, channelId, {value: spotifyDevices}, moment().add(1, 'hour').unix()),
       // Convert Devices to Options

@@ -54,7 +54,7 @@ module.exports.handler = async (event, context) => {
     auth = await authSession(stateJson.teamId, stateJson.channelId);
     const profile = await fetchProfile(stateJson.teamId, stateJson.channelId, auth);
     await changeSpotifyAuth(stateJson.teamId, stateJson.channelId, [
-      {key: PROFILE, value: modelProfile(profile)},
+      {key: PROFILE, value: modelProfile(profile.id, profile.country)},
     ]);
     const params = {
       Message: JSON.stringify({teamId: stateJson.teamId, channelId: stateJson.channelId, viewId: stateJson.viewId}),

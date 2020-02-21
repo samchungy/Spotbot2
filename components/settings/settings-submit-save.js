@@ -115,12 +115,12 @@ async function transformValue(teamId, channelId, attribute, newValue, oldValue) 
  */
 async function getPlaylistValue(teamId, channelId, newValue) {
   try {
-    const auth = await authSession(teamId, channelId, true);
+    const auth = await authSession(teamId, channelId);
+    const profile = auth.getProfile();
     if (newValue.includes(NEW_PLAYLIST)) {
       newValue = newValue.replace(NEW_PLAYLIST_REGEX, '');
       // Create a new playlist using Spotify API
-      const {id} = auth.getProfile();
-      const newPlaylist = await createPlaylist(teamId, channelId, auth, id, newValue);
+      const newPlaylist = await createPlaylist(teamId, channelId, auth, profile.id, newValue);
       return modelPlaylist(newValue, newPlaylist.id, newPlaylist.uri, newPlaylist.external_urls.spotify);
     } else {
       // Grab the playlist object from our earlier Database playlist fetch

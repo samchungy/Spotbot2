@@ -2,7 +2,7 @@ const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 const moment = require(process.env.MOMENT);
 const {fetchPlaylists} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const {loadSettings, storePlaylists} = require('/opt/settings/settings-interface');
+const {storePlaylists} = require('/opt/settings/settings-interface');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {modelPlaylist} = require('/opt/settings/settings-model');
 const {option, optionGroup} = require('/opt/slack/format/slack-format-modal');
@@ -20,7 +20,7 @@ const PLAYLIST = config.dynamodb.settings.playlist;
  */
 async function getCompatiblePlaylists(teamId, channelId, currentPlaylist) {
   try {
-    const auth = await authSession(teamId, channelId, true);
+    const auth = await authSession(teamId, channelId);
     const profile = auth.getProfile();
     const compatiblePlaylists = [...currentPlaylist ? [currentPlaylist] : []];
     let count = 0;
@@ -58,9 +58,7 @@ async function getCompatiblePlaylists(teamId, channelId, currentPlaylist) {
 module.exports.handler = async (event, context) => {
   try {
     // LAMBDA FUNCTION
-    const {teamId, channelId, query} = event;
-    const settings = await loadSettings(teamId, channelId, [PLAYLIST]);
-    console.log(settings);
+    const {teamId, channelId, settings, query} = event;
     const {[PLAYLIST]: currentPlaylist} = (settings ? settings : {});
     const playlists = await getCompatiblePlaylists(teamId, channelId, currentPlaylist);
     const [, searchPlaylists, other] = await Promise.all([
