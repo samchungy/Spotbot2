@@ -23,13 +23,14 @@ module.exports = ( prefix, Router ) => {
           if (textSplit.length == 0) {
             ctx.body = HELP;
           } else {
-            let params;
+            let params; let settings;
             switch (textSplit[0]) {
               case 'settings':
-                if (!await checkIsSetup(payload.team_id, payload.channel_id, payload.user_id) || await checkIsAdmin(payload.team_id, payload.channel_id, payload.user_id)) {
+                settings = await checkIsSetup(payload.team_id, payload.channel_id, payload.user_id);
+                if (!settings || await checkIsAdmin(payload.team_id, payload.channel_id, settings, payload.user_id)) {
                   const settingsPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, SETTINGS_MODAL, 'Spotbot Settings', 'Submit', 'Cancel');
                   params = {
-                    Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, viewId: settingsPayload.view.id, userId: payload.user_id}),
+                    Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: settingsPayload.view.id, userId: payload.user_id}),
                     TopicArn: process.env.SETTINGS_OPEN,
                   };
                   await sns.publish(params).promise();
@@ -43,10 +44,11 @@ module.exports = ( prefix, Router ) => {
                 ctx.body = '';
                 break;
               case 'device':
-                if (await checkSettings(payload.team_id, payload.channel_id, payload.user_id) && await checkIsAdmin(payload.team_id, payload.channel_id, payload.user_id)) {
+                settings = await checkSettings(payload.team_id, payload.channel_id, payload.user_id);
+                if (settings && await checkIsAdmin(payload.team_id, payload.channel_id, settings, payload.user_id)) {
                   const devicePayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, DEVICE_MODAL, 'Spotify Devices', 'Switch to Device', 'Cancel');
                   params = {
-                    Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, viewId: devicePayload.view.id, userId: payload.user_id}),
+                    Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: devicePayload.view.id, userId: payload.user_id}),
                     TopicArn: process.env.SETTINGS_DEVICE_SELECT,
                   };
                   await sns.publish(params).promise();

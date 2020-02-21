@@ -19,8 +19,12 @@ const MIDDLEWARE_RESPONSE = {
  */
 async function checkIsSetup(teamId, channelId) {
   try {
-    const settings = await loadSettings(teamId, channelId, [PLAYLIST]);
-    return (settings && settings[PLAYLIST]);
+    const settings = await loadSettings(teamId, channelId);
+    if (settings && settings[PLAYLIST]) {
+      return settings;
+    } else {
+      return false;
+    };
   } catch (error) {
     logger.error(error);
     return false;
@@ -35,13 +39,14 @@ async function checkIsSetup(teamId, channelId) {
  */
 async function checkSettings(teamId, channelId, userId) {
   try {
-    if (!await checkIsSetup(teamId, channelId)) {
+    const settings = await checkIsSetup(teamId, channelId);
+    if (!settings) {
       await postEphemeral(
           ephemeralPost(channelId, userId, MIDDLEWARE_RESPONSE.settings_error, null),
       );
       return false;
     };
-    return true;
+    return settings;
   } catch (error) {
     throw error;
   }
@@ -51,13 +56,13 @@ async function checkSettings(teamId, channelId, userId) {
  * Checks if settings are set. (Koa Middleware)
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} settings
  * @param {string} userId
  */
-async function checkIsAdmin(teamId, channelId, userId) {
+async function checkIsAdmin(teamId, channelId, settings, userId) {
   try {
-    const settings = await loadSettings(teamId, channelId, [CHANNEL_ADMINS]);
     if (settings && settings[CHANNEL_ADMINS].includes(userId)) {
-      return true;
+      return settings;
     };
     await reply(
         postEphemeral(channelId, userId, MIDDLEWARE_RESPONSE.admin_error, null),

@@ -14,12 +14,13 @@ module.exports = ( prefix, Router ) => {
       .post('/', async (ctx, next) =>{
         if (ctx.request.body && ctx.request.body.payload) {
           const payload = JSON.parse(ctx.request.body.payload);
+          const settings = ctx.state.settings;
           let options; let params;
           switch (payload.action_id) {
             case SETTINGS.playlist:
               params = {
                 FunctionName: process.env.SETTINGS_GET_OPTIONS_PLAYLISTS, // the lambda function we are going to invoke
-                Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, query: payload.value}),
+                Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings: settings, query: payload.value}),
               };
               const {Payload: playlistPayload} = await lambda.invoke(params).promise();
               options = JSON.parse(playlistPayload);
@@ -28,7 +29,7 @@ module.exports = ( prefix, Router ) => {
             case SETTINGS.default_device:
               params = {
                 FunctionName: process.env.SETTINGS_GET_OPTIONS_DEVICES, // the lambda function we are going to invoke
-                Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata}),
+                Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings: settings}),
               };
               const {Payload: devicePayload} = await lambda.invoke(params).promise();
               options = JSON.parse(devicePayload);
