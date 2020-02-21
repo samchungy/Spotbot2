@@ -1,7 +1,6 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
-const {loadBackToPlaylist, loadPlaylist} = require('/opt/settings/settings-interface');
 const {actionSection, buttonActionElement, confirmObject, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('/opt/slack/format/slack-format-blocks');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
 const {inChannelPost, messageUpdate} = require('/opt/slack/format/slack-format-reply');
@@ -9,14 +8,17 @@ const {post, updateChat} = require('/opt/slack/slack-api');
 
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
+const BACK_TO_PLAYLIST = config.dynamodb.settings.back_to_playlist;
+const PLAYLIST = config.dynamodb.settings.playlist;
 const CONTROLLER = config.slack.actions.controller;
 const CONTROLLER_OVERFLOW = config.slack.actions.controller_overflow;
 const CONTROLS = config.slack.actions.controls;
 
 const PANEL_RESPONSE = {
   context_off: (playlist, back) => `:information_source: Not playing from the Spotbot playlist: ${playlist}. ${back ? ` Spotbot will return when you add songs to the playlist.`: ``}`,
-  currently_playing: (title, artist, album) => `:sound: Currently Playing... ${title}\n\n:studio_microphone: Artists: ${artist}\n:dvd: Album: ${album}\n`,
-  currently_playing_mrkdwn: (title, url, artist, album) => `:sound: *Currently Playing...*\n\n<${url}|*${title}*>\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`,
+  state: `:sound: *Currently Playing...*`,
+  currently_playing: (title, artist, album, duration) => `:sound: Currently Playing...\n${title}\n\n:studio_microphone: Artists: ${artist}\n:dvd: Album: ${album}\n:clock1: Duration: ${duration}`,
+  currently_playing_mrkdwn: (title, url, artist, album, duration) => `<${url}|*${title}*>\n\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n:clock1: *Duration*: ${duration}`,
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   on_playlist: ':information_source: Currently playing from the Spotbot playlist.',
   paused: ':double_vertical_bar: Spotify is currently paused.',
@@ -28,18 +30,21 @@ const PANEL_RESPONSE = {
  * Updates the panel with success status, posts if successful.
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
+ * @param {Object} settings
+ *
  * @param {String} timestamp
  * @param {string} success
  * @param {string} response
  * @param {Object} status
  */
-async function responseUpdate(teamId, channelId, timestamp, success, response, status) {
+async function responseUpdate(teamId, channelId, auth, settings, timestamp, success, response, status) {
   try {
     if (!success) {
-      await updatePanel(teamId, channelId, timestamp, response, status);
+      await updatePanel(teamId, channelId, auth, settings, timestamp, response, status);
     } else {
       await Promise.all([
-        updatePanel(teamId, channelId, timestamp, null, status),
+        updatePanel(teamId, channelId, auth, settings, timestamp, null, status),
         post(
             inChannelPost(channelId, response, null),
         ),
@@ -54,19 +59,21 @@ async function responseUpdate(teamId, channelId, timestamp, success, response, s
  * Get Current Track Panel
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} settings
  * @param {Object} status
  * @param {string} response
  * @return {Object} Control Panel Block
  */
-async function getCurrentTrackPanel(teamId, channelId, status, response) {
+async function getCurrentTrackPanel(teamId, channelId, settings, status, response) {
   // If we have a song playing push the currently playing stack on
   let altText; let context;
   const currentPanel = [];
   if (status && status.item) {
     const track = new Track(status.item);
-    const text = PANEL_RESPONSE.currently_playing_mrkdwn(track.name, track.url, track.artists, track.album);
-    altText = PANEL_RESPONSE.currently_playing(track.name, track.artists, track.album);
+    const text = PANEL_RESPONSE.currently_playing_mrkdwn(track.name, track.url, track.artists, track.album, track.duration);
+    altText = PANEL_RESPONSE.currently_playing(track.name, track.artists, track.album, track.duration);
     currentPanel.push(
+        textSection(PANEL_RESPONSE.state),
         imageSection(text, track.art, `Album Art`),
     );
   } else {
@@ -83,7 +90,8 @@ async function getCurrentTrackPanel(teamId, channelId, status, response) {
     context = response;
   } else {
   // Check if we are playing from the playlist
-    const [backToPlaylist, playlist] = await Promise.all([loadBackToPlaylist(teamId, channelId), loadPlaylist(teamId, channelId )]);
+    const backToPlaylist = settings[BACK_TO_PLAYLIST];
+    const playlist = settings[PLAYLIST];
     if (status.context) {
       if (status.context.uri.includes(playlist.id)) {
         context = PANEL_RESPONSE.on_playlist;
@@ -152,16 +160,18 @@ function getShuffleRepeatPanel(status) {
  * Update the control panel
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
+ * @param {Object} settings
  * @param {string} timestamp
  * @param {string} response
  * @param {Object} status
  */
-async function updatePanel(teamId, channelId, timestamp, response, status) {
+async function updatePanel(teamId, channelId, auth, settings, timestamp, response, status) {
   try {
     if (!status) {
-      status = await fetchCurrentPlayback(teamId, channelId );
+      status = await fetchCurrentPlayback(teamId, channelId, auth );
     }
-    const {altText, currentPanel} = await getCurrentTrackPanel(teamId, channelId, status, response);
+    const {altText, currentPanel} = await getCurrentTrackPanel(teamId, channelId, settings, status, response);
 
     const controlPanel = [
       ...currentPanel,
