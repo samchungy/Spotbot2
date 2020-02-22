@@ -1,4 +1,5 @@
 const logger = require(process.env.LOGGER);
+const axios = require('axios');
 const slackClient = require('./slack-initialise');
 
 /**
@@ -61,6 +62,20 @@ async function postEphemeral(body) {
 }
 
 /**
+ * Reply to a Slack Slash Command via Response URL
+ * @param {*} body
+ * @param {*} responseUrl
+ */
+async function reply(body, responseUrl) {
+  try {
+    return await axios.post(responseUrl, body);
+  } catch (error) {
+    logger.error(`Slack API: Reply failed`, error);
+    throw error;
+  }
+}
+
+/**
  * Update Chat
  * @param {Object} body
  */
@@ -90,6 +105,7 @@ module.exports = {
   deleteChat,
   post,
   postEphemeral,
+  reply,
   sendModal,
   updateChat,
   updateModal,
