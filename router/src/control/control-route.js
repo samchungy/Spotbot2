@@ -43,11 +43,16 @@ module.exports = ( prefix, Router ) => {
         };
         await sns.publish(params).promise();
         ctx.body = publicAck('');
+      })
+      .post('/reset', async (ctx, next) => {
+        const payload = ctx.request.body;
+        const settings = ctx.state.settings;
+        const params = {
+          Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings, timestamp: null, userId: payload.user_id}),
+          TopicArn: process.env.CONTROL_RESET_START,
+        };
+        await sns.publish(params).promise();
+        ctx.body = publicAck('');
       });
-  // .post('/reset', async (ctx, next) => {
-  //   const payload = ctx.request.body;
-  //   reset(payload.team_id, payload.channel_id, null, payload.user_id, payload.trigger_id);
-  //   ctx.body = publicAck('');
-  // });
   return router;
 };

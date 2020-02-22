@@ -8,6 +8,7 @@ const {play} = require('/opt/spotify/spotify-api/spotify-api-playback');
 const {sleep} = require('/opt/utils/util-timeout');
 
 const PLAYLIST = config.dynamodb.settings.playlist;
+
 const JUMP_RESPONSE = {
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   success: (userId) => `:arrow_forward: Spotify is now playing from the start of the playlist. Set by <@${userId}>.`,
@@ -15,18 +16,30 @@ const JUMP_RESPONSE = {
   empty: ':information_source: The Spotbot playlist is empty. Please add tracks before trying to jumping back to the playlist.',
 };
 
+const RESET_RESPONSE = {
+  success_jump: ` Spotbot is now playing from the start of the playlist.`,
+  failed_jump: ` Spotbot failed to return to the start of the playlist.`,
+};
+
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, settings, userId, timestamp} = JSON.parse(event.Records[0].Sns.Message);
+  const {teamId, channelId, settings, userId, timestamp, resetResponse} = JSON.parse(event.Records[0].Sns.Message);
   try {
+    let resetFail = '';
+    let resetSuccess = '';
+
+    if (resetResponse) {
+      resetSuccess = resetResponse + RESET_RESPONSE.success_jump;
+      resetFail = resetResponse + RESET_RESPONSE.failed_jump;
+    }
     const auth = await authSession(teamId, channelId);
     const playlist = settings[PLAYLIST];
     const status = await fetchCurrentPlayback(teamId, channelId, auth);
     if (!status.device) {
-      return await responseUpdate(teamId, channelId, auth, settings, timestamp, false, JUMP_RESPONSE.not_playing, status);
+      return await responseUpdate(teamId, channelId, auth, settings, timestamp, resetResponse ? true : false, resetResponse ? resetFail : JUMP_RESPONSE.not_playing, status);
     }
     const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
     if (!total) {
-      return await responseUpdate(teamId, channelId, auth, settings, timestamp, false, JUMP_RESPONSE.empty, status);
+      return await responseUpdate(teamId, channelId, auth, settings, timestamp, resetResponse ? true : false, resetResponse ? resetFail : JUMP_RESPONSE.empty, status);
     }
 
     await play(teamId, channelId, auth, status.device.id, playlist.uri);
@@ -34,15 +47,15 @@ module.exports.handler = async (event, context) => {
 
     const newStatus = await fetchCurrentPlayback(teamId, channelId, auth );
     if (newStatus.device && newStatus.context && newStatus.context.uri.includes(playlist.id)) {
-      return await responseUpdate(teamId, channelId, auth, settings, timestamp, true, JUMP_RESPONSE.success(userId), newStatus);
+      return await responseUpdate(teamId, channelId, auth, settings, timestamp, true, resetResponse ? resetSuccess : JUMP_RESPONSE.success(userId), newStatus);
     }
-    return await responseUpdate(teamId, channelId, auth, settings, timestamp, false, JUMP_RESPONSE.fail, null);
+    return await responseUpdate(teamId, channelId, auth, settings, timestamp, resetResponse ? true : false, resetResponse ? resetFail : JUMP_RESPONSE.fail, null);
   } catch (error) {
     logger.error(error);
     logger.erorr('Failed to jump back to playlist');
     try {
       const auth = await authSession(teamId, channelId);
-      return await responseUpdate(teamId, channelId, auth, settings, timestamp, false, JUMP_RESPONSE.fail, null);
+      return await responseUpdate(teamId, channelId, auth, settings, timestamp, resetResponse ? true : false, resetResponse ? resetFail : JUMP_RESPONSE.fail, null);
     } catch (error) {
       logger.error(error);
       logger.error('Failed to report control jump fail');

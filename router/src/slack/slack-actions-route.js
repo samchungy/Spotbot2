@@ -5,6 +5,7 @@ const Lambda = require('aws-sdk/clients/lambda');
 const lambda = new Lambda();
 
 const {isEmpty} = require('/opt/utils/util-objects');
+const {openModal} = require('../response/open-modal');
 
 const SLACK_ACTIONS = config.slack.actions;
 const AUTH = config.dynamodb.settings_auth;
@@ -51,30 +52,51 @@ module.exports = ( prefix, Router ) => {
                     ctx.body = '';
                     break;
                   }
+                  let valuePayload;
                   switch (payload.actions[0].action_id) {
-                  //   // ARTISTS
-                  //   case ARTISTS.view_artist_tracks:
-                  //     viewArtist(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url, payload.trigger_id);
-                  //     ctx.body = '';
-                  //     break;
-                  //   case ARTISTS.see_more_artists:
-                  //     getMoreArtists(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url);
-                  //     ctx.body = '';
-                  //     break;
-                  //     // TRACKS
-                  //   case TRACKS.cancel_search: // Artist Search also uses this
-                  //     cancelSearch(payload.response_url);
-                  //     ctx.body = '';
-                  //     break;
-                  //   case TRACKS.see_more_results:
-                  //     getMoreTracks(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url);
-                  //     ctx.body = '';
-                  //     break;
-                  //   case TRACKS.add_to_playlist:
-                  //     setTrack(payload.team.id, payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
-                  //     ctx.body = '';
-                  //     break;
-                  //     // CONTROLS
+                    case SLACK_ACTIONS.reset_review_confirm:
+                      valuePayload = JSON.parse(payload.actions[0].value);
+                      const resetPayload = await openModal(payload.team_id, valuePayload.channelId, payload.trigger_id, SLACK_ACTIONS.reset_modal, 'Reset - Tracks Review', 'Confirm', 'Close');
+                      params = {
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: valuePayload.channelId, settings, timestamp: valuePayload.timestamp, viewId: resetPayload.view.id, responseUrl: payload.response_url}),
+                        TopicArn: process.env.CONTROL_RESET_REVIEW_OPEN,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
+                    case SLACK_ACTIONS.reset_review_deny:
+                      valuePayload = JSON.parse(payload.actions[0].value);
+                      params = {
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: valuePayload.channelId, settings, timestamp: valuePayload.timestamp, userId: payload.user.id, jump: false, responseUrl: payload.response_url}),
+                        TopicArn: process.env.CONTROL_RESET_SET,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
+
+                      //   // ARTISTS
+                      //   case ARTISTS.view_artist_tracks:
+                      //     viewArtist(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url, payload.trigger_id);
+                      //     ctx.body = '';
+                      //     break;
+                      //   case ARTISTS.see_more_artists:
+                      //     getMoreArtists(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url);
+                      //     ctx.body = '';
+                      //     break;
+                      //     // TRACKS
+                      //   case TRACKS.cancel_search: // Artist Search also uses this
+                      //     cancelSearch(payload.response_url);
+                      //     ctx.body = '';
+                      //     break;
+                      //   case TRACKS.see_more_results:
+                      //     getMoreTracks(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url);
+                      //     ctx.body = '';
+                      //     break;
+                      //   case TRACKS.add_to_playlist:
+                      //     setTrack(payload.team.id, payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
+                      //     ctx.body = '';
+                      //     break;
+                      //     // CONTROLS
                     case CONTROLS.play:
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
@@ -125,10 +147,14 @@ module.exports = ( prefix, Router ) => {
                           await sns.publish(params).promise();
                           ctx.body = '';
                           break;
-                        //       case CONTROLS.reset:
-                        //         reset(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id, payload.trigger_id);
-                        //         ctx.body = '';
-                        //         break;
+                        case CONTROLS.reset:
+                          params = {
+                            Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                            TopicArn: process.env.CONTROL_RESET_START,
+                          };
+                          await sns.publish(params).promise();
+                          ctx.body = '';
+                          break;
                         case CONTROLS.clear_one:
                           params = {
                             Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
@@ -145,7 +171,7 @@ module.exports = ( prefix, Router ) => {
               break;
             }
           case SLACK_ACTIONS.view_submission:
-            let errors;
+            let errors; let settings;
             switch (payload.view.callback_id) {
               // MODALS
               case SLACK_ACTIONS.settings_modal:
@@ -161,14 +187,19 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                 }
                 break;
-                // case SLACK_ACTIONS.reset_review:
-                //   const metadata = payload.view.private_metadata;
-                //   const {channelId} = JSON.parse(metadata);
-                //   if (await checkSettings(payload.team.id, channelId, payload.user.id)) {
-                //     verifyResetReview(false, payload.view, payload.user.id);
-                //   }
-                //   ctx.body = '';
-                //   break;
+              case SLACK_ACTIONS.reset_modal:
+                const metadata = payload.view.private_metadata;
+                const {channelId, timestamp, offset} = JSON.parse(metadata);
+                settings = await checkSettings(payload.team.id, channelId, payload.user.id);
+                if (settings) {
+                  params = {
+                    Message: JSON.stringify({teamId: payload.team.id, channelId, settings, timestamp, view: payload.view, offset, isClose: false, userId: payload.user.id}),
+                    TopicArn: process.env.CONTROL_RESET_REVIEW_SUBMIT,
+                  };
+                  await sns.publish(params).promise();
+                }
+                ctx.body = '';
+                break;
                 // case SLACK_ACTIONS.blacklist_modal:
                 //   if (await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id)) {
                 //     const errors = await saveBlacklist(payload.view, payload.user.id);
