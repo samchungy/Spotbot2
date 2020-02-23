@@ -137,6 +137,8 @@ functions:
       SETTINGS_AUTH_CHANGE: ${self:custom.topic}-settings-auth-change
       SETTINGS_AUTH_UPDATE_VIEW: ${self:custom.topic}-settings-auth-update-view
       SETTINGS_AUTH_VALIDATE: ${self:custom.lambda}-settings-auth-validate
+      SETTINGS_BLACKLIST_OPEN: ${self:custom.topic}-settings-blacklist-open
+      SETTINGS_BLACKLIST_SUBMIT_VERIFY: ${self:custom.lambda}-settings-blacklist-submit-verify
       SETTINGS_DEVICE_SELECT: ${self:custom.topic}-settings-device-select
       SETTINGS_DEVICE_SWITCH: ${self:custom.topic}-settings-device-switch
       SETTINGS_GET_OPTIONS_PLAYLISTS: ${self:custom.lambda}-settings-get-options-playlists
@@ -213,6 +215,48 @@ functions:
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
+  settings-blacklist-open:
+    events:
+      - sns: ${self:custom.prefix}-settings-blacklist-open
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-blacklist-open.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-blacklist-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-blacklist-submit-save:
+    events:
+      - sns: ${self:custom.prefix}-settings-blacklist-submit-save
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-blacklist-submit-save.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-blacklist-submit-save.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-blacklist-submit-verify:
+    environment:
+      SETTINGS_BLACKLIST_SUBMIT_SAVE: ${self:custom.topic}-settings-blacklist-submit-save
+    memorySize: 192
+    package:
+      include:
+        - ./components/settings/settings-blacklist-submit-verify.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-blacklist-submit-verify.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
   settings-device-select:
     events:
       - sns: ${self:custom.prefix}-settings-device-select
@@ -308,7 +352,7 @@ functions:
   settings-submit-verify:
     environment:
       SETTINGS_SUBMIT_SAVE: ${self:custom.topic}-settings-submit-save
-    memorySize: 256
+    memorySize: 192
     package:
       include:
         - ./components/settings/settings-submit-verify.js
