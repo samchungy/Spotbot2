@@ -56,7 +56,7 @@ module.exports = ( prefix, Router ) => {
                   switch (payload.actions[0].action_id) {
                     case SLACK_ACTIONS.reset_review_confirm:
                       valuePayload = JSON.parse(payload.actions[0].value);
-                      const resetPayload = await openModal(payload.team_id, valuePayload.channelId, payload.trigger_id, SLACK_ACTIONS.reset_modal, 'Reset - Tracks Review', 'Confirm', 'Close');
+                      const resetPayload = await openModal(payload.team_id, valuePayload.channelId, payload.trigger_id, SLACK_ACTIONS.empty_modal, 'Reset - Tracks Review', 'Confirm', 'Close');
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: valuePayload.channelId, settings, timestamp: valuePayload.timestamp, viewId: resetPayload.view.id, responseUrl: payload.response_url}),
                         TopicArn: process.env.CONTROL_RESET_REVIEW_OPEN,
@@ -181,6 +181,8 @@ module.exports = ( prefix, Router ) => {
           case SLACK_ACTIONS.view_submission:
             let errors; let settings;
             switch (payload.view.callback_id) {
+              case SLACK_ACTIONS.empty_modal:
+                ctx.body = '';
               // MODALS
               case SLACK_ACTIONS.settings_modal:
                 params = {
@@ -251,12 +253,21 @@ module.exports = ( prefix, Router ) => {
             }
             break;
           case SLACK_ACTIONS.view_closed:
-            // switch (payload.view.callback_id) {
-            //   case SLACK_ACTIONS.reset_review:
-            //     verifyResetReview(true, payload.view, payload.user.id);
-            //     ctx.body = '';
-            //     break;
-            // }
+            switch (payload.view.callback_id) {
+              case SLACK_ACTIONS.reset_modal:
+                const metadata = payload.view.private_metadata;
+                const {channelId, timestamp} = JSON.parse(metadata);
+                const settings = await checkSettings(payload.team.id, channelId, payload.user.id);
+                if (settings) {
+                  params = {
+                    Message: JSON.stringify({teamId: payload.team.id, channelId, settings, timestamp, trackUris: null, userId: payload.user.id}),
+                    TopicArn: process.env.CONTROL_RESET_SET,
+                  };
+                  await sns.publish(params).promise();
+                }
+                ctx.body = '';
+                break;
+            }
         }
       });
 
