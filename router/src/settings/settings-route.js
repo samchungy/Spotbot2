@@ -6,6 +6,7 @@ const {openModal} = require('../response/open-modal');
 const {checkIsAdmin, checkIsSetup, checkSettings} = require('./settings-check');
 // const {openBlacklistModal} = require('../server/components/settings/blacklist/blacklist-controller');
 // const {openDevicesModal} = require('../server/components/settings/device-select/device-controller');
+const BLACKLIST_MODAL = config.slack.actions.blacklist_modal;
 const SETTINGS_MODAL = config.slack.actions.settings_modal;
 const DEVICE_MODAL = config.slack.actions.device_modal;
 const HELP = '*Find Tracks*\n\n`/find [track]` - Find a track on Spotify\n`/artist [artist]` - Find an artist on Spotify\n`/removetracks` - Lists tracks you added to remove from the playlist\n\n*Playback Status*\n\n`/current` - Show the current playing track and it’s position in the playlist\n`/whom` - Show who requested the current track\n\n*Control*\n\n`/control` - Opens the Spotbot control panel\n`/play` - Pauses playback of Spotify\n`/pause`- Pauses playback of Spotify\n`/skip` - Starts a vote to skip a track\n`/reset` - Nukes the playlist\n\n*Admin Commands*\n\n`/spotbot settings` - Opens the Spotbot Settings panel.\n`/spotbot blacklist` - Opens the Spotbot Blacklist panel.\n`/spotbot device` - Opens the Spotbot Device switch panel.';
@@ -38,9 +39,15 @@ module.exports = ( prefix, Router ) => {
                 ctx.body = '';
                 break;
               case 'blacklist':
-                // if (await checkSettings(payload.team_id, payload.channel_id, payload.user_id) && await checkIsAdmin(payload.team_id, payload.channel_id, payload.user_id)) {
-                //   openBlacklistModal(payload.team_id, payload.channel_id, payload.trigger_id);
-                // }
+                settings = await checkSettings(payload.team_id, payload.channel_id, payload.user_id);
+                if (settings && await checkIsAdmin(payload.team_id, payload.channel_id, settings, payload.user_id)) {
+                  const blacklistPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, BLACKLIST_MODAL, `Spotbot Blacklist`, 'Save', 'Close');
+                  params = {
+                    Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: blacklistPayload.view.id, userId: payload.user_id}),
+                    TopicArn: process.env.SETTINGS_BLACKLIST_OPEN,
+                  };
+                  await sns.publish(params).promise();
+                }
                 ctx.body = '';
                 break;
               case 'device':
