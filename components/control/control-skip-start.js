@@ -7,18 +7,20 @@ const {responseUpdate} = require('/opt/control-panel/control-panel');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
 // const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
 const {addVote, getSkipBlock, setSkip} = require('/opt/control-skip/control-skip');
-const {changeSkip, loadSkip, storeSkip} = require('/opt/settings/settings-extra-interface');
+const {changeSkip, loadBlacklist, loadSkip, storeSkip} = require('/opt/settings/settings-extra-interface');
 const {modelSkip} = require('/opt/settings/settings-extra-model');
 const {post} = require('/opt/slack/slack-api');
 const {inChannelPost} = require('/opt/slack/format/slack-format-reply');
+const {sleep} = require('/opt/utils/util-timeout');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
+const {skip} = require('/opt/spotify/spotify-api/spotify-api-playback');
 
 const SKIP_VOTES = config.dynamodb.settings.skip_votes;
 const SKIP_VOTES_AH = config.dynamodb.settings.skip_votes_ah;
 const TIMEZONE = config.dynamodb.settings.timezone;
 
 const SKIP_RESPONSE = {
-  blacklist: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} is on the blacklist and was skipped by ${SKIP_RESPONSE.users(users)}.`,
+  blacklist: (title) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} is on the blacklist and was skipped.`,
   confirmation: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} was skipped by ${SKIP_RESPONSE.users(users)}.`,
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   failed: ':warning: Skip Failed.',
@@ -41,14 +43,19 @@ module.exports.handler = async (event, context) => {
 
     const statusTrack = new Track(status.item);
 
-    // const blacklist = await loadBlacklist(teamId, channelId);
-    // if (blacklist.find((track) => statusTrack.uri === track.uri)) {
-    //   await skip(teamId, channelId );
-    //   await post(
-    //       inChannelPost(channelId, SKIP_RESPONSE.blacklist(statusTrack.title, [userId])),
-    //   );
-    //   return await responseUpdate(teamId, channelId, auth, settings, timestamp, true, null, null);
-    // }
+    const blacklist = await loadBlacklist(teamId, channelId);
+    if (blacklist && blacklist.blacklist) {
+      if (blacklist.blacklist.find((track) => statusTrack.uri === track.uri)) {
+        await Promise.all([
+          skip(teamId, channelId, auth),
+          post(
+              inChannelPost(channelId, SKIP_RESPONSE.blacklist(statusTrack.title)),
+          ),
+        ]);
+        await sleep(400);
+        return await responseUpdate(teamId, channelId, auth, settings, timestamp, true, null, null);
+      }
+    }
 
 
     // See if there is an existing skip request

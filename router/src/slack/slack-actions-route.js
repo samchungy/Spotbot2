@@ -208,6 +208,19 @@ module.exports = ( prefix, Router ) => {
                 }
                 ctx.body = '';
                 break;
+              case SLACK_ACTIONS.blacklist_modal:
+                params = {
+                  FunctionName: process.env.SETTINGS_BLACKLIST_SUBMIT_VERIFY,
+                  Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, view: payload.view, userId: payload.user.id}),
+                };
+                const {Payload: blacklistErrorsPayload} = await lambda.invoke(params).promise();
+                errors = JSON.parse(blacklistErrorsPayload);
+                if (errors && !isEmpty(errors)) {
+                  ctx.body = errors;
+                } else {
+                  ctx.body = '';
+                }
+                break;
                 // case SLACK_ACTIONS.blacklist_modal:
                 //   if (await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id)) {
                 //     const errors = await saveBlacklist(payload.view, payload.user.id);
