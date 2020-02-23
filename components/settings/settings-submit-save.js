@@ -7,7 +7,7 @@ const {postEphemeral} = require('/opt/slack/slack-api');
 const {isEqual, isEmpty} = require('/opt/utils/util-objects');
 
 // Transform Device and Playlist values
-const {loadDevices, loadPlaylists} = require('/opt/settings/settings-helper');
+const {loadDevices, loadPlaylists} = require('/opt/settings/settings-extra-interface');
 const {modelDevice, modelPlaylist} = require('/opt/settings/settings-model');
 const {createPlaylist} = require('/opt/spotify/spotify-api/spotify-api-playlists');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
