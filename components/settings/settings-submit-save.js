@@ -98,7 +98,7 @@ module.exports.handler = async (event, context) => {
 async function transformValue(teamId, channelId, attribute, newValue, oldValue) {
   switch (attribute) {
     case SETTINGS.playlist:
-      newValue = await getPlaylistValue(teamId, channelId, newValue);
+      newValue = await getPlaylistValue(teamId, channelId, newValue, oldValue);
       break;
     case SETTINGS.default_device:
       newValue = await getDeviceValue(teamId, channelId, newValue, oldValue);
@@ -112,9 +112,13 @@ async function transformValue(teamId, channelId, attribute, newValue, oldValue) 
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} newValue
+ * @param {string} oldValue
  */
-async function getPlaylistValue(teamId, channelId, newValue) {
+async function getPlaylistValue(teamId, channelId, newValue, oldValue) {
   try {
+    if (oldValue && oldValue.id === newValue) {
+      return oldValue;
+    }
     const auth = await authSession(teamId, channelId);
     const profile = auth.getProfile();
     if (newValue.includes(NEW_PLAYLIST)) {
