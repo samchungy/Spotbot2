@@ -1,7 +1,7 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 const {loadSettings} = require('/opt/settings/settings-interface');
-const {postEphemeral, reply} = require('/opt/slack/slack-api');
+const {postEphemeral} = require('/opt/slack/slack-api');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 
 const PLAYLIST = config.dynamodb.settings.playlist;
@@ -64,8 +64,8 @@ async function checkIsAdmin(teamId, channelId, settings, userId) {
     if (settings && settings[CHANNEL_ADMINS].includes(userId)) {
       return settings;
     };
-    await reply(
-        postEphemeral(channelId, userId, MIDDLEWARE_RESPONSE.admin_error, null),
+    await postEphemeral(
+        ephemeralPost(channelId, userId, MIDDLEWARE_RESPONSE.admin_error, null),
     );
     return false;
   } catch (error) {
