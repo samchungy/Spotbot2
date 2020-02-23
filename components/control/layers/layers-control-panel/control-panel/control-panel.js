@@ -43,12 +43,16 @@ async function responseUpdate(teamId, channelId, auth, settings, timestamp, succ
     if (!success) {
       await updatePanel(teamId, channelId, auth, settings, timestamp, response, status);
     } else {
-      await Promise.all([
-        updatePanel(teamId, channelId, auth, settings, timestamp, null, status),
-        post(
-            inChannelPost(channelId, response, null),
-        ),
-      ]);
+      if (response) {
+        await Promise.all([
+          updatePanel(teamId, channelId, auth, settings, timestamp, null, status),
+          post(
+              inChannelPost(channelId, response, null),
+          ),
+        ]);
+      } else {
+        await updatePanel(teamId, channelId, auth, settings, timestamp, null, status);
+      }
     }
   } catch (error) {
     logger.error(error);
