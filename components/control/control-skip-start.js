@@ -25,6 +25,7 @@ const SKIP_RESPONSE = {
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   failed: ':warning: Skip Failed.',
   request: (userId, title) => `:black_right_pointing_double_triangle_with_vertical_bar: Skip Request:\n\n <@${userId}> has requested to skip ${title}`,
+  users: (users) => `${users.map((user) => `<@${user}>`).join(', ')}`,
 };
 
 module.exports.handler = async (event, context) => {
@@ -52,7 +53,7 @@ module.exports.handler = async (event, context) => {
               inChannelPost(channelId, SKIP_RESPONSE.blacklist(statusTrack.title)),
           ),
         ]);
-        await sleep(400);
+        await sleep(450);
         return await responseUpdate(teamId, channelId, auth, settings, timestamp, true, null, null);
       }
     }

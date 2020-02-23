@@ -50,7 +50,7 @@ async function setSkip(teamId, channelId, auth, track, currentSkip) {
       } else {
         await skip(teamId, channelId, auth);
       }
-      await sleep(400);
+      await sleep(450);
     }
   } catch (error) {
     logger.error('Skipping failed');
