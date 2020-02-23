@@ -32,7 +32,8 @@ provider:
     #Tables
     AUTH_TABLE: ${self:custom.prefix}-auth
     SEARCH_TABLE: ${self:custom.prefix}-search
-    SETTINGS_TABLE: ${self:custom.prefix}-settings
+    OLD_SETTINGS_TABLE: ${self:custom.prefix}-settings
+    SETTINGS_TABLE: ${self:custom.prefix}-settings-v2
     REGION: ${self:provider.region}
     #Core Libraries
     LOG_LEVEL: info
@@ -74,19 +75,39 @@ layers:
   core:
     name: ${self:custom.prefix}-core
     path: layers/layers-core
+    compatibleRuntimes:
+      - nodejs12.x
   slack:
     name: ${self:custom.prefix}-slack
     path: layers/layers-slack
+    compatibleRuntimes:
+      - nodejs12.x
   spotify:
     name: ${self:custom.prefix}-spotify
     path: layers/layers-spotify
+    compatibleRuntimes:
+      - nodejs12.x
   # Other Layers
   settings-blocks:
     name: ${self:custom.prefix}-settings-blocks
     path: components/settings/layers/layers-settings
-  control:
+    compatibleRuntimes:
+      - nodejs12.x
+  control-panel:
     name: ${self:custom.prefix}-control-panel
-    path: components/control/layers/layers-control
+    path: components/control/layers/layers-control-panel
+    compatibleRuntimes:
+      - nodejs12.x
+  control-reset:
+    name: ${self:custom.prefix}-control-reset
+    path: components/control/layers/layers-control-reset
+    compatibleRuntimes:
+      - nodejs12.x
+  control-skip:
+    name: ${self:custom.prefix}-control-skip
+    path: components/control/layers/layers-control-skip
+    compatibleRuntimes:
+      - nodejs12.x
 functions:
   #Router
   authorizer-slack-headers:
@@ -106,7 +127,13 @@ functions:
       CONTROL_OPEN: ${self:custom.topic}-control-open
       CONTROL_PLAY: ${self:custom.topic}-control-play
       CONTROL_REPEAT: ${self:custom.topic}-control-repeat
+      CONTROL_RESET_START: ${self:custom.topic}-control-reset-start
+      CONTROL_RESET_REVIEW_OPEN: ${self:custom.topic}-control-reset-review-open
+      CONTROL_RESET_REVIEW_SUBMIT: ${self:custom.topic}-control-reset-review-submit
+      CONTROL_RESET_SET: ${self:custom.topic}-control-reset-set
       CONTROL_SHUFFLE: ${self:custom.topic}-control-shuffle
+      CONTROL_SKIP_ADD_VOTE: ${self:custom.topic}-control-skip-add-vote
+      CONTROL_SKIP_START: ${self:custom.topic}-control-skip-start
       SETTINGS_AUTH_CHANGE: ${self:custom.topic}-settings-auth-change
       SETTINGS_AUTH_UPDATE_VIEW: ${self:custom.topic}-settings-auth-update-view
       SETTINGS_AUTH_VALIDATE: ${self:custom.lambda}-settings-auth-validate
@@ -308,8 +335,10 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
   control-jump:
+    environment:
+      CONTROL_RESET_SET: ${self:custom.topic}-control-reset-set
     events:
       - sns: ${self:custom.prefix}-control-jump
     memorySize: 192
@@ -323,7 +352,7 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
   control-pause:
     events:
       - sns: ${self:custom.prefix}-control-pause
@@ -338,7 +367,7 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
   control-play:
     events:
       - sns: ${self:custom.prefix}-control-play
@@ -353,7 +382,7 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
   control-open:
     events:
       - sns: ${self:custom.prefix}-control-open
@@ -368,7 +397,7 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
   control-repeat:
     events:
       - sns: ${self:custom.prefix}-control-repeat
@@ -383,7 +412,73 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-reset-start:
+    events:
+      - sns: ${self:custom.prefix}-control-reset-start
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-reset-start.js
+      exclude:
+        - ./**
+    handler: components/control/control-reset-start.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+      - { Ref: ControlDashresetLambdaLayer}
+  control-reset-set:
+    environment:
+      CONTROL_JUMP: ${self:custom.topic}-control-jump
+    events:
+      - sns: ${self:custom.prefix}-control-reset-set
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-reset-set.js
+      exclude:
+        - ./**
+    handler: components/control/control-reset-set.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-reset-review-open:
+    events:
+      - sns: ${self:custom.prefix}-control-reset-review-open
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-reset-review-open.js
+      exclude:
+        - ./**
+    handler: components/control/control-reset-review-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+      - { Ref: ControlDashresetLambdaLayer}
+  control-reset-review-submit:
+    environment:
+      CONTROL_RESET_SET: ${self:custom.topic}-control-reset-set
+    events:
+      - sns: ${self:custom.prefix}-control-reset-review-submit
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-reset-review-submit.js
+      exclude:
+        - ./**
+    handler: components/control/control-reset-review-submit.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
   control-shuffle:
     events:
       - sns: ${self:custom.prefix}-control-shuffle
@@ -398,7 +493,42 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-skip-add-vote:
+    events:
+      - sns: ${self:custom.prefix}-control-skip-add-vote
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-skip-add-vote.js
+      exclude:
+        - ./**
+    handler: components/control/control-skip-add-vote.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+      - { Ref: ControlDashskipLambdaLayer }
+  control-skip-start:
+    environment:
+      CONTROL_SKIP_ADD_VOTE: ${self:custom.topic}-control-skip-add-vote
+    events:
+      - sns: ${self:custom.prefix}-control-skip-start
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-skip-start.js
+      exclude:
+        - ./**
+    handler: components/control/control-skip-start.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+      - { Ref: ControlDashskipLambdaLayer }
+
 resources:
   Resources:
     SpotbotAuthTable:
@@ -420,6 +550,9 @@ resources:
           SSEEnabled: true
           SSEType: KMS
         TableName: ${self:provider.environment.AUTH_TABLE}
+        TimeToLiveSpecification:
+            AttributeName: ttl
+            Enabled: true
     SpotbotSettingsTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
@@ -435,7 +568,26 @@ resources:
             KeyType: HASH
           - AttributeName: name
             KeyType: RANGE
+        TableName: ${self:provider.environment.OLD_SETTINGS_TABLE}
+    SpotbotNewSettingsTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
+      Properties:
+        BillingMode: 'PAY_PER_REQUEST'
+        AttributeDefinitions:
+          - AttributeName: team_channel
+            AttributeType: S
+          - AttributeName: name
+            AttributeType: S
+        KeySchema:
+          - AttributeName: team_channel
+            KeyType: HASH
+          - AttributeName: name
+            KeyType: RANGE
         TableName: ${self:provider.environment.SETTINGS_TABLE}
+        TimeToLiveSpecification:
+            AttributeName: ttl
+            Enabled: true
     SpotbotSearchTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
