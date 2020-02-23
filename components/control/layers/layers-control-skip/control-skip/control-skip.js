@@ -15,10 +15,7 @@ const SKIP_VOTE = config.slack.actions.skip_vote;
 const SKIP_RESPONSE = {
   already: ':information_source: You have already voted on this.',
   button: `:black_right_pointing_double_triangle_with_vertical_bar: Skip`,
-  blacklist: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} is on the blacklist and was skipped by ${SKIP_RESPONSE.users(users)}.`,
   confirmation: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} was skipped by ${SKIP_RESPONSE.users(users)}.`,
-  expired: ':information_source: Skip vote has expired.',
-  not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   failed: ':warning: Skip Failed.',
   users: (users) => `${users.map((user) => `<@${user}>`).join(', ')}`,
   request: (userId, title) => `:black_right_pointing_double_triangle_with_vertical_bar: Skip Request:\n\n <@${userId}> has requested to skip ${title}`,
@@ -121,7 +118,6 @@ async function addVote(teamId, channelId, auth, settings, userId, currentSkip, s
         await deleteChat(
             deleteMessage(channelId, currentSkip.skip.timestamp),
         );
-        const timestamp = currentSkip.skip.timestamp;
         await Promise.all([
           setSkip(teamId, channelId, auth, statusTrack, currentSkip),
           post(

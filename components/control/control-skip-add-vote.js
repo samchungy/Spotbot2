@@ -1,4 +1,3 @@
-const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');

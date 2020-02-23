@@ -4,16 +4,13 @@ const moment = require(process.env.MOMENT);
 
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {responseUpdate} = require('/opt/control-panel/control-panel');
-const {skip} = require('/opt/spotify/spotify-api/spotify-api-playback');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
 // const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
 const {addVote, getSkipBlock, setSkip} = require('/opt/control-skip/control-skip');
 const {changeSkip, loadSkip, storeSkip} = require('/opt/settings/settings-extra-interface');
-const {loadProfile, loadSkipVotes, loadSkipVotesAfterHours, loadTimezone} = require('/opt/settings/settings-interface');
 const {modelSkip} = require('/opt/settings/settings-extra-model');
-const {actionSection, buttonActionElement, contextSection, textSection} = require('/opt/slack/format/slack-format-blocks');
-const {deleteChat, postEphemeral, post, reply, updateChat} = require('/opt/slack/slack-api');
-const {deleteMessage, ephemeralPost, inChannelPost, messageUpdate, updateReply} = require('/opt/slack/format/slack-format-reply');
+const {post} = require('/opt/slack/slack-api');
+const {inChannelPost} = require('/opt/slack/format/slack-format-reply');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
 const SKIP_VOTES = config.dynamodb.settings.skip_votes;
@@ -21,17 +18,11 @@ const SKIP_VOTES_AH = config.dynamodb.settings.skip_votes_ah;
 const TIMEZONE = config.dynamodb.settings.timezone;
 
 const SKIP_RESPONSE = {
-  already: ':information_source: You have already voted on this.',
-  button: `:black_right_pointing_double_triangle_with_vertical_bar: Skip`,
   blacklist: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} is on the blacklist and was skipped by ${SKIP_RESPONSE.users(users)}.`,
   confirmation: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} was skipped by ${SKIP_RESPONSE.users(users)}.`,
-  expired: ':information_source: Skip vote has expired.',
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   failed: ':warning: Skip Failed.',
-  users: (users) => `${users.map((user) => `<@${user}>`).join(', ')}`,
   request: (userId, title) => `:black_right_pointing_double_triangle_with_vertical_bar: Skip Request:\n\n <@${userId}> has requested to skip ${title}`,
-  voters: (users) => `*Votes*: ${SKIP_RESPONSE.users(users)}.`,
-  votesNeeded: (votes) => `*${votes}* more ${votes == 1 ? 'vote' : 'votes'} needed.`,
 };
 
 module.exports.handler = async (event, context) => {
@@ -118,26 +109,3 @@ module.exports.handler = async (event, context) => {
     }
   }
 };
-
-
-/**
- * Adds a skip vote from our skip post
- * @param {string} teamId
- * @param {string} channelId
- * @param {string} userId
- * @param {string} value
- * @param {string} responseUrl
- */
-async function addVoteFromPost(teamId, channelId, userId, value, responseUrl) {
-  const [currentSkip, status] = await Promise.all([loadSkip(teamId, channelId), fetchCurrentPlayback(teamId, channelId )]);
-  // Skip Vote has expired
-  if (!status.item || value != currentSkip.track.id || value != status.item.id) {
-    const expiredBlock = [textSection(SKIP_RESPONSE.expired)];
-    await reply(
-        updateReply(SKIP_RESPONSE.expired, expiredBlock),
-        responseUrl,
-    );
-    return;
-  }
-  await addVote(teamId, channelId, userId, currentSkip, status);
-}
