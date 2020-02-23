@@ -32,7 +32,6 @@ module.exports.handler = async (event, context) => {
       await reply(deleteReply('', null), responseUrl);
     }
     let jumpToStart = jump;
-    console.log(jumpToStart);
     const playlistId = settings.playlist.id;
     const auth = await authSession(teamId, channelId);
     let res = RESET_RESPONSE.success(userId);
