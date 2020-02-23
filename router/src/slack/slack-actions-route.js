@@ -113,14 +113,22 @@ module.exports = ( prefix, Router ) => {
                       await sns.publish(params).promise();
                       ctx.body = '';
                       break;
-                      //   case CONTROLS.skip:
-                      //     skip(payload.team.id, payload.channel.id, payload.message.ts, payload.user.id);
-                      //     ctx.body = '';
-                      //     break;
-                      //   case SLACK_ACTIONS.skip_vote:
-                      //     voteToSkip(payload.team.id, payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
-                      //     ctx.body = '';
-                      //     break;
+                    case CONTROLS.skip:
+                      params = {
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                        TopicArn: process.env.CONTROL_SKIP_START,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
+                    case SLACK_ACTIONS.skip_vote:
+                      params = {
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, userId: payload.user.id, responseUrl: payload.response_url}),
+                        TopicArn: process.env.CONTROL_SKIP_ADD_VOTE,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
                     case OVERFLOW:
                       switch (payload.actions[0].selected_option.value) {
                         case CONTROLS.jump_to_start:

@@ -19,11 +19,16 @@ module.exports = ( prefix, Router ) => {
         await sns.publish(params).promise();
         ctx.body = publicAck('');
       })
-      // .post('/skip', async (ctx, next) => {
-      //   const payload = ctx.request.body;
-      //   skip(payload.team_id, payload.channel_id, null, payload.user_id);
-      //   ctx.body = publicAck('');
-      // })
+      .post('/skip', async (ctx, next) => {
+        const payload = ctx.request.body;
+        const settings = ctx.state.settings;
+        params = {
+          Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings, timestamp: null, userId: payload.user_id}),
+          TopicArn: process.env.CONTROL_SKIP_START,
+        };
+        await sns.publish(params).promise();
+        ctx.body = publicAck('');
+      })
       .post('/play', async (ctx, next) => {
         const payload = ctx.request.body;
         const settings = ctx.state.settings;
