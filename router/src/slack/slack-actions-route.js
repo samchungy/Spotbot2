@@ -11,7 +11,7 @@ const SLACK_ACTIONS = config.slack.actions;
 const AUTH = config.dynamodb.settings_auth;
 const CONTROLS = SLACK_ACTIONS.controls;
 const OVERFLOW = SLACK_ACTIONS.controller_overflow;
-// const TRACKS = SLACK_ACTIONS.tracks;
+const TRACKS = SLACK_ACTIONS.tracks;
 // const ARTISTS = SLACK_ACTIONS.artists;
 
 const {checkSettings} = require('../settings/settings-check');
@@ -84,14 +84,23 @@ module.exports = ( prefix, Router ) => {
                       //     ctx.body = '';
                       //     break;
                       //     // TRACKS
-                      //   case TRACKS.cancel_search: // Artist Search also uses this
-                      //     cancelSearch(payload.response_url);
-                      //     ctx.body = '';
-                      //     break;
-                      //   case TRACKS.see_more_results:
-                      //     getMoreTracks(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url);
-                      //     ctx.body = '';
-                      //     break;
+                    case TRACKS.cancel_search: // Artist Search also uses this
+                      cancelSearch(payload.response_url);
+                      params = {
+                        Message: JSON.stringify({channelId: payload.channel.id, userId: payload.user.id, responseUrl: payload.response_url}),
+                        TopicArn: process.env.TRACKS_FIND_CANCEL,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
+                    case TRACKS.see_more_results:
+                      params = {
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, userId: payload.user.id, triggerId: payload.actions[0].value, responseUrl: payload.response_url}),
+                        TopicArn: process.env.TRACKS_FIND_GET_TRACKS,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
                       //   case TRACKS.add_to_playlist:
                       //     setTrack(payload.team.id, payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
                       //     ctx.body = '';
