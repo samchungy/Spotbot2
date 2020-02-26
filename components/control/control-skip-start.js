@@ -65,7 +65,7 @@ module.exports.handler = async (event, context) => {
             ),
           ]);
         }
-        await sleep(450);
+        await sleep(500);
         return await responseUpdate(teamId, channelId, auth, settings, timestamp, true, null, null);
       }
     }
