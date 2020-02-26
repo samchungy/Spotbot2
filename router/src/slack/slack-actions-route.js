@@ -12,7 +12,7 @@ const AUTH = config.dynamodb.settings_auth;
 const CONTROLS = SLACK_ACTIONS.controls;
 const OVERFLOW = SLACK_ACTIONS.controller_overflow;
 const TRACKS = SLACK_ACTIONS.tracks;
-// const ARTISTS = SLACK_ACTIONS.artists;
+const ARTISTS = SLACK_ACTIONS.artists;
 
 const {checkSettings} = require('../settings/settings-check');
 // const {getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, updateView} = require('../server/components/settings/settings-controller');
@@ -74,16 +74,24 @@ module.exports = ( prefix, Router ) => {
                       ctx.body = '';
                       break;
 
-                      //   // ARTISTS
-                      //   case ARTISTS.view_artist_tracks:
-                      //     viewArtist(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url, payload.trigger_id);
-                      //     ctx.body = '';
-                      //     break;
-                      //   case ARTISTS.see_more_artists:
-                      //     getMoreArtists(payload.team.id, payload.channel.id, payload.actions[0].value, payload.response_url);
-                      //     ctx.body = '';
-                      //     break;
-                      //     // TRACKS
+                    // ARTISTS
+                    case ARTISTS.view_artist_tracks:
+                      params = {
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, userId: payload.user.id, artistId: payload.actions[0].value, triggerId: payload.trigger_id, responseUrl: payload.response_url}),
+                        TopicArn: process.env.TRACKS_FIND_ARTISTS_GET_TRACKS,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
+                    case ARTISTS.see_more_artists:
+                      params = {
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, userId: payload.user.id, triggerId: payload.actions[0].value, responseUrl: payload.response_url}),
+                        TopicArn: process.env.TRACKS_FIND_ARTISTS_GET_ARTISTS,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
+                      // TRACKS
                     case TRACKS.cancel_search: // Artist Search also uses this
                       params = {
                         Message: JSON.stringify({channelId: payload.channel.id, userId: payload.user.id, responseUrl: payload.response_url}),

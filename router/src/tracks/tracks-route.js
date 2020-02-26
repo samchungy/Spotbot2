@@ -18,12 +18,17 @@ module.exports = ( prefix, Router ) => {
         };
         await sns.publish(params).promise();
         ctx.body = publicAck('');
+      })
+      .post('/artist', async (ctx, next) => {
+        const payload = ctx.request.body;
+        const settings = ctx.state.settings;
+        const params = {
+          Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings, query: payload.text, userId: payload.user_id, triggerId: payload.trigger_id}),
+          TopicArn: process.env.TRACKS_FIND_ARTISTS_SEARCH,
+        };
+        await sns.publish(params).promise();
+        ctx.body = publicAck('');
       });
-  // .post('/artist', async (ctx, next) => {
-  //   const payload = ctx.request.body;
-  //   findArtists(payload.team_id, payload.channel_id, payload.user_id, payload.text, payload.trigger_id);
-  //   ctx.body = publicAck('');
-  // })
   // .post('/current', async (ctx, next) => {
   //   const payload = ctx.request.body;
   //   getCurrentInfo(payload.team_id, payload.channel_id);

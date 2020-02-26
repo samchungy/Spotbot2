@@ -150,6 +150,9 @@ functions:
       SETTINGS_SUBMIT_VERIFY: ${self:custom.lambda}-settings-submit-verify
       #Track Functions
       TRACKS_FIND_ADD: ${self:custom.topic}-tracks-find-add
+      TRACKS_FIND_ARTISTS_SEARCH: ${self:custom.topic}-tracks-find-artists-search
+      TRACKS_FIND_ARTISTS_GET_ARTISTS: ${self:custom.topic}-tracks-find-artists-get-artists
+      TRACKS_FIND_ARTISTS_GET_TRACKS: ${self:custom.topic}-tracks-find-artists-get-tracks
       TRACKS_FIND_CANCEL: ${self:custom.topic}-tracks-find-cancel
       TRACKS_FIND_GET_TRACKS: ${self:custom.topic}-tracks-find-get-tracks
       TRACKS_FIND_SEARCH: ${self:custom.topic}-tracks-find-search
@@ -591,6 +594,52 @@ functions:
       exclude:
         - ./**
     handler: components/tracks/tracks-find-add.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-find-artists-search:
+    environment:
+      TRACKS_FIND_ARTISTS_GET_ARTISTS: ${self:custom.topic}-tracks-find-artists-get-artists
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-artists-search
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-find-artists-search.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-artists-search.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-find-artists-get-artists:
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-artists-get-artists
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-find-artists-get-artists.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-artists-get-artists.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-find-artists-get-tracks:
+    environment:
+      TRACKS_FIND_GET_TRACKS: ${self:custom.topic}-tracks-find-get-tracks
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-artists-get-tracks
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-find-artists-get-tracks.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-artists-get-tracks.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }

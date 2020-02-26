@@ -1,6 +1,7 @@
 const SNS = require('aws-sdk/clients/sns');
 const sns = new SNS();
 
+const moment = require(process.env.MOMENT);
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
@@ -42,7 +43,7 @@ async function findAndStore(teamId, channelId, query, triggerId) {
       return {success: false, response: TRACK_RESPONSE.no_tracks + `"${query}".`};
     }
     const search = modelSearch(searchResults.tracks.items.map((track) => new Track(track)), query);
-    const expiry = Math.floor(Date.now() / 1000) + 86400;
+    const expiry = moment().add('1', 'day').unix();
     await storeTracks(teamId, channelId, triggerId, search, expiry);
     return {success: true, response: null};
   } catch (error) {
