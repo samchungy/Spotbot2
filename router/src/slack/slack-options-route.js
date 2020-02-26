@@ -4,7 +4,7 @@ const lambda = new Lambda();
 const config = require(process.env.CONFIG);
 const SETTINGS = config.dynamodb.settings;
 
-const SETTINGS_GET_OPTIONS_PLAYLISTS = process.env.LAMBDA_PREFIX+ 'settings-get-options-playlist';
+const SETTINGS_GET_OPTIONS_PLAYLISTS = process.env.LAMBDA_PREFIX+ 'settings-get-options-playlists';
 const SETTINGS_GET_OPTIONS_DEVICES = process.env.LAMBDA_PREFIX + 'settings-get-options-devices';
 const SETTINGS_GET_OPTIONS_TIMEZONES = process.env.LAMBDA_PREFIX + 'settings-get-options-timezones';
 
