@@ -5,7 +5,7 @@ const moment = require(process.env.MOMENT);
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {responseUpdate} = require('/opt/control-panel/control-panel');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
-// const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
+const {deleteTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
 const {addVote, getSkipBlock, setSkip} = require('/opt/control-skip/control-skip');
 const {changeSkip, loadBlacklist, loadSkip, storeSkip} = require('/opt/settings/settings-extra-interface');
 const {modelSkip} = require('/opt/settings/settings-extra-model');
@@ -15,12 +15,13 @@ const {sleep} = require('/opt/utils/util-timeout');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 const {skip} = require('/opt/spotify/spotify-api/spotify-api-playback');
 
+const PLAYLIST = config.dynamodb.settings.playlist;
 const SKIP_VOTES = config.dynamodb.settings.skip_votes;
 const SKIP_VOTES_AH = config.dynamodb.settings.skip_votes_ah;
 const TIMEZONE = config.dynamodb.settings.timezone;
 
 const SKIP_RESPONSE = {
-  blacklist: (title) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} is on the blacklist and was skipped.`,
+  blacklist: (title, deleted) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} is on the blacklist and was skipped.${deleted ? ` The track was deleted from the playlist.` : ``}`,
   confirmation: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} was skipped by ${SKIP_RESPONSE.users(users)}.`,
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   failed: ':warning: Skip Failed.',
@@ -33,6 +34,7 @@ module.exports.handler = async (event, context) => {
   try {
     // Get current playback status
     let skipVotes;
+    const playlist = settings[PLAYLIST];
     const auth = await authSession(teamId, channelId);
     const {country} = auth.getProfile();
     const status = await fetchCurrentPlayback(teamId, channelId, auth, country);
@@ -47,12 +49,22 @@ module.exports.handler = async (event, context) => {
     const blacklist = await loadBlacklist(teamId, channelId);
     if (blacklist && blacklist.blacklist) {
       if (blacklist.blacklist.find((track) => statusTrack.uri === track.uri)) {
-        await Promise.all([
-          skip(teamId, channelId, auth),
-          post(
-              inChannelPost(channelId, SKIP_RESPONSE.blacklist(statusTrack.title)),
-          ),
-        ]);
+        if (status.context && status.context.uri.includes(playlist.id)) {
+          await Promise.all([
+            skip(teamId, channelId, auth),
+            deleteTracks(teamId, channelId, auth, playlist.id, [{uri: statusTrack.uri}]),
+            post(
+                inChannelPost(channelId, SKIP_RESPONSE.blacklist(statusTrack.title, true)),
+            ),
+          ]);
+        } else {
+          await Promise.all([
+            skip(teamId, channelId, auth),
+            post(
+                inChannelPost(channelId, SKIP_RESPONSE.blacklist(statusTrack.title)),
+            ),
+          ]);
+        }
         await sleep(450);
         return await responseUpdate(teamId, channelId, auth, settings, timestamp, true, null, null);
       }
