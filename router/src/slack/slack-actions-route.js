@@ -85,7 +85,6 @@ module.exports = ( prefix, Router ) => {
                       //     break;
                       //     // TRACKS
                     case TRACKS.cancel_search: // Artist Search also uses this
-                      cancelSearch(payload.response_url);
                       params = {
                         Message: JSON.stringify({channelId: payload.channel.id, userId: payload.user.id, responseUrl: payload.response_url}),
                         TopicArn: process.env.TRACKS_FIND_CANCEL,
@@ -101,11 +100,15 @@ module.exports = ( prefix, Router ) => {
                       await sns.publish(params).promise();
                       ctx.body = '';
                       break;
-                      //   case TRACKS.add_to_playlist:
-                      //     setTrack(payload.team.id, payload.channel.id, payload.user.id, payload.actions[0].value, payload.response_url);
-                      //     ctx.body = '';
-                      //     break;
-                      //     // CONTROLS
+                    case TRACKS.add_to_playlist:
+                      params = {
+                        Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, userId: payload.user.id, trackId: payload.actions[0].value, responseUrl: payload.response_url}),
+                        TopicArn: process.env.TRACKS_FIND_ADD,
+                      };
+                      await sns.publish(params).promise();
+                      ctx.body = '';
+                      break;
+                    // CONTROLS
                     case CONTROLS.play:
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),

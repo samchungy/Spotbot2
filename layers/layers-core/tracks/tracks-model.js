@@ -1,11 +1,3 @@
-const modelHistory = (uri, userId, time) => {
-  return {
-    uri: uri,
-    userId: userId,
-    time: time,
-  };
-};
-
 modelSearch = (items, query) => {
   return {
     numSearches: items && items.length ? Math.ceil(items.length/3) : 0,
@@ -24,6 +16,5 @@ module.exports = {
   changeQuery,
   changeQueryValue,
   loadQuery,
-  modelHistory,
   modelSearch,
 };

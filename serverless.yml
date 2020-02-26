@@ -32,7 +32,6 @@ provider:
     #Tables
     AUTH_TABLE: ${self:custom.prefix}-auth
     SEARCH_TABLE: ${self:custom.prefix}-search
-    OLD_SETTINGS_TABLE: ${self:custom.prefix}-settings
     SETTINGS_TABLE: ${self:custom.prefix}-settings-v2
     HISTORY_TABLE: ${self:custom.prefix}-history
     #Core Libraries
@@ -60,7 +59,8 @@ provider:
     Resource: [
       "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.SETTINGS_TABLE}",
       "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.SEARCH_TABLE}",
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.AUTH_TABLE}"
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.AUTH_TABLE}",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.HISTORY_TABLE}"
     ]
   - Effect: Allow
     Action:
@@ -149,6 +149,7 @@ functions:
       SETTINGS_OPEN: ${self:custom.topic}-settings-open
       SETTINGS_SUBMIT_VERIFY: ${self:custom.lambda}-settings-submit-verify
       #Track Functions
+      TRACKS_FIND_ADD: ${self:custom.topic}-tracks-find-add
       TRACKS_FIND_CANCEL: ${self:custom.topic}-tracks-find-cancel
       TRACKS_FIND_GET_TRACKS: ${self:custom.topic}-tracks-find-get-tracks
       TRACKS_FIND_SEARCH: ${self:custom.topic}-tracks-find-search
@@ -580,6 +581,20 @@ functions:
       - { Ref: ControlDashskipLambdaLayer }
 
 #Tracks
+  tracks-find-add:
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-add
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-find-add.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-add.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
   tracks-find-search:
     environment:
       TRACKS_FIND_GET_TRACKS: ${self:custom.topic}-tracks-find-get-tracks
@@ -613,7 +628,7 @@ functions:
   tracks-find-cancel:
     events:
       - sns: ${self:custom.prefix}-tracks-find-cancel
-    memorySize: 192
+    memorySize: 128
     package:
       include:
         - ./components/tracks/tracks-find-cancel.js
@@ -624,6 +639,7 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
+
 resources:
   Resources:
     SpotbotAuthTable:
@@ -648,22 +664,6 @@ resources:
         TimeToLiveSpecification:
             AttributeName: ttl
             Enabled: true
-    SpotbotSettingsTable:
-      Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
-      Properties:
-        BillingMode: 'PAY_PER_REQUEST'
-        AttributeDefinitions:
-          - AttributeName: team_channel
-            AttributeType: S
-          - AttributeName: name
-            AttributeType: S
-        KeySchema:
-          - AttributeName: team_channel
-            KeyType: HASH
-          - AttributeName: name
-            KeyType: RANGE
-        TableName: ${self:provider.environment.OLD_SETTINGS_TABLE}
     SpotbotNewSettingsTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}

@@ -1,5 +1,5 @@
 const logger = require(process.env.LOGGER);
-const {batchGetSearch, batchGetParams, getSearch, putSearch, searchModel, searchUpdateModel, searchValues, updateSearch} = require('/opt/db/search');
+const {getSearch, putSearch, searchModel, searchUpdateModel, searchValues, updateSearch} = require('/opt/db/search');
 
 /**
  * Store Track Search to DB
@@ -55,45 +55,8 @@ async function changeSearch(teamId, channelId, triggerId, query, queryVal) {
   }
 }
 
-/**
- * Batch Load Tracks search from DB
- * @param {string} teamId
- * @param {string} channelId
- * @param {array} triggerIds
- */
-async function batchLoadSearch(teamId, channelId, triggerIds) {
-  try {
-    let params = batchGetParams(triggerIds.map((triggerId) => searchModel(teamId, channelId, triggerId, null)));
-    let unprocessedEmpty = true;
-    const results = [];
-    while (unprocessedEmpty) {
-      const {Responses: searches, UnprocessedKeys} = await batchGetSearch(params);
-      unprocessedEmpty = Object.entries(UnprocessedKeys).length === 0 && UnprocessedKeys.constructor === Object;
-      if (unprocessedEmpty) {
-        for (const table in searches) {
-          if ({}.hasOwnProperty.call(searches, table)) {
-            results.push(searches[table]);
-            unprocessedEmpty = false;
-          }
-        }
-      } else {
-        for (const table in searches) {
-          if ({}.hasOwnProperty.call(searches, table)) {
-            params = searches[table].Keys;
-          }
-        }
-      }
-    }
-    return results.flat();
-  } catch (error) {
-    logger.error('Batch loading track search from Dynamodb failed');
-    throw error;
-  }
-}
-
 
 module.exports = {
-  batchLoadSearch,
   changeSearch,
   loadSearch,
   storeSearch,

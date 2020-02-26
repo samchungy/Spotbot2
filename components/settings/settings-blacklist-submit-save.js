@@ -23,21 +23,21 @@ module.exports.handler = async (event, context) => {
     }
     const {country} = auth.getProfile();
     let currentList;
-    let trackUrisToAdd;
+    let trackIdsToAdd;
     if (submissions) {
       // See which tracks are still on the blacklist and which need to be added
       {
-        [currentList, trackUrisToAdd] = submissions.reduce(([curr, adds], submission) => {
+        [currentList, trackIdsToAdd] = submissions.reduce(([curr, adds], submission) => {
           const track = blacklistTracks.find((track) => track.id === submission.value);
           return track ? [[...curr, track], adds] : [curr, [...adds, submission.value]];
         }, [[], []]);
       }
 
-      if (trackUrisToAdd.length) {
+      if (trackIdsToAdd.length) {
         const allTrackInfoPromises = [];
-        const attempts = Math.ceil(trackUrisToAdd.length/INFO_LIMIT);
+        const attempts = Math.ceil(trackIdsToAdd.length/INFO_LIMIT);
         for (let attempt = 0; attempt < attempts; attempt++) {
-          allTrackInfoPromises.push(fetchTracksInfo(teamId, channelId, auth, country, trackUrisToAdd.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT)));
+          allTrackInfoPromises.push(fetchTracksInfo(teamId, channelId, auth, country, trackIdsToAdd.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT)));
         }
         // Extract Promise Info
         const allSpotifyTrackInfos = (await Promise.all(allTrackInfoPromises)).map((infoPromise) => infoPromise.tracks).flat();

@@ -14,9 +14,6 @@ const TRACK_RESPONSE = {
   error: ':warning: An error occured.',
   expired: ':information_source: Search has expired.',
   found: ':mag: Are these the tracks you were looking for?',
-  no_tracks: ':information_source: No tracks found for the query ',
-  query_empty: ':information_source: No query entered. Please enter a query.',
-  query_error: ':warning: Invalid query, please try again.',
 };
 
 
@@ -41,7 +38,7 @@ module.exports.handler = async (event, context) => {
         ),
         actionSection(
             null,
-            [buttonActionElement(TRACK_ACTIONS.add_to_playlist, `+ Add to playlist`, track.uri, false, BUTTON.primary)],
+            [buttonActionElement(TRACK_ACTIONS.add_to_playlist, `+ Add to playlist`, track.id, false, BUTTON.primary)],
         ),
       ];
     }).flat();

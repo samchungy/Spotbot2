@@ -10,13 +10,10 @@ const {postEphemeral} = require('/opt/slack/slack-api');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 const {modelSearch} = require('/opt/tracks/tracks-model');
-const EXPIRY = Math.floor(Date.now() / 1000) + 86400; // Current Time in Epoch + 84600 (A day)
 const LIMIT = config.spotify_api.tracks.limit; // 24 Search results = 8 pages.
 
 const TRACK_RESPONSE = {
   error: ':warning: Track search failed. Please try again.',
-  expired: ':information_source: Search has expired.',
-  found: ':mag: Are these the tracks you were looking for?',
   no_tracks: ':information_source: No tracks found for the query ',
   query_empty: ':information_source: No query entered. Please enter a query.',
   query_error: ':warning: Invalid query, please try again.',
@@ -45,7 +42,8 @@ async function findAndStore(teamId, channelId, query, triggerId) {
       return {success: false, response: TRACK_RESPONSE.no_tracks + `"${query}".`};
     }
     const search = modelSearch(searchResults.tracks.items.map((track) => new Track(track)), query);
-    await storeTracks(teamId, channelId, triggerId, search, EXPIRY);
+    const expiry = Math.floor(Date.now() / 1000) + 86400;
+    await storeTracks(teamId, channelId, triggerId, search, expiry);
     return {success: true, response: null};
   } catch (error) {
     logger.error(error);
