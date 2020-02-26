@@ -21,7 +21,7 @@ const PLAY_RESPONSE = {
   empty_playlist: ':information_source: Playlist is empty. Please add songs to the playlist.',
   success: (user) => `:arrow_forward: Spotify is now playing. Started by <@${user}>.`,
 };
-const noSongs = (status, playlist) => status.is_playing && !status.item && status.context && status.context.uri.includes(playlist.id);
+const noSongs = (status, playlist) => status.is_playing && !status.item && status.context && status.context.uri.includes(playlist.id) && status.currently_playing_type !='unknown';
 
 /**
  * Recursive Retries to Play
@@ -58,7 +58,7 @@ async function attemptPlay(teamId, channelId, auth, settings, timestamp, deviceI
     await play(teamId, channelId, auth, deviceId);
   }
   // Wait before verifying that Spotify is playing
-  await sleep(550);
+  await sleep(600);
   const newStatus = await fetchCurrentPlayback(teamId, channelId, auth);
   return await attemptPlay(teamId, channelId, auth, settings, timestamp, deviceId, newStatus, playlist, attempt+1, userId);
 }
