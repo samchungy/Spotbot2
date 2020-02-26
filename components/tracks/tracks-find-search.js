@@ -13,6 +13,8 @@ const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 const {modelSearch} = require('/opt/tracks/tracks-model');
 const LIMIT = config.spotify_api.tracks.limit; // 24 Search results = 8 pages.
 
+const TRACKS_FIND_GET_TRACKS = process.env.SNS_PREFIX + 'tracks-find-get-tracks';
+
 const TRACK_RESPONSE = {
   error: ':warning: Track search failed. Please try again.',
   no_tracks: ':information_source: No tracks found for the query ',
@@ -70,7 +72,7 @@ module.exports.handler = async (event, context) => {
     if (success) {
       const params = {
         Message: JSON.stringify({teamId, channelId, userId, triggerId}),
-        TopicArn: process.env.TRACKS_FIND_GET_TRACKS,
+        TopicArn: TRACKS_FIND_GET_TRACKS,
       };
       await sns.publish(params).promise();
     } else {

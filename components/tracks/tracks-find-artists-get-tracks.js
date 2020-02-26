@@ -11,6 +11,8 @@ const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 const {reply} = require('/opt/slack/slack-api');
 const {updateReply} = require('/opt/slack/format/slack-format-reply');
 
+const TRACKS_FIND_GET_TRACKS = process.env.SNS_PREFIX + 'tracks-find-get-tracks';
+
 const ARTISTS_RESPONSES = {
   error: ':warning: An error occured.',
 };
@@ -45,7 +47,7 @@ module.exports.handler = async (event, context) => {
     if (success) {
       const params = {
         Message: JSON.stringify({teamId, channelId, userId, triggerId, responseUrl}),
-        TopicArn: process.env.TRACKS_FIND_GET_TRACKS,
+        TopicArn: TRACKS_FIND_GET_TRACKS,
       };
       await sns.publish(params).promise();
     } else {

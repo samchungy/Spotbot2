@@ -15,6 +15,8 @@ const {deleteReply} = require('/opt/slack/format/slack-format-reply');
 
 // const {setJumpToStart} = require('/opt/control/control-jump');
 
+const CONTROL_JUMP = process.env.SNS_PREFIX + 'control-jump';
+
 const LIMIT = config.spotify_api.playlists.tracks.limit;
 const AFRICA = config.spotify_api.africa;
 
@@ -64,7 +66,7 @@ module.exports.handler = async (event, context) => {
     if (jumpToStart) {
       params = {
         Message: JSON.stringify({teamId, channelId, settings, timestamp, userId, resetResponse: res}),
-        TopicArn: process.env.CONTROL_JUMP,
+        TopicArn: CONTROL_JUMP,
       };
       return await sns.publish(params).promise();
     }

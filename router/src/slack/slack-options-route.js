@@ -4,6 +4,10 @@ const lambda = new Lambda();
 const config = require(process.env.CONFIG);
 const SETTINGS = config.dynamodb.settings;
 
+const SETTINGS_GET_OPTIONS_PLAYLISTS = process.env.LAMBDA_PREFIX+ 'settings-get-options-playlist';
+const SETTINGS_GET_OPTIONS_DEVICES = process.env.LAMBDA_PREFIX + 'settings-get-options-devices';
+const SETTINGS_GET_OPTIONS_TIMEZONES = process.env.LAMBDA_PREFIX + 'settings-get-options-timezones';
+
 // const {getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, updateView} = require('../server/components/settings/settings-controller');
 
 module.exports = ( prefix, Router ) => {
@@ -19,7 +23,7 @@ module.exports = ( prefix, Router ) => {
           switch (payload.action_id) {
             case SETTINGS.playlist:
               params = {
-                FunctionName: process.env.SETTINGS_GET_OPTIONS_PLAYLISTS, // the lambda function we are going to invoke
+                FunctionName: SETTINGS_GET_OPTIONS_PLAYLISTS, // the lambda function we are going to invoke
                 Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings: settings, query: payload.value}),
               };
               const {Payload: playlistPayload} = await lambda.invoke(params).promise();
@@ -28,7 +32,7 @@ module.exports = ( prefix, Router ) => {
               break;
             case SETTINGS.default_device:
               params = {
-                FunctionName: process.env.SETTINGS_GET_OPTIONS_DEVICES, // the lambda function we are going to invoke
+                FunctionName: SETTINGS_GET_OPTIONS_DEVICES, // the lambda function we are going to invoke
                 Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings: settings}),
               };
               const {Payload: devicePayload} = await lambda.invoke(params).promise();
@@ -37,7 +41,7 @@ module.exports = ( prefix, Router ) => {
               break;
             case SETTINGS.timezone:
               params = {
-                FunctionName: process.env.SETTINGS_GET_OPTIONS_TIMEZONES, // the lambda function we are going to invoke
+                FunctionName: SETTINGS_GET_OPTIONS_TIMEZONES, // the lambda function we are going to invoke
                 Payload: JSON.stringify({query: payload.value}),
               };
               const {Payload: timezonePayload} = await lambda.invoke(params).promise();

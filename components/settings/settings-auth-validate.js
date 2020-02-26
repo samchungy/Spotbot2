@@ -11,6 +11,8 @@ const {fetchTokens} = require('/opt/spotify/spotify-api/spotify-api-auth');
 const {fetchProfile} = require('/opt/spotify/spotify-api/spotify-api-profile');
 const {isEqual} = require('/opt/utils/util-objects');
 
+const SETTINGS_AUTH_UPDATE_VIEW = process.env.SNS_PREFIX + 'settings-auth-update-view';
+
 const PROFILE = config.dynamodb.auth.profile;
 
 /**
@@ -58,7 +60,7 @@ module.exports.handler = async (event, context) => {
     ]);
     const params = {
       Message: JSON.stringify({teamId: stateJson.teamId, channelId: stateJson.channelId, viewId: stateJson.viewId}),
-      TopicArn: process.env.SETTINGS_AUTH_UPDATE_VIEW,
+      TopicArn: SETTINGS_AUTH_UPDATE_VIEW,
     };
     await sns.publish(params).promise();
     return {success: true, failReason: null};

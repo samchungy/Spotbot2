@@ -3,6 +3,9 @@ const sns = new SNS();
 
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
+
+const CONTROL_RESET_SET = process.env.SNS_PREFIX + 'control-reset-set';
+
 const RESET_MODAL = config.slack.actions.reset_modal;
 const REVIEW_JUMP = config.slack.actions.reset_review_jump;
 
@@ -17,7 +20,7 @@ module.exports.handler = async (event, context) => {
       // Slack Modal was closed. Keep no tracks
       const params = {
         Message: JSON.stringify({teamId, channelId, settings, timestamp, trackUris: null, userId}),
-        TopicArn: process.env.CONTROL_RESET_SET,
+        TopicArn: CONTROL_RESET_SET,
       };
       await sns.publish(params).promise();
     } else {
@@ -25,7 +28,7 @@ module.exports.handler = async (event, context) => {
       const {[RESET_MODAL]: trackUris, [REVIEW_JUMP]: jump} = extractSubmissions(view);
       const params = {
         Message: JSON.stringify({teamId, channelId, settings, timestamp, trackUris, userId, jump: (jump == 'true')}),
-        TopicArn: process.env.CONTROL_RESET_SET,
+        TopicArn: CONTROL_RESET_SET,
       };
       await sns.publish(params).promise();
     }

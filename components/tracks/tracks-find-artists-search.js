@@ -11,6 +11,9 @@ const {postEphemeral} = require('/opt/slack/slack-api');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const Artist = require('/opt/spotify/spotify-objects/util-spotify-artist');
 const {modelSearch} = require('/opt/tracks/tracks-model');
+
+const TRACKS_FIND_ARTISTS_GET_ARTISTS = process.env.SNS_PREFIX + 'tracks-find-artists-get-artists';
+
 const LIMIT = config.spotify_api.tracks.limit; // 24 Search results = 8 pages.
 
 const ARTISTS_RESPONSES = {
@@ -41,7 +44,7 @@ module.exports.handler = async (event, context) => {
     if (success) {
       const params = {
         Message: JSON.stringify({teamId, channelId, userId, triggerId}),
-        TopicArn: process.env.TRACKS_FIND_ARTISTS_GET_ARTISTS,
+        TopicArn: TRACKS_FIND_ARTISTS_GET_ARTISTS,
       };
       await sns.publish(params).promise();
     } else {

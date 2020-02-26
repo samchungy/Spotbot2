@@ -6,6 +6,8 @@ const sns = new SNS();
 const {changeSettings} = require('/opt/settings/settings-interface');
 const {removeSpotifyAuth} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
 
+const SETTINGS_AUTH_UPDATE_VIEW = process.env.SNS_PREFIX + 'settings-auth-update-view';
+
 const DEFAULT_DEVICE = config.dynamodb.settings.default_device;
 const PLAYLIST = config.dynamodb.settings.playlist;
 
@@ -26,7 +28,7 @@ module.exports.handler = async (event, context) => {
     ]);
     const params = {
       Message: JSON.stringify({teamId, channelId, viewId}),
-      TopicArn: process.env.SETTINGS_AUTH_UPDATE_VIEW,
+      TopicArn: SETTINGS_AUTH_UPDATE_VIEW,
     };
     // Update View of Modal
     await sns.publish(params).promise();

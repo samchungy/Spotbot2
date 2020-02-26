@@ -6,6 +6,9 @@ const logger = require(process.env.LOGGER);
 
 const {postEphemeral} = require('/opt/slack/slack-api');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
+
+const SETTINGS_BLACKLIST_SUBMIT_SAVE = process.env.SNS_PREFIX + 'settings-blacklist-submit-save';
+
 const BLACKLIST_LIMIT = config.dynamodb.blacklist.limit;
 const BLACKLIST_MODAL = config.slack.actions.blacklist_modal;
 const BLACKLIST_RESPONSE = {
@@ -27,7 +30,7 @@ module.exports.handler = async (event, context) => {
 
     const params = {
       Message: JSON.stringify({teamId, channelId, settings, userId, submissions}),
-      TopicArn: process.env.SETTINGS_BLACKLIST_SUBMIT_SAVE,
+      TopicArn: SETTINGS_BLACKLIST_SUBMIT_SAVE,
     };
     await sns.publish(params).promise();
   } catch (error) {

@@ -3,7 +3,7 @@ const SNS = require('aws-sdk/clients/sns');
 const sns = new SNS();
 const Lambda = require('aws-sdk/clients/lambda');
 const lambda = new Lambda();
-
+const {checkSettings} = require('../settings/settings-check');
 const {isEmpty} = require('/opt/utils/util-objects');
 const {openModal} = require('../response/open-modal');
 
@@ -14,13 +14,30 @@ const OVERFLOW = SLACK_ACTIONS.controller_overflow;
 const TRACKS = SLACK_ACTIONS.tracks;
 const ARTISTS = SLACK_ACTIONS.artists;
 
-const {checkSettings} = require('../settings/settings-check');
-// const {getAllDevices, getAllPlaylists, getAllTimezones, saveSettings, updateView} = require('../server/components/settings/settings-controller');
-// const {changeAuthentication, saveView} = require('../server/components/settings/spotifyauth/spotifyauth-controller');
-// const {clearOneDay, jumpToStart, pause, play, reset, skip, toggleRepeat, toggleShuffle, verifyResetReview, voteToSkip} = require('../server/components/control/control-controller');
-// const {getMoreArtists, getMoreTracks, cancelSearch, removeTracks, setTrack, viewArtist} = require('../server/components/tracks/tracks-controller');
-// const {saveBlacklist} = require('../server/components/settings/blacklist/blacklist-controller');
-// const {switchDevice} = require('../server/components/settings/device-select/device-controller');
+const SETTINGS_AUTH_CHANGE = process.env.SNS_PREFIX + 'settings-auth-change';
+const SETTINGS_DEVICE_SWITCH = process.env.SNS_PREFIX + 'settings-device-switch';
+const SETTINGS_SUBMIT_VERIFY = process.env.LAMBDA_PREFIX + 'settings-submit-verify';
+const SETTINGS_BLACKLIST_SUBMIT_VERIFY = process.env.LAMBDA_PREFIX + 'settings-blacklist-submit-verify';
+
+const CONTROL_RESET_REVIEW_OPEN = process.env.SNS_PREFIX + 'control-reset-review-open';
+const CONTROL_RESET_SET = process.env.SNS_PREFIX + 'control-reset-set';
+
+const TRACKS_FIND_ADD = process.env.SNS_PREFIX + 'tracks-find-add';
+const TRACKS_FIND_ARTISTS_GET_ARTISTS = process.env.SNS_PREFIX + 'tracks-find-artists-get-artists';
+const TRACKS_FIND_ARTISTS_GET_TRACKS = process.env.SNS_PREFIX + 'tracks-find-artists-get-tracks';
+const TRACKS_FIND_CANCEL = process.env.SNS_PREFIX + 'tracks-find-cancel';
+const TRACKS_FIND_GET_TRACKS = process.env.SNS_PREFIX + 'tracks-find-get-tracks';
+
+const CONTROL_CLEAR_ONE = process.env.SNS_PREFIX + 'control-clear-one';
+const CONTROL_JUMP = process.env.SNS_PREFIX + 'control-jump';
+const CONTROL_PAUSE = process.env.SNS_PREFIX + 'control-pause';
+const CONTROL_PLAY = process.env.SNS_PREFIX + 'control-play';
+const CONTROL_SHUFFLE = process.env.SNS_PREFIX + 'control-shuffle';
+const CONTROL_SKIP_START = process.env.SNS_PREFIX + 'control-skip-start';
+const CONTROL_SKIP_ADD_VOTE = process.env.SNS_PREFIX + 'control-skip-add-vote';
+const CONTROL_REPEAT = process.env.SNS_PREFIX + 'control-repeat';
+const CONTROL_RESET_START = process.env.SNS_PREFIX + 'control-reset-start';
+const CONTROL_RESET_REVIEW_SUBMIT = process.env.SNS_PREFIX + 'control-reset-review-submit';
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
@@ -41,7 +58,7 @@ module.exports = ( prefix, Router ) => {
                 case AUTH.reauth:
                   params = {
                     Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, viewId: payload.view.id}),
-                    TopicArn: process.env.SETTINGS_AUTH_CHANGE,
+                    TopicArn: SETTINGS_AUTH_CHANGE,
                   };
                   await sns.publish(params).promise();
                   ctx.body = '';
@@ -59,7 +76,7 @@ module.exports = ( prefix, Router ) => {
                       const resetPayload = await openModal(payload.team_id, valuePayload.channelId, payload.trigger_id, SLACK_ACTIONS.empty_modal, 'Reset - Tracks Review', 'Confirm', 'Close');
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: valuePayload.channelId, settings, timestamp: valuePayload.timestamp, viewId: resetPayload.view.id, responseUrl: payload.response_url}),
-                        TopicArn: process.env.CONTROL_RESET_REVIEW_OPEN,
+                        TopicArn: CONTROL_RESET_REVIEW_OPEN,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -68,7 +85,7 @@ module.exports = ( prefix, Router ) => {
                       valuePayload = JSON.parse(payload.actions[0].value);
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: valuePayload.channelId, settings, timestamp: valuePayload.timestamp, userId: payload.user.id, jump: false, responseUrl: payload.response_url}),
-                        TopicArn: process.env.CONTROL_RESET_SET,
+                        TopicArn: CONTROL_RESET_SET,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -78,7 +95,7 @@ module.exports = ( prefix, Router ) => {
                     case ARTISTS.view_artist_tracks:
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, userId: payload.user.id, artistId: payload.actions[0].value, triggerId: payload.trigger_id, responseUrl: payload.response_url}),
-                        TopicArn: process.env.TRACKS_FIND_ARTISTS_GET_TRACKS,
+                        TopicArn: TRACKS_FIND_ARTISTS_GET_TRACKS,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -86,7 +103,7 @@ module.exports = ( prefix, Router ) => {
                     case ARTISTS.see_more_artists:
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, userId: payload.user.id, triggerId: payload.actions[0].value, responseUrl: payload.response_url}),
-                        TopicArn: process.env.TRACKS_FIND_ARTISTS_GET_ARTISTS,
+                        TopicArn: TRACKS_FIND_ARTISTS_GET_ARTISTS,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -95,7 +112,7 @@ module.exports = ( prefix, Router ) => {
                     case TRACKS.cancel_search: // Artist Search also uses this
                       params = {
                         Message: JSON.stringify({channelId: payload.channel.id, userId: payload.user.id, responseUrl: payload.response_url}),
-                        TopicArn: process.env.TRACKS_FIND_CANCEL,
+                        TopicArn: TRACKS_FIND_CANCEL,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -103,7 +120,7 @@ module.exports = ( prefix, Router ) => {
                     case TRACKS.see_more_results:
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, userId: payload.user.id, triggerId: payload.actions[0].value, responseUrl: payload.response_url}),
-                        TopicArn: process.env.TRACKS_FIND_GET_TRACKS,
+                        TopicArn: TRACKS_FIND_GET_TRACKS,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -111,7 +128,7 @@ module.exports = ( prefix, Router ) => {
                     case TRACKS.add_to_playlist:
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, userId: payload.user.id, trackId: payload.actions[0].value, responseUrl: payload.response_url}),
-                        TopicArn: process.env.TRACKS_FIND_ADD,
+                        TopicArn: TRACKS_FIND_ADD,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -120,7 +137,7 @@ module.exports = ( prefix, Router ) => {
                     case CONTROLS.play:
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                        TopicArn: process.env.CONTROL_PLAY,
+                        TopicArn: CONTROL_PLAY,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -128,7 +145,7 @@ module.exports = ( prefix, Router ) => {
                     case CONTROLS.pause:
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                        TopicArn: process.env.CONTROL_PAUSE,
+                        TopicArn: CONTROL_PAUSE,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -136,7 +153,7 @@ module.exports = ( prefix, Router ) => {
                     case CONTROLS.skip:
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                        TopicArn: process.env.CONTROL_SKIP_START,
+                        TopicArn: CONTROL_SKIP_START,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -144,7 +161,7 @@ module.exports = ( prefix, Router ) => {
                     case SLACK_ACTIONS.skip_vote:
                       params = {
                         Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, userId: payload.user.id, responseUrl: payload.response_url}),
-                        TopicArn: process.env.CONTROL_SKIP_ADD_VOTE,
+                        TopicArn: CONTROL_SKIP_ADD_VOTE,
                       };
                       await sns.publish(params).promise();
                       ctx.body = '';
@@ -154,7 +171,7 @@ module.exports = ( prefix, Router ) => {
                         case CONTROLS.jump_to_start:
                           params = {
                             Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                            TopicArn: process.env.CONTROL_JUMP,
+                            TopicArn: CONTROL_JUMP,
                           };
                           await sns.publish(params).promise();
                           ctx.body = '';
@@ -162,7 +179,7 @@ module.exports = ( prefix, Router ) => {
                         case CONTROLS.shuffle:
                           params = {
                             Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                            TopicArn: process.env.CONTROL_SHUFFLE,
+                            TopicArn: CONTROL_SHUFFLE,
                           };
                           await sns.publish(params).promise();
                           ctx.body = '';
@@ -170,7 +187,7 @@ module.exports = ( prefix, Router ) => {
                         case CONTROLS.repeat:
                           params = {
                             Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                            TopicArn: process.env.CONTROL_REPEAT,
+                            TopicArn: CONTROL_REPEAT,
                           };
                           await sns.publish(params).promise();
                           ctx.body = '';
@@ -178,7 +195,7 @@ module.exports = ( prefix, Router ) => {
                         case CONTROLS.reset:
                           params = {
                             Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                            TopicArn: process.env.CONTROL_RESET_START,
+                            TopicArn: CONTROL_RESET_START,
                           };
                           await sns.publish(params).promise();
                           ctx.body = '';
@@ -186,7 +203,7 @@ module.exports = ( prefix, Router ) => {
                         case CONTROLS.clear_one:
                           params = {
                             Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                            TopicArn: process.env.CONTROL_CLEAR_ONE,
+                            TopicArn: CONTROL_CLEAR_ONE,
                           };
                           await sns.publish(params).promise();
                           ctx.body = '';
@@ -206,7 +223,7 @@ module.exports = ( prefix, Router ) => {
               // MODALS
               case SLACK_ACTIONS.settings_modal:
                 params = {
-                  FunctionName: process.env.SETTINGS_SUBMIT_VERIFY, // the lambda function we are going to invoke
+                  FunctionName: SETTINGS_SUBMIT_VERIFY, // the lambda function we are going to invoke
                   Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, view: payload.view, userId: payload.user.id}),
                 };
                 const {Payload: settingsErrorsPayload} = await lambda.invoke(params).promise();
@@ -224,7 +241,7 @@ module.exports = ( prefix, Router ) => {
                 if (settings) {
                   params = {
                     Message: JSON.stringify({teamId: payload.team.id, channelId, settings, timestamp, view: payload.view, offset, isClose: false, userId: payload.user.id}),
-                    TopicArn: process.env.CONTROL_RESET_REVIEW_SUBMIT,
+                    TopicArn: CONTROL_RESET_REVIEW_SUBMIT,
                   };
                   await sns.publish(params).promise();
                 }
@@ -232,7 +249,7 @@ module.exports = ( prefix, Router ) => {
                 break;
               case SLACK_ACTIONS.blacklist_modal:
                 params = {
-                  FunctionName: process.env.SETTINGS_BLACKLIST_SUBMIT_VERIFY,
+                  FunctionName: SETTINGS_BLACKLIST_SUBMIT_VERIFY,
                   Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, view: payload.view, userId: payload.user.id}),
                 };
                 const {Payload: blacklistErrorsPayload} = await lambda.invoke(params).promise();
@@ -264,7 +281,7 @@ module.exports = ( prefix, Router ) => {
                 if (await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id)) {
                   params = {
                     Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, userId: payload.user.id, view: payload.view}),
-                    TopicArn: process.env.SETTINGS_DEVICE_SWITCH,
+                    TopicArn: SETTINGS_DEVICE_SWITCH,
                   };
                   await sns.publish(params).promise();
                   ctx.body = '';
@@ -281,7 +298,7 @@ module.exports = ( prefix, Router ) => {
                 if (settings) {
                   params = {
                     Message: JSON.stringify({teamId: payload.team.id, channelId, settings, timestamp, trackUris: null, userId: payload.user.id}),
-                    TopicArn: process.env.CONTROL_RESET_SET,
+                    TopicArn: CONTROL_RESET_SET,
                   };
                   await sns.publish(params).promise();
                 }

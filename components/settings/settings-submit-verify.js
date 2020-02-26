@@ -1,5 +1,8 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
+
+const SETTINGS_SUBMIT_SAVE = process.env.SNS_PREFIX + 'settings-submit-save';
+
 const DB = config.dynamodb.settings;
 const AUTH_URL = config.dynamodb.settings_auth.auth_url;
 const AUTH_CONFIRMATION = config.dynamodb.settings_auth.auth_confirmation;
@@ -28,7 +31,7 @@ module.exports.handler = async (event, context) => {
     }
     const params = {
       Message: JSON.stringify({teamId: teamId, channelId: channelId, userId: userId, submissions: submissions}),
-      TopicArn: process.env.SETTINGS_SUBMIT_SAVE,
+      TopicArn: SETTINGS_SUBMIT_SAVE,
     };
     await sns.publish(params).promise();
   } catch (error) {

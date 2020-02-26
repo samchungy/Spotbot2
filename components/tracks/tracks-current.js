@@ -1,41 +1,63 @@
-const logger = require('../../../layers/config/util-logger');
-const config = require('config');
-const {fetchCurrentPlayback} = require('../spotify-api/spotify-api-playback-status');
-const {fetchTracks, fetchPlaylistTotal} = require('../spotify-api/spotify-api-playlists');
-const {loadBackToPlaylist, loadPlaylist} = require('../settings/settings-interface');
-const {contextSection, textSection} = require('../slack/format/slack-format-blocks');
-const {inChannelPost} = require('../slack/format/slack-format-reply');
-const {post} = require('../slack/slack-api');
-const Track = require('../spotify-api/spotifyObjects/util-spotify-track');
-const PlaylistTrack = require('../spotify-api/spotifyObjects/util-spotify-playlist-track');
-const LIMIT = config.get('spotify_api.playlists.tracks.limit');
+const SNS = require('aws-sdk/clients/sns');
+const sns = new SNS();
+
+const logger = require(process.env.LOGGER);
+const config = require(process.env.CONFIG);
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {loadBlacklist} = require('/opt/settings/settings-extra-interface');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {fetchTracks, fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {contextSection, textSection} = require('/opt/slack/format/slack-format-blocks');
+const {ephemeralPost, inChannelPost} = require('/opt/slack/format/slack-format-reply');
+const {post, postEphemeral} = require('/opt/slack/slack-api');
+const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
+const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
+
+const CONTROL_SKIP_START = process.env.SNS_PREFIX + 'control-skip-start';
+
+const LIMIT = config.spotify_api.playlists.tracks.limit;
+const BACK_TO_PLAYLIST = config.dynamodb.settings.back_to_playlist;
+const PLAYLIST = config.dynamodb.settings.playlist;
+
 
 const CURRENT_RESPONSES = {
+  error: `:warning: An error occured. Please try again.`,
   currently_playing: (title) => `:sound: Currently playing ${title}.`,
-  context_on: (playlist, position, total, next) => `:information_source: Playing from the Spotbot playlist: ${playlist}. ${position ? `Track ${position} of ${total}`: ``}${next ? ` - Next track: ${next}.`: `.`}`,
+  context_on: (playlist, position, total, next) => `:information_source: Playing from the Spotbot playlist: ${playlist}. ${position ? `Track ${position} of ${total}`: ``}${next ? ` - Next track: ${next}.`: ``}`,
   context_off: (playlist, back) => `:information_source: Not playing from the Spotbot playlist: ${playlist}. ${back ? ` Spotbot will return when you add songs to the playlist.`: ``}`,
   returning: (playlist) => `:information_source: Spotbot is returning to the Spotbot playlist: <${playlist}>. The next song will be back on the playlist.`,
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first. Use `/control` to play Spotbot.',
 };
 
-/**
- * Get Current Info
- * @param {string} teamId
- * @param {string} channelId
- */
-async function getCurrentInfo(teamId, channelId) {
+module.exports.handler = async (event, context) => {
+  const {teamId, channelId, userId, settings} = JSON.parse(event.Records[0].Sns.Message);
   try {
+    const auth = await authSession(teamId, channelId);
+    const {country} = auth.getProfile();
+    const backToPlaylist = settings[BACK_TO_PLAYLIST];
+    const playlist = settings[PLAYLIST];
+
     let text;
     const blocks = [];
-    const status = await fetchCurrentPlayback(teamId, channelId);
+    const status = await fetchCurrentPlayback(teamId, channelId, auth, country);
     if (status.item && status.is_playing) {
-      const playlist = await loadPlaylist(teamId, channelId);
       const track = new Track(status.item);
+
+      // Blacklist, skip if in it.
+      const blacklist = await loadBlacklist(teamId, channelId);
+      if (blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
+        const params = {
+          Message: JSON.stringify({teamId, channelId, settings, timestamp: null, userId}),
+          TopicArn: CONTROL_SKIP_START,
+        };
+        return await sns.publish(params).promise();
+      }
+
       text = CURRENT_RESPONSES.currently_playing(track.title);
       blocks.push(textSection(text));
       if (status.context && status.context.uri.includes(playlist.id)) {
         // Find position in playlist
-        const {positions, total} = await getAllTrackPositions(teamId, channelId, playlist.id, track.uri);
+        const {positions, total} = await getAllTrackPositions(teamId, channelId, auth, playlist.id, track.uri);
         if (positions.length == 1) {
           blocks.push(contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`, positions[0].position+1, total, positions[0].next ? positions[0].next.title : null)));
         } else if (positions.length== 0) {
@@ -44,7 +66,6 @@ async function getCurrentInfo(teamId, channelId) {
           blocks.push(contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`)));
         }
       } else {
-        const backToPlaylist = await loadBackToPlaylist(teamId, channelId);
         blocks.push(contextSection(null, CURRENT_RESPONSES.context_off(`<${playlist.url}|${playlist.name}>`, backToPlaylist === 'true')));
       }
     } else {
@@ -55,6 +76,15 @@ async function getCurrentInfo(teamId, channelId) {
     );
   } catch (error) {
     logger.error(error);
+    logger.error('Get current failed');
+    try {
+      await postEphemeral(
+          ephemeralPost(channelId, userId, CURRENT_RESPONSES.error, null),
+      );
+    } catch (error) {
+      logger.error(error);
+      logger.error('Failed to report current Slack');
+    }
   }
 };
 
@@ -62,16 +92,17 @@ async function getCurrentInfo(teamId, channelId) {
  * Get Track Positions
  * @param {string} teamId
  * @param {string} channelId
+ * @param {Object} auth
  * @param {string} playlistId
  * @param {string} trackUri
  */
-async function getAllTrackPositions(teamId, channelId, playlistId, trackUri) {
+async function getAllTrackPositions(teamId, channelId, auth, playlistId, trackUri) {
   try {
-    const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, playlistId);
+    const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlistId);
     const promises = [];
     const attempts = Math.ceil(total/LIMIT);
     for (let offset=0; offset<attempts; offset++) {
-      promises.push(getTracks(teamId, channelId, playlistId, offset));
+      promises.push(getTracks(teamId, channelId, auth, playlistId, offset));
     }
     const allTracksPromises = await Promise.all(promises);
     const positions = [];
@@ -91,12 +122,7 @@ async function getAllTrackPositions(teamId, channelId, playlistId, trackUri) {
   }
 }
 
-const getTracks = async (teamId, channelId, playlistId, offset) => {
-  const spotifyTracks = await fetchTracks(teamId, channelId, playlistId, null, offset*LIMIT);
+const getTracks = async (teamId, channelId, auth, playlistId, offset) => {
+  const spotifyTracks = await fetchTracks(teamId, channelId, auth, playlistId, null, offset*LIMIT);
   return spotifyTracks.items.map((track) => new PlaylistTrack(track));
-};
-
-module.exports = {
-  CURRENT_RESPONSES,
-  getCurrentInfo,
 };

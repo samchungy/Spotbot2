@@ -1,6 +1,8 @@
 const Lambda = require('aws-sdk/clients/lambda');
 const lambda = new Lambda();
 
+const SETTINGS_AUTH_VALIDATE = process.env.LAMBDA_PREFIX + 'settings-auth-validate';
+
 module.exports = ( prefix, Router ) => {
   const router = new Router({
     prefix: prefix,
@@ -8,7 +10,7 @@ module.exports = ( prefix, Router ) => {
 
   router.get('/', async (ctx, next) => {
     const params = {
-      FunctionName: process.env.SETTINGS_AUTH_VALIDATE, // the lambda function we are going to invoke
+      FunctionName: SETTINGS_AUTH_VALIDATE, // the lambda function we are going to invoke
       Payload: JSON.stringify({code: ctx.query.code, state: ctx.query.state}),
     };
     const {Payload: payload} = await lambda.invoke(params).promise();

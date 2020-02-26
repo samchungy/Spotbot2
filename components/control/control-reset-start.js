@@ -16,6 +16,7 @@ const PLAYLIST = config.dynamodb.settings.playlist;
 const BUTTON = config.slack.buttons;
 const RESET_REVIEW_CONFIRM = config.slack.actions.reset_review_confirm;
 const RESET_REVIEW_DENY = config.slack.actions.reset_review_deny;
+const CONTROL_RESET_SET = process.env.SNS_PREFIX + 'control-reset-set';
 
 const RESET_RESPONSE = {
   empty: ':information_source: Playlist is already empty.',
@@ -55,7 +56,7 @@ module.exports.handler = async (event, context) => {
       // reset
       const params = {
         Message: JSON.stringify({teamId, channelId, settings, timestamp, trackUris: null, userId}),
-        TopicArn: process.env.CONTROL_RESET_SET,
+        TopicArn: CONTROL_RESET_SET,
       };
       await sns.publish(params).promise();
     }
