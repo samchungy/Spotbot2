@@ -28,6 +28,8 @@ provider:
   region: ap-southeast-2
   runtime: nodejs12.x
   environment:
+    SNS_PREFIX: ${self:custom.topic}-
+    LAMBDA_PREFIX: ${self:custom.lambda}-
     REGION: ${self:provider.region}
     #Tables
     AUTH_TABLE: ${self:custom.prefix}-auth
@@ -121,41 +123,6 @@ functions:
   router:
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
-      #Control Functions
-      CONTROL_CLEAR_ONE: ${self:custom.topic}-control-clear-one
-      CONTROL_JUMP: ${self:custom.topic}-control-jump
-      CONTROL_PAUSE: ${self:custom.topic}-control-pause
-      CONTROL_OPEN: ${self:custom.topic}-control-open
-      CONTROL_PLAY: ${self:custom.topic}-control-play
-      CONTROL_REPEAT: ${self:custom.topic}-control-repeat
-      CONTROL_RESET_START: ${self:custom.topic}-control-reset-start
-      CONTROL_RESET_REVIEW_OPEN: ${self:custom.topic}-control-reset-review-open
-      CONTROL_RESET_REVIEW_SUBMIT: ${self:custom.topic}-control-reset-review-submit
-      CONTROL_RESET_SET: ${self:custom.topic}-control-reset-set
-      CONTROL_SHUFFLE: ${self:custom.topic}-control-shuffle
-      CONTROL_SKIP_ADD_VOTE: ${self:custom.topic}-control-skip-add-vote
-      CONTROL_SKIP_START: ${self:custom.topic}-control-skip-start
-      #Settings Functions
-      SETTINGS_AUTH_CHANGE: ${self:custom.topic}-settings-auth-change
-      SETTINGS_AUTH_UPDATE_VIEW: ${self:custom.topic}-settings-auth-update-view
-      SETTINGS_AUTH_VALIDATE: ${self:custom.lambda}-settings-auth-validate
-      SETTINGS_BLACKLIST_OPEN: ${self:custom.topic}-settings-blacklist-open
-      SETTINGS_BLACKLIST_SUBMIT_VERIFY: ${self:custom.lambda}-settings-blacklist-submit-verify
-      SETTINGS_DEVICE_SELECT: ${self:custom.topic}-settings-device-select
-      SETTINGS_DEVICE_SWITCH: ${self:custom.topic}-settings-device-switch
-      SETTINGS_GET_OPTIONS_PLAYLISTS: ${self:custom.lambda}-settings-get-options-playlists
-      SETTINGS_GET_OPTIONS_DEVICES: ${self:custom.lambda}-settings-get-options-devices
-      SETTINGS_GET_OPTIONS_TIMEZONES: ${self:custom.lambda}-settings-get-options-timezones
-      SETTINGS_OPEN: ${self:custom.topic}-settings-open
-      SETTINGS_SUBMIT_VERIFY: ${self:custom.lambda}-settings-submit-verify
-      #Track Functions
-      TRACKS_FIND_ADD: ${self:custom.topic}-tracks-find-add
-      TRACKS_FIND_ARTISTS_SEARCH: ${self:custom.topic}-tracks-find-artists-search
-      TRACKS_FIND_ARTISTS_GET_ARTISTS: ${self:custom.topic}-tracks-find-artists-get-artists
-      TRACKS_FIND_ARTISTS_GET_TRACKS: ${self:custom.topic}-tracks-find-artists-get-tracks
-      TRACKS_FIND_CANCEL: ${self:custom.topic}-tracks-find-cancel
-      TRACKS_FIND_GET_TRACKS: ${self:custom.topic}-tracks-find-get-tracks
-      TRACKS_FIND_SEARCH: ${self:custom.topic}-tracks-find-search
     memorySize: 256
     package:
       include:
@@ -213,8 +180,6 @@ functions:
       - { Ref: SlackLambdaLayer }
       - { Ref: SettingsDashblocksLambdaLayer }
   settings-auth-validate:
-    environment:
-      SETTINGS_AUTH_UPDATE_VIEW: arn:aws:sns:ap-southeast-2:897201036940:spotbot-dev-settings-auth-update-view
     memorySize: 128
     package:
       include:
@@ -254,8 +219,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
   settings-blacklist-submit-verify:
-    environment:
-      SETTINGS_BLACKLIST_SUBMIT_SAVE: ${self:custom.topic}-settings-blacklist-submit-save
     memorySize: 192
     package:
       include:
@@ -360,8 +323,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
   settings-submit-verify:
-    environment:
-      SETTINGS_SUBMIT_SAVE: ${self:custom.topic}-settings-submit-save
     memorySize: 192
     package:
       include:
@@ -391,8 +352,6 @@ functions:
       - { Ref: SlackLambdaLayer }
       - { Ref: ControlDashpanelLambdaLayer }
   control-jump:
-    environment:
-      CONTROL_RESET_SET: ${self:custom.topic}-control-reset-set
     events:
       - sns: ${self:custom.prefix}-control-jump
     memorySize: 192
@@ -517,8 +476,6 @@ functions:
       - { Ref: ControlDashpanelLambdaLayer }
       - { Ref: ControlDashresetLambdaLayer}
   control-reset-review-submit:
-    environment:
-      CONTROL_RESET_SET: ${self:custom.topic}-control-reset-set
     events:
       - sns: ${self:custom.prefix}-control-reset-review-submit
     memorySize: 192
@@ -565,8 +522,6 @@ functions:
       - { Ref: ControlDashpanelLambdaLayer }
       - { Ref: ControlDashskipLambdaLayer }
   control-skip-start:
-    environment:
-      CONTROL_SKIP_ADD_VOTE: ${self:custom.topic}-control-skip-add-vote
     events:
       - sns: ${self:custom.prefix}-control-skip-start
     memorySize: 192
@@ -584,6 +539,20 @@ functions:
       - { Ref: ControlDashskipLambdaLayer }
 
 #Tracks
+  tracks-current:
+    events:
+      - sns: ${self:custom.prefix}-tracks-current
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-current.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-current.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
   tracks-find-add:
     events:
       - sns: ${self:custom.prefix}-tracks-find-add
@@ -599,8 +568,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
   tracks-find-artists-search:
-    environment:
-      TRACKS_FIND_ARTISTS_GET_ARTISTS: ${self:custom.topic}-tracks-find-artists-get-artists
     events:
       - sns: ${self:custom.prefix}-tracks-find-artists-search
     memorySize: 192
@@ -629,8 +596,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
   tracks-find-artists-get-tracks:
-    environment:
-      TRACKS_FIND_GET_TRACKS: ${self:custom.topic}-tracks-find-get-tracks
     events:
       - sns: ${self:custom.prefix}-tracks-find-artists-get-tracks
     memorySize: 192
@@ -645,8 +610,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
   tracks-find-search:
-    environment:
-      TRACKS_FIND_GET_TRACKS: ${self:custom.topic}-tracks-find-get-tracks
     events:
       - sns: ${self:custom.prefix}-tracks-find-search
     memorySize: 192
@@ -688,7 +651,22 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
+  tracks-whom:
+    events:
+      - sns: ${self:custom.prefix}-tracks-whom
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-whom.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-whom.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
 
+      
 resources:
   Resources:
     SpotbotAuthTable:
