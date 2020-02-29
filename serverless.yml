@@ -4,6 +4,7 @@ package:
 
 plugins:
   - serverless-dotenv-plugin
+  - serverless-plugin-split-stacks
 
 custom:
   # dynamodb:
@@ -28,6 +29,7 @@ provider:
   region: ap-southeast-2
   runtime: nodejs12.x
   environment:
+    ENV: ${self:custom.stage}
     SNS_PREFIX: ${self:custom.topic}-
     LAMBDA_PREFIX: ${self:custom.lambda}-
     REGION: ${self:provider.region}
