@@ -7,6 +7,7 @@ const {play} = require('/opt/spotify/spotify-api/spotify-api-playback');
 const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
 const {sleep} = require('/opt/utils/util-timeout');
+const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
 
 const NO_DEVICES = config.dynamodb.settings_helper.no_devices;
 const DEFAULT_DEVICE = config.dynamodb.settings.default_device;
@@ -21,7 +22,6 @@ const PLAY_RESPONSE = {
   empty_playlist: ':information_source: Playlist is empty. Please add songs to the playlist.',
   success: (user) => `:arrow_forward: Spotify is now playing. Started by <@${user}>.`,
 };
-const noSongs = (status, playlist) => status.is_playing && !status.item && status.context && status.context.uri.includes(playlist.id) && status.currently_playing_type !='unknown';
 
 /**
  * Recursive Retries to Play
@@ -39,12 +39,8 @@ const noSongs = (status, playlist) => status.is_playing && !status.item && statu
 async function attemptPlay(teamId, channelId, auth, settings, timestamp, deviceId, status, playlist, attempt, userId) {
   if (attempt) {
     // Base Cases
-    if (status.is_playing && status.item) {
+    if (status.is_playing && status.item && status.currently_playing_type!='unknown') {
       return await responseUpdate(teamId, channelId, auth, settings, timestamp, true, PLAY_RESPONSE.success(userId), status);
-    }
-    // We have an empty playlist and status is IsPlaying
-    if (noSongs(status, playlist)) {
-      return await responseUpdate(teamId, channelId, auth, settings, timestamp, false, PLAY_RESPONSE.empty_playlist, status);
     }
     if (attempt == 2) {
       throw new Error;
@@ -52,7 +48,7 @@ async function attemptPlay(teamId, channelId, auth, settings, timestamp, deviceI
   }
 
   // Unique Spotify edge case where it gets stuck
-  if (status && status.currently_playing_type=='unknown' && !status.context && !status.item) {
+  if (status && status.currently_playing_type=='unknown' && !status.item) {
     await play(teamId, channelId, auth, deviceId, playlist.uri);
   } else {
     await play(teamId, channelId, auth, deviceId);
@@ -74,9 +70,10 @@ module.exports.handler = async (event, context) => {
       return await responseUpdate(teamId, channelId, auth, settings, timestamp, false, PLAY_RESPONSE.already, status);
     }
     const playlist = settings[PLAYLIST];
+    const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, settings[PLAYLIST].id);
 
     // We have an empty playlist and status is IsPlaying
-    if (noSongs(status, playlist)) {
+    if (!total) {
       return await responseUpdate(teamId, channelId, auth, settings, timestamp, false, PLAY_RESPONSE.empty, status);
     }
 
