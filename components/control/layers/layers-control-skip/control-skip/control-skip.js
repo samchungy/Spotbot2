@@ -41,7 +41,11 @@ async function setSkip(teamId, channelId, auth, track, currentSkip) {
       ]);
     } else {
       // We have a skip object, update it.
-      currentSkip.history.unshift(track);
+      if (currentSkip.history) {
+        currentSkip.history.unshift(track);
+      } else {
+        currentSkip.history = [track];
+      }
       const newSkip = modelSkip(null, null, null, null, null, currentSkip.history);
       if (currentSkip.skip) {
         await Promise.all([
