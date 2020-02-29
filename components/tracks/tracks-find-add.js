@@ -144,14 +144,17 @@ async function setHistory(teamId, channelId, history, trackId, userId) {
  * @param {Object} auth
  * @param {Object} playlist
  * @param {string} statusTrack
- * @param {object} status
  * @param {string} newTrack
  */
-async function setBackToPlaylist(teamId, channelId, auth, playlist, statusTrack, status, newTrack) {
+async function setBackToPlaylist(teamId, channelId, auth, playlist, statusTrack, newTrack) {
   try {
     // Make another call to reduce the lag
-    await play(teamId, channelId, auth, status.device.id, playlist.uri, {uri: statusTrack.uri}, status.progress_ms);
-
+    const status = await fetchCurrentPlayback(teamId, channelId, auth);
+    if (status.is_playing && status.item && status.item.id === statusTrack.id) {
+      await play(teamId, channelId, auth, status.device.id, playlist.uri, {uri: statusTrack.uri}, status.progress_ms);
+    } else {
+      await play(teamId, channelId, auth, status.device.id, playlist.uri, {uri: newTrack.uri});
+    }
     if (statusTrack.uri != newTrack.uri) {
       await deleteTracks(teamId, channelId, auth, playlist.id, [{
         uri: statusTrack.uri,
