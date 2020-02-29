@@ -63,6 +63,7 @@ module.exports = {
       'auth_verify': 'auth_verify',
       'auth_confirmation': 'auth_confirmation',
       'auth_error': 'auth_error',
+      'auth_url': 'spotify-auth-callback',
     },
     'settings_helper': {
       'no_devices': 'no_devices',
@@ -92,6 +93,7 @@ module.exports = {
       'blacklist_modal': 'blacklist_modal',
       'settings_modal': 'settings_modal',
       'device_modal': 'device_modal',
+      'remove_modal': 'remove_modal',
       'reset_modal': 'reset_modal',
       'playlist': 'playlist',
       'block_actions': 'block_actions',
