@@ -8,24 +8,31 @@
 
 # Changelog
 
+Spotbot is now serverless :o 
+
 - Individual Channel Separation (Requires different spotify accounts)
   - Adds the ability to have multiple Spotbot instances in a single Slack Workspace to control different playlists/spotify accounts
   - Feel free to add Spotbot to other channels.
 
-- Updated all UI to use Slack Block Kit
+- Updated all UI to use Slack Block Kit.
 
 - New /control command!
   - Becomes a central hub for all control based features. (Play/Pause/Skip/Reset)
   - Dynamically updates a current playing panel on control button presses.
   - Added the ability to Jump to the Start of the playlist and Clear Songs > 1 day old.
   - Added the ability to toggle shuffle and repeat.
-  - /play, /pause, /reset now bring up the Control menu for status information.
+  - /play, /pause, /reset now also bring up the Control menu for status information.
 
-- Spotify added fuzzy search to the search api so searching should now be easier spelling wise.
+- Spotify added wildcard search to search by default (yay)
 
 - /current
   - Removed /current playlist, /current track. The link to the playlist is now embedded in /current.
-  - Added information about the current playing track's position in the playlist + next song. (Will not work if there are multiple instances of the specific track in the playlist)
+  - Upgraded detection of back to playlist state.
+  - Added information about the current playing track's position in the playlist + next song. (This will not work if there are multiple instances of the specific track in the playlist)
+  - If the current song is blacklisted, the song will be skipped and removed from the playlist
+
+- /whom
+  - If song is blacklisted, the song will be skipped and removed from the playlist.
 
 - /reset
   - Added the ability to keep up to 100 songs added in the past 30 minutes before reset command is used.
@@ -33,7 +40,6 @@
 
 - /find
   - Added duration of songs to search panels.
-  - Improved load times on searches by optimising album images
   - removed /findpop
 
 - /skip
