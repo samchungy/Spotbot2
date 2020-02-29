@@ -78,8 +78,8 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
 
     const history = await loadTrackHistory(teamId, channelId, track.id);
     // Handle Repeats
-    if (history && moment(history.timeAdded).add(repeatDuration, 'hours').isAfter(moment())) {
-      return TRACK_ADD_RESPONSE.repeat(track.title, moment(history.timeAdded).fromNow(), repeatDuration);
+    if (history && moment.unix(history.timeAdded).add(repeatDuration, 'hours').isAfter(moment())) {
+      return TRACK_ADD_RESPONSE.repeat(track.title, moment.unix(history.timeAdded).fromNow(), repeatDuration);
     }
 
     // Add to our playlist
@@ -102,7 +102,7 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
             await addTracksToPlaylist(teamId, channelId, auth, playlist.id, [track.uri]);
           }
           // // Save our history
-          await setBackToPlaylist(teamId, channelId, auth, playlist, statusTrack, track);
+          await setBackToPlaylist(teamId, channelId, auth, playlist, statusTrack, status, track);
           return TRACK_ADD_RESPONSE.success_back(track.title);
         } else {
           await sleep(1000); // Wait 2 seconds and then try again (concurrent back 2 playlist requests)
@@ -143,20 +143,15 @@ async function setHistory(teamId, channelId, history, trackId, userId) {
  * @param {string} channelId
  * @param {Object} auth
  * @param {Object} playlist
- * @param {string} country
  * @param {string} statusTrack
+ * @param {object} status
  * @param {string} newTrack
  */
-async function setBackToPlaylist(teamId, channelId, auth, playlist, country, statusTrack, newTrack) {
+async function setBackToPlaylist(teamId, channelId, auth, playlist, statusTrack, status, newTrack) {
   try {
     // Make another call to reduce the lag
-    const status = await fetchCurrentPlayback(teamId, channelId, auth);
-    if (status && status.item && status.item.uri != statusTrack.uri) {
-      // Just in case the track ends as we are trying to get back to playlist
-      await play(teamId, channelId, auth, status.device.id, playlist.uri, {uri: newTrack.uri});
-    } else {
-      await play(teamId, channelId, auth, status.device.id, playlist.uri, {uri: statusTrack.uri}, status.progress_ms);
-    }
+    await play(teamId, channelId, auth, status.device.id, playlist.uri, {uri: statusTrack.uri}, status.progress_ms);
+
     if (statusTrack.uri != newTrack.uri) {
       await deleteTracks(teamId, channelId, auth, playlist.id, [{
         uri: statusTrack.uri,
