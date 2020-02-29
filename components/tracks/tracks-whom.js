@@ -42,7 +42,7 @@ module.exports.handler = async (event, context) => {
 
       // Blacklist, skip if in it.
       const blacklist = await loadBlacklist(teamId, channelId);
-      if (blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
+      if (blacklist && blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
         const params = {
           Message: JSON.stringify({teamId, channelId, settings, timestamp: null, userId}),
           TopicArn: CONTROL_SKIP_START,
