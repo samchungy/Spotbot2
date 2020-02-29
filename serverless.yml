@@ -36,7 +36,7 @@ provider:
     #Tables
     AUTH_TABLE: ${self:custom.prefix}-auth
     SEARCH_TABLE: ${self:custom.prefix}-search
-    SETTINGS_TABLE: ${self:custom.prefix}-settings-v2
+    SETTINGS_TABLE: ${self:custom.prefix}-settings
     HISTORY_TABLE: ${self:custom.prefix}-history
     #Core Libraries
     LOG_LEVEL: info
@@ -48,7 +48,6 @@ provider:
     SPOTIFY_CLIENT_ID: ${env:SPOTIFY_CLIENT_ID}
     SPOTIFY_SECRET: ${env:SPOTIFY_SECRET}
     #Auth
-    REDIRECT_URL: { "Fn::Join" : ["", ["https://", { "Ref" : "ApiGatewayRestApi" }, ".execute-api.${self:provider.region}.amazonaws.com/${self:custom.stage}/spotify-auth-callback" ] ]  }
   iamRoleStatements:
   - Effect: Allow
     Action:
@@ -61,10 +60,10 @@ provider:
       - dynamodb:UpdateItem
       - dynamodb:DeleteItem
     Resource: [
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.SETTINGS_TABLE}",
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.SEARCH_TABLE}",
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.AUTH_TABLE}",
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.HISTORY_TABLE}"
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.SETTINGS_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.SEARCH_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.AUTH_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.HISTORY_TABLE}*"
     ]
   - Effect: Allow
     Action:
@@ -150,8 +149,6 @@ functions:
 
   #Settings
   settings-auth-change:
-    environment:
-      SETTINGS_AUTH_UPDATE_VIEW: arn:aws:sns:ap-southeast-2:897201036940:spotbot-dev-settings-auth-update-view
     events:
       - sns: ${self:custom.prefix}-settings-auth-change
     memorySize: 128
@@ -445,8 +442,6 @@ functions:
       - { Ref: ControlDashpanelLambdaLayer }
       - { Ref: ControlDashresetLambdaLayer}
   control-reset-set:
-    environment:
-      CONTROL_JUMP: ${self:custom.topic}-control-jump
     events:
       - sns: ${self:custom.prefix}-control-reset-set
     memorySize: 192
@@ -651,6 +646,33 @@ functions:
     handler: components/tracks/tracks-find-cancel.handler
     layers:
       - { Ref: CoreLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-remove-open:
+    events:
+      - sns: ${self:custom.prefix}-tracks-remove-open
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-remove-open.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-remove-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-remove-submit:
+    events:
+      - sns: ${self:custom.prefix}-tracks-remove-submit
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-remove-submit.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-remove-submit.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
   tracks-whom:
@@ -667,8 +689,7 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-
-      
+    
 resources:
   Resources:
     SpotbotAuthTable:
@@ -741,6 +762,8 @@ resources:
             AttributeType: S
           - AttributeName: id
             AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
         KeySchema:
           - AttributeName: team_channel
             KeyType: HASH
@@ -750,3 +773,12 @@ resources:
         TimeToLiveSpecification:
             AttributeName: ttl
             Enabled: true
+        LocalSecondaryIndexes: 
+        - IndexName: userId-index
+          KeySchema: 
+            - AttributeName: team_channel
+              KeyType: HASH
+            - AttributeName: userId
+              KeyType: RANGE
+          Projection: 
+            ProjectionType: KEYS_ONLY
