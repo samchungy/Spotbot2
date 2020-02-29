@@ -14,9 +14,9 @@ const OPEN_RESPONSE = {
 };
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, settings, viewId, userId} = JSON.parse(event.Records[0].Sns.Message);
+  const {teamId, channelId, settings, viewId, userId, url} = JSON.parse(event.Records[0].Sns.Message);
   try {
-    const {authBlock, authError} = await getAuthBlock(teamId, channelId, viewId);
+    const {authBlock, authError} = await getAuthBlock(teamId, channelId, viewId, url);
     // Do not load settings blocks if Spotify is not authenticated
     const blocks = [
       ...authBlock,
