@@ -35,7 +35,10 @@ async function setSkip(teamId, channelId, auth, track, currentSkip) {
   try {
     if (!currentSkip) {
       // First time write
-      await storeSkip(teamId, channelId, modelSkip(null, null, null, null, null, [track]));
+      await Promise.all([
+        storeSkip(teamId, channelId, modelSkip(null, null, null, null, null, [track])),
+        skip(teamId, channelId, auth),
+      ]);
     } else {
       // We have a skip object, update it.
       currentSkip.history.unshift(track);
