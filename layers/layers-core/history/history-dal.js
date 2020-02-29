@@ -1,41 +1,5 @@
 const logger = require(process.env.LOGGER);
-const {getHistory, putHistory, historyModel, historyUpdateModel, historyValues, updateHistory} = require('/opt/db/history');
-
-// /**
-// * Batch Load Tracks history from DB
-// * @param {string} teamId
-// * @param {string} channelId
-// * @param {array} triggerIds
-// */
-// async function batchLoadHistory(teamId, channelId, triggerIds) {
-//   try {
-//     let params = batchGetParams(triggerIds.map((triggerId) => historyModel(teamId, channelId, triggerId, null)));
-//     let unprocessedEmpty = true;
-//     const results = [];
-//     while (unprocessedEmpty) {
-//       const {Responses: historyes, UnprocessedKeys} = await batchGetHistory(params);
-//       unprocessedEmpty = Object.entries(UnprocessedKeys).length === 0 && UnprocessedKeys.constructor === Object;
-//       if (unprocessedEmpty) {
-//         for (const table in historyes) {
-//           if ({}.hasOwnProperty.call(historyes, table)) {
-//             results.push(historyes[table]);
-//             unprocessedEmpty = false;
-//           }
-//         }
-//       } else {
-//         for (const table in historyes) {
-//           if ({}.hasOwnProperty.call(historyes, table)) {
-//             params = historyes[table].Keys;
-//           }
-//         }
-//       }
-//     }
-//     return results.flat();
-//   } catch (error) {
-//     logger.error('Batch loading track history from Dynamodb failed');
-//     throw error;
-//   }
-// }
+const {getHistory, putHistory, historyModel, historyUpdateModel, historyQueryModel, historyValues, queryHistory, updateHistory} = require('/opt/db/history');
 
 /**
  * Load Tracks history from DB
@@ -93,9 +57,27 @@ async function changeHistory(teamId, channelId, triggerId, query, queryVal, quer
   }
 }
 
+/**
+ * Query Dynamodb
+ * @param {*} keyConditionExpression
+ * @param {*} queryAttributeNames
+ * @param {*} queryAttributeValues
+ * @param {*} filterExpression
+ */
+async function searchHistory(keyConditionExpression, queryAttributeNames, queryAttributeValues, filterExpression ) {
+  try {
+    const history = historyQueryModel(keyConditionExpression, queryAttributeNames, queryAttributeValues, filterExpression);
+    return (await queryHistory(history)).Items;
+  } catch (error) {
+    logger.error('Changing history in Dynamodb failed');
+    throw error;
+  }
+};
+
 
 module.exports = {
   changeHistory,
   loadHistory,
+  searchHistory,
   storeHistory,
 };

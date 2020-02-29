@@ -44,6 +44,16 @@ const historyUpdateModel = (team, channel, id, expression, expressionValues, exp
   });
 };
 
+const historyQueryModel = (keyConditionExpression, expressionAttributeNames, expressionAttributeValues, filterExpression) => {
+  return historyTable({
+    IndexName: 'userId-index',
+    KeyConditionExpression: keyConditionExpression,
+    ExpressionAttributeValues: expressionAttributeValues,
+    ExpressionAttributeNames: expressionAttributeNames,
+    FilterExpression: filterExpression,
+  });
+};
+
 const historyValues = (item) => {
   // eslint-disable-next-line no-unused-vars, camelcase
   const {id, team_channel, ...results} = item;
@@ -61,6 +71,10 @@ const getHistory = (history, keys) => {
 
 const updateHistory = (history) => {
   return dynamoDb.update(history).promise();
+};
+
+const queryHistory = (history) => {
+  return dynamoDb.query(history).promise();
 };
 
 const batchGetHistory = (history) => {
@@ -83,8 +97,10 @@ module.exports = {
   batchGetHistory,
   getHistory,
   putHistory,
+  historyQueryModel,
   historyModel,
   historyUpdateModel,
   historyValues,
+  queryHistory,
   updateHistory,
 };

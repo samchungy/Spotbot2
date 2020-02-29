@@ -3,6 +3,8 @@ const SNS = require('aws-sdk/clients/sns');
 const sns = new SNS();
 const Lambda = require('aws-sdk/clients/lambda');
 const lambda = new Lambda();
+const {updateReply} = require('/opt/slack/format/slack-format-reply');
+const {reply} = require('/opt/slack/slack-api');
 const {checkSettings} = require('../settings/settings-check');
 const {isEmpty} = require('/opt/utils/util-objects');
 const {openModal} = require('../response/open-modal');
@@ -25,8 +27,8 @@ const CONTROL_RESET_SET = process.env.SNS_PREFIX + 'control-reset-set';
 const TRACKS_FIND_ADD = process.env.SNS_PREFIX + 'tracks-find-add';
 const TRACKS_FIND_ARTISTS_GET_ARTISTS = process.env.SNS_PREFIX + 'tracks-find-artists-get-artists';
 const TRACKS_FIND_ARTISTS_GET_TRACKS = process.env.SNS_PREFIX + 'tracks-find-artists-get-tracks';
-const TRACKS_FIND_CANCEL = process.env.SNS_PREFIX + 'tracks-find-cancel';
 const TRACKS_FIND_GET_TRACKS = process.env.SNS_PREFIX + 'tracks-find-get-tracks';
+const TRACKS_REMOVE_SUBMIT = process.env.SNS_PREFIX + 'tracks-remove-submit';
 
 const CONTROL_CLEAR_ONE = process.env.SNS_PREFIX + 'control-clear-one';
 const CONTROL_JUMP = process.env.SNS_PREFIX + 'control-jump';
@@ -110,11 +112,10 @@ module.exports = ( prefix, Router ) => {
                       break;
                       // TRACKS
                     case TRACKS.cancel_search: // Artist Search also uses this
-                      params = {
-                        Message: JSON.stringify({channelId: payload.channel.id, userId: payload.user.id, responseUrl: payload.response_url}),
-                        TopicArn: TRACKS_FIND_CANCEL,
-                      };
-                      await sns.publish(params).promise();
+                      await reply(
+                          updateReply(`:information_source: Search cancelled.`, null),
+                          payload.response_url,
+                      );
                       ctx.body = '';
                       break;
                     case TRACKS.see_more_results:
@@ -260,23 +261,17 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                 }
                 break;
-                // case SLACK_ACTIONS.blacklist_modal:
-                //   if (await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id)) {
-                //     const errors = await saveBlacklist(payload.view, payload.user.id);
-                //     if (errors) {
-                //       ctx.body = errors;
-                //     } else {
-                //       ctx.body = '';
-                //     }
-                //   }
-                //   break;
-
-              // case SLACK_ACTIONS.remove_modal:
-              //   if (await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id)) {
-              //     removeTracks(payload.team.id, payload.view.private_metadata, payload.user.id, payload.view);
-              //   }
-              //   ctx.body = '';
-              //   break;
+              case SLACK_ACTIONS.remove_modal:
+                settings = await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id);
+                if (settings) {
+                  params = {
+                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings, userId: payload.user.id, view: payload.view}),
+                    TopicArn: TRACKS_REMOVE_SUBMIT,
+                  };
+                  await sns.publish(params).promise();
+                  ctx.body = '';
+                  break;
+                }
               case SLACK_ACTIONS.device_modal:
                 if (await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id)) {
                   params = {
