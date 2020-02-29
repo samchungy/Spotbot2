@@ -24,7 +24,7 @@ module.exports = {
     },
     'africa': 'spotify:track:2374M0fQpWi3dLnB54qaLX',
     'tracks': {
-      'limit': 30,
+      'limit': 24,
       'info_limit': 50,
     },
     'recent_limit': 5,
