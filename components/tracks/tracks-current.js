@@ -23,10 +23,11 @@ const PLAYLIST = config.dynamodb.settings.playlist;
 const CURRENT_RESPONSES = {
   error: `:warning: An error occured. Please try again.`,
   currently_playing: (title) => `:sound: Currently playing ${title}.`,
-  context_on: (playlist, position, total, next) => `:information_source: Playing from the Spotbot playlist: ${playlist}. ${position ? `Track ${position} of ${total}`: ``}${next ? ` - Next track: ${next}.`: ``}`,
+  context_on: (playlist, position, total) => `:information_source: Playing from the Spotbot playlist: ${playlist}. ${position ? `Track ${position} of ${total}.`: ``}`,
+  context_track: (title) => `:black_right_pointing_double_triangle_with_vertical_bar: Next Track: ${title}.`,
   context_off: (playlist, back) => `:information_source: Not playing from the Spotbot playlist: ${playlist}. ${back ? ` Spotbot will return when you add songs to the playlist.`: ``}`,
-  returning: (playlist) => `:information_source: Spotbot is returning to the Spotbot playlist: <${playlist}>. The next song will be back on the playlist.`,
-  not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first. Use `/control` to play Spotbot.',
+  returning: (playlist) => `:information_source: Spotbot is returning to the Spotbot playlist: ${playlist}. The next song will be back on the playlist.`,
+  not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first. Use `/control` or `/play` to play Spotbot.',
 };
 
 module.exports.handler = async (event, context) => {
@@ -45,7 +46,7 @@ module.exports.handler = async (event, context) => {
 
       // Blacklist, skip if in it.
       const blacklist = await loadBlacklist(teamId, channelId);
-      if (blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
+      if (blacklist && blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
         const params = {
           Message: JSON.stringify({teamId, channelId, settings, timestamp: null, userId}),
           TopicArn: CONTROL_SKIP_START,
@@ -59,7 +60,14 @@ module.exports.handler = async (event, context) => {
         // Find position in playlist
         const {positions, total} = await getAllTrackPositions(teamId, channelId, auth, playlist.id, track.uri);
         if (positions.length == 1) {
-          blocks.push(contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`, positions[0].position+1, total, positions[0].next ? positions[0].next.title : null)));
+          blocks.push(
+              contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`, positions[0].position+1, total)),
+          );
+          if (positions[0].next) {
+            blocks.push(
+                contextSection(null, CURRENT_RESPONSES.context_track(positions[0].next.title)),
+            );
+          }
         } else if (positions.length== 0) {
           blocks.push(contextSection(null, CURRENT_RESPONSES.returning(`<${playlist.url}|${playlist.name}>`)));
         } else {
