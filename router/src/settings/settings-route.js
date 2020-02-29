@@ -31,7 +31,7 @@ module.exports = ( prefix, Router ) => {
                 if (!settings || await checkIsAdmin(payload.team_id, payload.channel_id, settings, payload.user_id)) {
                   const settingsPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotbot Settings', 'Submit', 'Cancel');
                   params = {
-                    Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: settingsPayload.view.id, userId: payload.user_id}),
+                    Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: settingsPayload.view.id, userId: payload.user_id, url: `${ctx.protocol}://${ctx.host}`}),
                     TopicArn: SETTINGS_OPEN,
                   };
                   await sns.publish(params).promise();

@@ -8,11 +8,12 @@ const SCOPES = config.spotify_api.scopes;
  * @param {string} teamId
  * @param {string} channelId
  * @param {Object} auth
- * @param {string} triggerId
+ * @param {string} state
+ * @param {string} url
  */
-async function fetchAuthorizeURL(teamId, channelId, auth, triggerId) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return await requester(teamId, channelId, auth, 'Create Authorize URL', async () => await spotifyApi.createAuthorizeURL(SCOPES, triggerId, true));
+async function fetchAuthorizeURL(teamId, channelId, auth, state, url) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId, auth, url);
+  return await requester(teamId, channelId, auth, 'Create Authorize URL', async () => await spotifyApi.createAuthorizeURL(SCOPES, state, true));
 }
 
 /**
@@ -21,9 +22,10 @@ async function fetchAuthorizeURL(teamId, channelId, auth, triggerId) {
  * @param {string} channelId
  * @param {Object} auth
  * @param {string} code
+ * @param {string} url
  */
-async function fetchTokens(teamId, channelId, auth, code) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+async function fetchTokens(teamId, channelId, auth, code, url) {
+  const spotifyApi = await spotifyWebApi(teamId, channelId, auth, url);
   return (await requester(teamId, channelId, auth, 'Authorization Code Grant', async () => await spotifyApi.authorizationCodeGrant(code))).body;
 }
 

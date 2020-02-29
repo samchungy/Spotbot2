@@ -18,7 +18,7 @@ const PLAYLIST = config.dynamodb.settings.playlist;
  */
 module.exports.handler = async (event, context) => {
   try {
-    const {teamId, channelId, viewId} = JSON.parse(event.Records[0].Sns.Message);
+    const {teamId, channelId, viewId, url} = JSON.parse(event.Records[0].Sns.Message);
     await Promise.all([
       removeSpotifyAuth(teamId, channelId),
       changeSettings(teamId, channelId, [
@@ -27,7 +27,7 @@ module.exports.handler = async (event, context) => {
       ]),
     ]);
     const params = {
-      Message: JSON.stringify({teamId, channelId, viewId}),
+      Message: JSON.stringify({teamId, channelId, viewId, url}),
       TopicArn: SETTINGS_AUTH_UPDATE_VIEW,
     };
     // Update View of Modal

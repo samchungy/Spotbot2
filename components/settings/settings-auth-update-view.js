@@ -11,9 +11,9 @@ const SETTINGS_MODAL = config.slack.actions.settings_modal;
 
 module.exports.handler = async (event, context) => {
   try {
-    const {teamId, channelId, viewId} = JSON.parse(event.Records[0].Sns.Message);
+    const {teamId, channelId, viewId, url} = JSON.parse(event.Records[0].Sns.Message);
     const settings = await loadSettings(teamId, channelId);
-    const {authBlock, authError} = await getAuthBlock(teamId, channelId, viewId);
+    const {authBlock, authError} = await getAuthBlock(teamId, channelId, viewId, url);
     // Do not load settings blocks if Spotify is not authenticated
     const blocks = [
       ...authBlock,

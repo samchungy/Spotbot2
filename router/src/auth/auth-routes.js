@@ -11,7 +11,7 @@ module.exports = ( prefix, Router ) => {
   router.get('/', async (ctx, next) => {
     const params = {
       FunctionName: SETTINGS_AUTH_VALIDATE, // the lambda function we are going to invoke
-      Payload: JSON.stringify({code: ctx.query.code, state: ctx.query.state}),
+      Payload: JSON.stringify({code: ctx.query.code, state: ctx.query.state, url: `${ctx.protocol}://${ctx.host}`}),
     };
     const {Payload: payload} = await lambda.invoke(params).promise();
     const {success, failReason} = JSON.parse(payload);

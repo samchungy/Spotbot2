@@ -57,7 +57,7 @@ module.exports = ( prefix, Router ) => {
                   break;
                 case AUTH.reauth:
                   params = {
-                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, viewId: payload.view.id}),
+                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, viewId: payload.view.id, url: `${ctx.protocol}://${ctx.host}`}),
                     TopicArn: SETTINGS_AUTH_CHANGE,
                   };
                   await sns.publish(params).promise();

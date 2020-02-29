@@ -12,6 +12,7 @@ const {fetchProfile} = require('/opt/spotify/spotify-api/spotify-api-profile');
 const {isEqual} = require('/opt/utils/util-objects');
 
 const SETTINGS_AUTH_UPDATE_VIEW = process.env.SNS_PREFIX + 'settings-auth-update-view';
+const SETTINGS_AUTH = config.dynamodb.settings_auth;
 
 const PROFILE = config.dynamodb.auth.profile;
 
@@ -42,14 +43,14 @@ async function verifyState(state) {
 module.exports.handler = async (event, context) => {
   try {
     // LAMBDA FUNCTION
-    const {code, state} = event;
+    const {code, state, url} = event;
     const stateJson = await verifyState(state);
     if (!stateJson) {
       return {success: false, failReason: 'Invalid State, please close the window and run /spotbot settings again.'};
     }
     // Get Tokens from Spotify
     let auth = await authSession(stateJson.teamId, stateJson.channelId);
-    const {access_token: accessToken, refresh_token: refreshToken} = await fetchTokens(stateJson.teamId, stateJson.channelId, auth, code);
+    const {access_token: accessToken, refresh_token: refreshToken} = await fetchTokens(stateJson.teamId, stateJson.channelId, auth, code, `${url}/${process.env.ENV}/${SETTINGS_AUTH.auth_url}`);
     // Store our tokens in our DB & Get Spotify URI for authenticator
     const authModel = modelSpotifyAuth(accessToken, refreshToken, moment().add(55, 'm').toISOString(), null);
     await storeSpotifyAuth(stateJson.teamId, stateJson.channelId, authModel);

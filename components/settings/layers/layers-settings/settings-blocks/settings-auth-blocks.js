@@ -38,9 +38,9 @@ const AUTH_RESPONSE = {
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} viewId
- * @param {boolean} failState
+ * @param {string} url
  */
-async function getAuthBlock(teamId, channelId, viewId) {
+async function getAuthBlock(teamId, channelId, viewId, url) {
   let authError;
   const authBlock = [];
 
@@ -64,10 +64,10 @@ async function getAuthBlock(teamId, channelId, viewId) {
       authError = true;
       // We are not authenticated - push non-authenticated blocks
       try {
-        const noAuth = await authSession(teamId, channelId);
-        const url = await getAuthorizationURL(teamId, channelId, noAuth, viewId);
+        const noAuth = await authSession(teamId, channelId, url);
+        const authUrl = await getAuthorizationURL(teamId, channelId, noAuth, viewId, url);
         authBlock.push(
-            buttonSection(SETTINGS_AUTH.auth_url, LABELS.auth_url, HINTS.auth_url_button, null, url, null),
+            buttonSection(SETTINGS_AUTH.auth_url, LABELS.auth_url, HINTS.auth_url_button, null, authUrl, null),
         );
         if (error instanceof PremiumError) {
           // If the user is not premium
@@ -94,12 +94,13 @@ async function getAuthBlock(teamId, channelId, viewId) {
  * @param {string} channelId
  * @param {Object} auth
  * @param {string} viewId
+ * @param {string} url
  */
-async function getAuthorizationURL(teamId, channelId, auth, viewId) {
+async function getAuthorizationURL(teamId, channelId, auth, viewId, url) {
   try {
     // TODO Store triggerId as Spotify Auth state.
-    const state = modelState(teamId, channelId, viewId);
-    const [, authUrl] = await Promise.all([storeState(teamId, channelId, {state: state}, moment().add(1, 'hour').unix()), fetchAuthorizeURL(teamId, channelId, auth, encodeURI(JSON.stringify(state)))]);
+    const state = modelState(teamId, channelId, viewId, url);
+    const [, authUrl] = await Promise.all([storeState(teamId, channelId, {state: state}, moment().add(1, 'hour').unix()), fetchAuthorizeURL(teamId, channelId, auth, encodeURI(JSON.stringify(state)), `${url}/${process.env.ENV}/${SETTINGS_AUTH.auth_url}`)]);
     return authUrl;
   } catch (error) {
     logger.error(error);

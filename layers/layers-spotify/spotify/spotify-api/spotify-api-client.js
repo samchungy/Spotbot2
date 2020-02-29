@@ -7,8 +7,9 @@ const {refreshAccessToken} = require('./spotify-api-refresh');
  * @param {string} teamId
  * @param {string} channelId
  * @param {string} auth
+ * @param {string} url
  */
-async function setTokens(teamId, channelId, auth) {
+async function setTokens(teamId, channelId, auth, url) {
   const now = moment();
   // New Authentication
   if (auth.getAccess()) {
@@ -19,6 +20,9 @@ async function setTokens(teamId, channelId, auth) {
   }
   spotifyWebApi.setAccessToken(auth.getAccess());
   spotifyWebApi.setRefreshToken(auth.getRefresh());
+  if (url) {
+    spotifyWebApi.setRedirectURI(url);
+  }
   return spotifyWebApi;
 };
 
