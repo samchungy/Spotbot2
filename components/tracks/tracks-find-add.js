@@ -72,7 +72,7 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
     const track = new Track(spotifyTrack);
 
     // Handle Blacklist
-    if (blacklist.blacklist.find((trackB) => track.id === trackB.id)) {
+    if (blacklist && blacklist.blacklist.find((trackB) => track.id === trackB.id)) {
       return TRACK_ADD_RESPONSE.blacklist(track.title);
     }
 
@@ -102,7 +102,7 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
             await addTracksToPlaylist(teamId, channelId, auth, playlist.id, [track.uri]);
           }
           // // Save our history
-          await setBackToPlaylist(teamId, channelId, auth, playlist, country, statusTrack, track);
+          await setBackToPlaylist(teamId, channelId, auth, playlist, statusTrack, track);
           return TRACK_ADD_RESPONSE.success_back(track.title);
         } else {
           await sleep(1000); // Wait 2 seconds and then try again (concurrent back 2 playlist requests)
@@ -130,7 +130,7 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
 async function setHistory(teamId, channelId, history, trackId, userId) {
   const expiry = moment().add('1', 'month').unix();
   if (history) {
-    await changeTrackHistory(teamId, channelId, trackId, changeQuery, changeQueryValue(userId, Date.now(), expiry), changeQueryNames);
+    await changeTrackHistory(teamId, channelId, trackId, changeQuery, changeQueryValue(userId, moment().unix(), expiry), changeQueryNames);
   } else {
     const newHistory = modelHistory(trackId, userId, moment().unix(), 1);
     await storeTrackHistory(teamId, channelId, trackId, newHistory, expiry);
@@ -150,7 +150,7 @@ async function setHistory(teamId, channelId, history, trackId, userId) {
 async function setBackToPlaylist(teamId, channelId, auth, playlist, country, statusTrack, newTrack) {
   try {
     // Make another call to reduce the lag
-    const status = await fetchCurrentPlayback(teamId, channelId, auth, country);
+    const status = await fetchCurrentPlayback(teamId, channelId, auth);
     if (status && status.item && status.item.uri != statusTrack.uri) {
       // Just in case the track ends as we are trying to get back to playlist
       await play(teamId, channelId, auth, status.device.id, playlist.uri, {uri: newTrack.uri});
