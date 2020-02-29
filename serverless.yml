@@ -1,94 +1,784 @@
 service: spotbot
+package:
+  individually: true
 
 plugins:
-  - serverless-dynamodb-local
-  - serverless-offline
+  - serverless-dotenv-plugin
+  - serverless-plugin-split-stacks
 
 custom:
-  dynamodb:
-    stages:
-      - ${self:provider.stage}
-    start:
-      port: 8000
-      dbPath: .dynamodb/db
-      migrate: true
+  # dynamodb:
+  #   stages:
+  #     - ${self:provider.stage}
+  #   start:
+  #     port: 8000
+  #     dbPath: .dynamodb/db
+  #     migrate: true
+  account_id: 897201036940
+  stage: ${opt:stage, self:provider.stage}
+  dev:
+    deletion_policy: Delete
+  prod:
+    deletion_policy: Retain
+  prefix: ${self:service}-${self:custom.stage}
+  topic: arn:aws:sns:${self:provider.region}:${self:custom.account_id}:${self:custom.prefix}
+  lambda: arn:aws:lambda:${self:provider.region}:${self:custom.account_id}:function:${self:custom.prefix}
 
 provider:
   name: aws
+  region: ap-southeast-2
   runtime: nodejs12.x
   environment:
-    AUTH_TABLE: ${self:service}-${opt:stage, self:provider.stage}-auth
-    SETTINGS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-settings
-    SEARCH_TABLE: ${self:service}-${opt:stage, self:provider.stage}-search
+    ENV: ${self:custom.stage}
+    SNS_PREFIX: ${self:custom.topic}-
+    LAMBDA_PREFIX: ${self:custom.lambda}-
+    REGION: ${self:provider.region}
+    #Tables
+    AUTH_TABLE: ${self:custom.prefix}-auth
+    SEARCH_TABLE: ${self:custom.prefix}-search
+    SETTINGS_TABLE: ${self:custom.prefix}-settings
+    HISTORY_TABLE: ${self:custom.prefix}-history
+    #Core Libraries
+    LOG_LEVEL: info
+    CONFIG: /opt/config/config
+    LOGGER: /opt/utils/util-logger
+    MOMENT: /opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030
+    #Tokens
+    SLACK_TOKEN: ${env:SLACK_TOKEN}
+    SPOTIFY_CLIENT_ID: ${env:SPOTIFY_CLIENT_ID}
+    SPOTIFY_SECRET: ${env:SPOTIFY_SECRET}
+    #Auth
   iamRoleStatements:
   - Effect: Allow
     Action:
+      - dynamodb:BatchGetItem
+      - dynamodb:BatchWriteItem
       - dynamodb:Query
       - dynamodb:Scan
       - dynamodb:GetItem
       - dynamodb:PutItem
       - dynamodb:UpdateItem
       - dynamodb:DeleteItem
-    Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.SETTINGS_TABLE}"
-
+    Resource: [
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.SETTINGS_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.SEARCH_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.AUTH_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.HISTORY_TABLE}*"
+    ]
+  - Effect: Allow
+    Action:
+      - sns:Publish
+    Resource: "${self:custom.topic}-*"
+  - Effect: Allow
+    Action:
+      - lambda:InvokeFunction
+    Resource: "${self:custom.lambda}-*"
+layers:
+  # Main Layers
+  core:
+    name: ${self:custom.prefix}-core
+    path: layers/layers-core
+    compatibleRuntimes:
+      - nodejs12.x
+  slack:
+    name: ${self:custom.prefix}-slack
+    path: layers/layers-slack
+    compatibleRuntimes:
+      - nodejs12.x
+  spotify:
+    name: ${self:custom.prefix}-spotify
+    path: layers/layers-spotify
+    compatibleRuntimes:
+      - nodejs12.x
+  # Other Layers
+  settings-blocks:
+    name: ${self:custom.prefix}-settings-blocks
+    path: components/settings/layers/layers-settings
+    compatibleRuntimes:
+      - nodejs12.x
+  control-panel:
+    name: ${self:custom.prefix}-control-panel
+    path: components/control/layers/layers-control-panel
+    compatibleRuntimes:
+      - nodejs12.x
+  control-reset:
+    name: ${self:custom.prefix}-control-reset
+    path: components/control/layers/layers-control-reset
+    compatibleRuntimes:
+      - nodejs12.x
+  control-skip:
+    name: ${self:custom.prefix}-control-skip
+    path: components/control/layers/layers-control-skip
+    compatibleRuntimes:
+      - nodejs12.x
 functions:
-  spotbot:
-    handler: server/server.handler
+  #Router
+  authorizer-slack-headers:
+    memorySize: 128
+    package:
+      include:
+        - ./authorizer/**
+      exclude:
+        - ./**
+    handler: authorizer/authorizer-headers.handler
+  router:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/**
+      exclude:
+        - ./**
+    handler: router/server.handler
     events:
-      - http: 'ANY {proxy+}'
+      - http:
+          method: any
+          path: api/{proxy+}
+          authorizer: 
+            name: authorizer-slack-headers
+            identitySource: method.request.header.X-Slack-Request-Timestamp, method.request.header.X-Slack-Signature
+            type: request
+      - http:
+          method: get
+          path: spotify-auth-callback
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
 
+  #Settings
+  settings-auth-change:
+    events:
+      - sns: ${self:custom.prefix}-settings-auth-change
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-auth-change.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-auth-change.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SettingsDashblocksLambdaLayer }
+  settings-auth-update-view:
+    events:
+      - sns: ${self:custom.prefix}-settings-auth-update-view
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-auth-update-view.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-auth-update-view.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SettingsDashblocksLambdaLayer }
+  settings-auth-validate:
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-auth-validate.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-auth-validate.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+  settings-blacklist-open:
+    events:
+      - sns: ${self:custom.prefix}-settings-blacklist-open
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-blacklist-open.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-blacklist-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-blacklist-submit-save:
+    events:
+      - sns: ${self:custom.prefix}-settings-blacklist-submit-save
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-blacklist-submit-save.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-blacklist-submit-save.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-blacklist-submit-verify:
+    memorySize: 192
+    package:
+      include:
+        - ./components/settings/settings-blacklist-submit-verify.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-blacklist-submit-verify.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-device-select:
+    events:
+      - sns: ${self:custom.prefix}-settings-device-select
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-device-select.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-device-select.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-device-switch:
+    events:
+      - sns: ${self:custom.prefix}-settings-device-switch
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-device-switch.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-device-switch.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-get-options-devices:
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-get-options-devices.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-get-options-devices.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-get-options-playlists:
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-get-options-playlists.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-get-options-playlists.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-get-options-timezones:
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-get-options-timezones.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-get-options-timezones.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-open:
+    events:
+      - sns: ${self:custom.prefix}-settings-open
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-open.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SettingsDashblocksLambdaLayer }
+  settings-submit-save:
+    events:
+      - sns: ${self:custom.prefix}-settings-submit-save
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-submit-save.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-submit-save.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  settings-submit-verify:
+    memorySize: 192
+    package:
+      include:
+        - ./components/settings/settings-submit-verify.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-submit-verify.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  
+  #Control
+  control-clear-one:
+    events:
+      - sns: ${self:custom.prefix}-control-clear-one
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-clear-one.js
+      exclude:
+        - ./**
+    handler: components/control/control-clear-one.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-jump:
+    events:
+      - sns: ${self:custom.prefix}-control-jump
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-jump.js
+      exclude:
+        - ./**
+    handler: components/control/control-jump.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-pause:
+    events:
+      - sns: ${self:custom.prefix}-control-pause
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-pause.js
+      exclude:
+        - ./**
+    handler: components/control/control-pause.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-play:
+    events:
+      - sns: ${self:custom.prefix}-control-play
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-play.js
+      exclude:
+        - ./**
+    handler: components/control/control-play.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-open:
+    events:
+      - sns: ${self:custom.prefix}-control-open
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-open.js
+      exclude:
+        - ./**
+    handler: components/control/control-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-repeat:
+    events:
+      - sns: ${self:custom.prefix}-control-repeat
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-repeat.js
+      exclude:
+        - ./**
+    handler: components/control/control-repeat.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-reset-start:
+    events:
+      - sns: ${self:custom.prefix}-control-reset-start
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-reset-start.js
+      exclude:
+        - ./**
+    handler: components/control/control-reset-start.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+      - { Ref: ControlDashresetLambdaLayer}
+  control-reset-set:
+    events:
+      - sns: ${self:custom.prefix}-control-reset-set
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-reset-set.js
+      exclude:
+        - ./**
+    handler: components/control/control-reset-set.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-reset-review-open:
+    events:
+      - sns: ${self:custom.prefix}-control-reset-review-open
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-reset-review-open.js
+      exclude:
+        - ./**
+    handler: components/control/control-reset-review-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+      - { Ref: ControlDashresetLambdaLayer}
+  control-reset-review-submit:
+    events:
+      - sns: ${self:custom.prefix}-control-reset-review-submit
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-reset-review-submit.js
+      exclude:
+        - ./**
+    handler: components/control/control-reset-review-submit.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-shuffle:
+    events:
+      - sns: ${self:custom.prefix}-control-shuffle
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-shuffle.js
+      exclude:
+        - ./**
+    handler: components/control/control-shuffle.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+  control-skip-add-vote:
+    events:
+      - sns: ${self:custom.prefix}-control-skip-add-vote
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-skip-add-vote.js
+      exclude:
+        - ./**
+    handler: components/control/control-skip-add-vote.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+      - { Ref: ControlDashskipLambdaLayer }
+  control-skip-start:
+    events:
+      - sns: ${self:custom.prefix}-control-skip-start
+    memorySize: 192
+    package:
+      include:
+        - ./components/control/control-skip-start.js
+      exclude:
+        - ./**
+    handler: components/control/control-skip-start.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashpanelLambdaLayer }
+      - { Ref: ControlDashskipLambdaLayer }
+
+#Tracks
+  tracks-current:
+    events:
+      - sns: ${self:custom.prefix}-tracks-current
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-current.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-current.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-find-add:
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-add
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-find-add.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-add.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-find-artists-search:
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-artists-search
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-find-artists-search.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-artists-search.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-find-artists-get-artists:
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-artists-get-artists
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-find-artists-get-artists.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-artists-get-artists.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-find-artists-get-tracks:
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-artists-get-tracks
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-find-artists-get-tracks.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-artists-get-tracks.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-find-search:
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-search
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-find-search.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-search.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-find-get-tracks:
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-get-tracks
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-find-get-tracks.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-get-tracks.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-find-cancel:
+    events:
+      - sns: ${self:custom.prefix}-tracks-find-cancel
+    memorySize: 128
+    package:
+      include:
+        - ./components/tracks/tracks-find-cancel.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-find-cancel.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-remove-open:
+    events:
+      - sns: ${self:custom.prefix}-tracks-remove-open
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-remove-open.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-remove-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-remove-submit:
+    events:
+      - sns: ${self:custom.prefix}-tracks-remove-submit
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-remove-submit.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-remove-submit.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  tracks-whom:
+    events:
+      - sns: ${self:custom.prefix}-tracks-whom
+    memorySize: 192
+    package:
+      include:
+        - ./components/tracks/tracks-whom.js
+      exclude:
+        - ./**
+    handler: components/tracks/tracks-whom.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+    
 resources:
   Resources:
     SpotbotAuthTable:
       Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: Retain
+      DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
       Properties:
         BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
-          - AttributeName: name
-            AttributeType: S
           - AttributeName: team_channel
+            AttributeType: S
+          - AttributeName: name
             AttributeType: S
         KeySchema:
-          - AttributeName: name
-            KeyType: HASH
           - AttributeName: team_channel
+            KeyType: HASH
+          - AttributeName: name
             KeyType: RANGE
         SSESpecification:
-          SSEEnabled: false
+          SSEEnabled: true
+          SSEType: KMS
         TableName: ${self:provider.environment.AUTH_TABLE}
-    SpotbotSettingsTable:
+        TimeToLiveSpecification:
+            AttributeName: ttl
+            Enabled: true
+    SpotbotNewSettingsTable:
       Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: Retain
+      DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
       Properties:
         BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
-          - AttributeName: name
-            AttributeType: S
           - AttributeName: team_channel
+            AttributeType: S
+          - AttributeName: name
             AttributeType: S
         KeySchema:
-          - AttributeName: name
-            KeyType: HASH
           - AttributeName: team_channel
+            KeyType: HASH
+          - AttributeName: name
             KeyType: RANGE
         TableName: ${self:provider.environment.SETTINGS_TABLE}
+        TimeToLiveSpecification:
+            AttributeName: ttl
+            Enabled: true
     SpotbotSearchTable:
       Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: Retain
+      DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
       Properties:
         BillingMode: 'PAY_PER_REQUEST'
         AttributeDefinitions:
-          - AttributeName: triggerId
-            AttributeType: S
           - AttributeName: team_channel
+            AttributeType: S
+          - AttributeName: triggerId
             AttributeType: S
         KeySchema:
-          - AttributeName: triggerId
-            KeyType: HASH
           - AttributeName: team_channel
+            KeyType: HASH
+          - AttributeName: triggerId
             KeyType: RANGE
         TableName: ${self:provider.environment.SEARCH_TABLE}
         TimeToLiveSpecification:
             AttributeName: ttl
             Enabled: true
+    SpotbotHistoryTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
+      Properties:
+        BillingMode: 'PAY_PER_REQUEST'
+        AttributeDefinitions:
+          - AttributeName: team_channel
+            AttributeType: S
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: team_channel
+            KeyType: HASH
+          - AttributeName: id
+            KeyType: RANGE
+        TableName: ${self:provider.environment.HISTORY_TABLE}
+        TimeToLiveSpecification:
+            AttributeName: ttl
+            Enabled: true
+        LocalSecondaryIndexes: 
+        - IndexName: userId-index
+          KeySchema: 
+            - AttributeName: team_channel
+              KeyType: HASH
+            - AttributeName: userId
+              KeyType: RANGE
+          Projection: 
+            ProjectionType: KEYS_ONLY
