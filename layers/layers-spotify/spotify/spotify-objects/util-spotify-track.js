@@ -14,6 +14,7 @@ class Track {
     this.id = trackObject.id;
     this.uri = trackObject.uri;
     this.artists = trackObject.artists.map((artist) => artist.name).join(', ');
+    this.artistsIds = trackObject.artists.map((artist) => artist.id);
     this.url = trackObject.external_urls.spotify;
     this.album = trackObject.album.name;
     // Get second highest res picture

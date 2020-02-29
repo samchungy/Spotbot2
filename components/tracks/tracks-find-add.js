@@ -93,7 +93,7 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
           // Tell Spotbot we are currently getting back to playlist, Remove any invalid tracks, Add current playing song + new track to playlist
           await Promise.all([
             storeBackToPlaylistState(teamId, channelId, {added: moment().unix()}),
-            setHistory(teamId, channelId, history, track.id, userId),
+            setHistory(teamId, channelId, history, track, userId),
             deleteTracks(teamId, channelId, auth, playlist.id, [{uri: statusTrack.uri}]),
           ]);
           if (statusTrack.uri != track.uri) {
@@ -111,7 +111,7 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
       }
     }
     // Save history + add to playlist
-    await Promise.all([setHistory(teamId, channelId, history, track.id, userId), addTracksToPlaylist(teamId, channelId, auth, playlist.id, [track.uri])]);
+    await Promise.all([setHistory(teamId, channelId, history, track, userId), addTracksToPlaylist(teamId, channelId, auth, playlist.id, [track.uri])]);
     return TRACK_ADD_RESPONSE.success(track.title);
   } catch (error) {
     logger.error(error);
@@ -124,16 +124,16 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
  * @param {string} teamId
  * @param {string} channelId
  * @param {Objext} history
- * @param {string} trackId
+ * @param {string} track
  * @param {string} userId
  */
-async function setHistory(teamId, channelId, history, trackId, userId) {
+async function setHistory(teamId, channelId, history, track, userId) {
   const expiry = moment().add('1', 'month').unix();
   if (history) {
-    await changeTrackHistory(teamId, channelId, trackId, changeQuery, changeQueryValue(userId, moment().unix(), expiry), changeQueryNames);
+    await changeTrackHistory(teamId, channelId, track.id, changeQuery, changeQueryValue(userId, moment().unix(), expiry), changeQueryNames);
   } else {
-    const newHistory = modelHistory(trackId, userId, moment().unix(), 1);
-    await storeTrackHistory(teamId, channelId, trackId, newHistory, expiry);
+    const newHistory = modelHistory(track.id, track.artistsIds, userId, moment().unix(), 1);
+    await storeTrackHistory(teamId, channelId, track.id, newHistory, expiry);
   }
 }
 

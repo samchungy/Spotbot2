@@ -1,6 +1,7 @@
-const modelHistory = (id, userId, timeAdded, numAdds) => {
+const modelHistory = (id, artistsIds, userId, timeAdded, numAdds) => {
   return {
     id: id,
+    artistsIds: artistsIds,
     userId: userId,
     timeAdded: timeAdded,
     numAdds: numAdds,
