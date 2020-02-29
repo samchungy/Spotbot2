@@ -59,7 +59,7 @@ module.exports.handler = async (event, context) => {
   try {
     // LAMBDA FUNCTION
     const {teamId, channelId, settings, query} = event;
-    const {[PLAYLIST]: currentPlaylist} = (settings ? settings : {});
+    const currentPlaylist = settings ? settings[PLAYLIST] : null;
     const playlists = await getCompatiblePlaylists(teamId, channelId, currentPlaylist);
     const [, searchPlaylists, other] = await Promise.all([
       storePlaylists(teamId, channelId, {value: playlists}, moment().add(1, 'hour').unix()),

@@ -2,6 +2,7 @@ const Lambda = require('aws-sdk/clients/lambda');
 const lambda = new Lambda();
 
 const config = require(process.env.CONFIG);
+const {loadSettings} = require('/opt/settings/settings-interface');
 const SETTINGS = config.dynamodb.settings;
 
 const SETTINGS_GET_OPTIONS_PLAYLISTS = process.env.LAMBDA_PREFIX+ 'settings-get-options-playlists';
@@ -18,7 +19,7 @@ module.exports = ( prefix, Router ) => {
       .post('/', async (ctx, next) =>{
         if (ctx.request.body && ctx.request.body.payload) {
           const payload = JSON.parse(ctx.request.body.payload);
-          const settings = ctx.state.settings;
+          const settings = await loadSettings(payload.team.id, payload.view.private_metadata);
           let options; let params;
           switch (payload.action_id) {
             case SETTINGS.playlist:
