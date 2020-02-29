@@ -8,7 +8,7 @@ const PLAYLIST = config.dynamodb.settings.playlist;
 const CHANNEL_ADMINS = config.dynamodb.settings.channel_admins;
 
 const MIDDLEWARE_RESPONSE = {
-  admin_error: ':information_source: You must be a Spotbot admin for this channel to use this command.',
+  admin_error: (users) => `:information_source: You must be a Spotbot admin for this channel to use this command. Current channel admins: ${users.map((user)=>`<@${user}>`).join(', ')}.`,
   settings_error: ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.',
 };
 
@@ -65,7 +65,7 @@ async function checkIsAdmin(teamId, channelId, settings, userId) {
       return settings;
     };
     await postEphemeral(
-        ephemeralPost(channelId, userId, MIDDLEWARE_RESPONSE.admin_error, null),
+        ephemeralPost(channelId, userId, MIDDLEWARE_RESPONSE.admin_error(settings[CHANNEL_ADMINS]), null),
     );
     return false;
   } catch (error) {
