@@ -89,7 +89,7 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
         const statusTrack = new Track(status.item);
         // If Back to Playlist was not already called within the past 3 seconds
         const state = await loadBackToPlaylistState(teamId, channelId);
-        if (!state || moment(state.added).add('2', 'seconds').isBefore(moment())) {
+        if (!state || moment.unix(state.added).add('1', 'seconds').isBefore(moment())) {
           // Tell Spotbot we are currently getting back to playlist, Remove any invalid tracks, Add current playing song + new track to playlist
           await Promise.all([
             storeBackToPlaylistState(teamId, channelId, {added: moment().unix()}),
