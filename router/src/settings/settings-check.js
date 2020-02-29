@@ -61,7 +61,7 @@ async function checkSettings(teamId, channelId, userId) {
  */
 async function checkIsAdmin(teamId, channelId, settings, userId) {
   try {
-    if (settings && settings[CHANNEL_ADMINS].includes(userId)) {
+    if (settings && settings[CHANNEL_ADMINS] && settings[CHANNEL_ADMINS].includes(userId)) {
       return settings;
     };
     await postEphemeral(
