@@ -16,7 +16,7 @@ const {userTrackKeyConditionExpression, userTrackFilterExpression, userTrackQuer
 
 const REMOVE_RESPONSES = {
   error: `:warning: An error occured. Please try again.`,
-  no_songs: `:information_source: You have not added any songs to the playlist.`,
+  no_songs: `:information_source: You can only remove tracks which you have added. You have not added any songs to the playlist.`,
   no_tracks: `:information_source: There are no tracks on the playlist to remove.`,
 };
 
