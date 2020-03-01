@@ -634,19 +634,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-  tracks-find-cancel:
-    events:
-      - sns: ${self:custom.prefix}-tracks-find-cancel
-    memorySize: 128
-    package:
-      include:
-        - ./components/tracks/tracks-find-cancel.js
-      exclude:
-        - ./**
-    handler: components/tracks/tracks-find-cancel.handler
-    layers:
-      - { Ref: CoreLambdaLayer }
-      - { Ref: SlackLambdaLayer }
   tracks-remove-open:
     events:
       - sns: ${self:custom.prefix}-tracks-remove-open
