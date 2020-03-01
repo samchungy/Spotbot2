@@ -66,7 +66,7 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = '';
                   break;
                 default:
-                  const settings = await checkSettings(payload.team.id, payload.channel.id, payload.user.id);
+                  const settings = await checkSettings(payload.team.id, payload.channel.id, payload.user.id, payload.response_url);
                   if (!settings) {
                     ctx.body = '';
                     break;

@@ -101,8 +101,22 @@ async function deleteChat(body) {
   }
 }
 
+/**
+ * Gets Channel/Group info
+ * @param {string} channel
+ */
+async function getConversationInfo(channel) {
+  try {
+    return await slackClient.conversations.info({channel: channel});
+  } catch (error) {
+    logger.error(`Slack API: Get Conversation Info failed`, error);
+    throw error;
+  }
+}
+
 module.exports = {
   deleteChat,
+  getConversationInfo,
   post,
   postEphemeral,
   reply,

@@ -2,7 +2,7 @@ const config = require(process.env.CONFIG);
 const SNS = require('aws-sdk/clients/sns');
 const sns = new SNS();
 const {openModal} = require('../response/open-modal');
-const {checkIsAdmin, checkIsSetup, checkSettings} = require('./settings-check');
+const {checkIsAdmin, checkIsInChannel, checkIsSetup, checkSettings} = require('./settings-check');
 
 const EMPTY_MODAL = config.slack.actions.empty_modal;
 const HELP = '*Find Tracks*\n\n`/find [track]` - Find a track on Spotify\n`/artist [artist]` - Find an artist on Spotify\n`/removetracks` - Lists tracks you added to remove from the playlist\n\n*Playback Status*\n\n`/current` - Show the current playing track and it’s position in the playlist\n`/whom` - Show who requested the current track\n\n*Control*\n\n`/control` - Opens the Spotbot control panel\n`/play` - Pauses playback of Spotify\n`/pause`- Pauses playback of Spotify\n`/skip` - Starts a vote to skip a track\n`/reset` - Nukes the playlist\n\n*Admin Commands*\n\n`/spotbot settings` - Opens the Spotbot Settings panel.\n`/spotbot blacklist` - Opens the Spotbot Blacklist panel.\n`/spotbot device` - Opens the Spotbot Device switch panel.';
@@ -28,6 +28,12 @@ module.exports = ( prefix, Router ) => {
             switch (textSplit[0]) {
               case 'settings':
                 settings = await checkIsSetup(payload.team_id, payload.channel_id, payload.user_id);
+                if (!settings) {
+                  if (!(await checkIsInChannel(payload.channel_id, payload.response_url))) {
+                    ctx.body = '';
+                    break;
+                  }
+                }
                 if (!settings || await checkIsAdmin(payload.team_id, payload.channel_id, settings, payload.user_id)) {
                   const settingsPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotbot Settings', 'Submit', 'Cancel');
                   params = {
@@ -39,7 +45,7 @@ module.exports = ( prefix, Router ) => {
                 ctx.body = '';
                 break;
               case 'blacklist':
-                settings = await checkSettings(payload.team_id, payload.channel_id, payload.user_id);
+                settings = await checkSettings(payload.team_id, payload.channel_id, payload.user_id, payload.response_url);
                 if (settings && await checkIsAdmin(payload.team_id, payload.channel_id, settings, payload.user_id)) {
                   const blacklistPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, `Spotbot Blacklist`, 'Save', 'Close');
                   params = {
@@ -51,7 +57,7 @@ module.exports = ( prefix, Router ) => {
                 ctx.body = '';
                 break;
               case 'device':
-                settings = await checkSettings(payload.team_id, payload.channel_id, payload.user_id);
+                settings = await checkSettings(payload.team_id, payload.channel_id, payload.user_id, payload.response_url);
                 if (settings && await checkIsAdmin(payload.team_id, payload.channel_id, settings, payload.user_id)) {
                   const devicePayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotify Devices', 'Switch to Device', 'Cancel');
                   params = {

@@ -7,7 +7,7 @@ const {checkSettings} = require('../src/settings/settings-check');
  */
 async function checkSettingsMiddleware(ctx, next) {
   const payload = ctx.request.body;
-  const settings = await checkSettings(payload.team_id, payload.channel_id, payload.user_id);
+  const settings = await checkSettings(payload.team_id, payload.channel_id, payload.user_id, payload.response_url);
   if (settings) {
     ctx.state.settings = settings;
     await next();
