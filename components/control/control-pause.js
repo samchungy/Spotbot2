@@ -29,7 +29,7 @@ module.exports.handler = async (event, context) => {
 
     // Try Pause
     await pause(teamId, channelId, auth, status.device.id);
-    await sleep(400);
+    await sleep(500);
     const newStatus = await fetchCurrentPlayback(teamId, channelId, auth);
     if (!newStatus.is_playing) {
       return await responseUpdate(teamId, channelId, auth, settings, timestamp, true, PAUSE_RESPONSE.success(userId), newStatus);
