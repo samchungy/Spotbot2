@@ -11,10 +11,10 @@ module.exports.handler = async (event, context) => {
       // All other tables have ttl, we can just let them expire.
       const allSettings = await searchAllSettings(allSettingsKeyExpression, allSettingsValues(teamId, channelId));
       if (allSettings.length) {
-        await Promise.all(
-            removeSpotifyAuth(teamId, channelId),
-            deleteSettings(teamId, channelId, allSettings.map((setting) => setting.name)),
-        );
+        await Promise.all([
+          removeSpotifyAuth(teamId, channelId),
+          deleteSettings(teamId, channelId, allSettings.map((setting) => setting.name)),
+        ]);
       }
     }
   } catch (error) {
