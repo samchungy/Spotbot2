@@ -691,6 +691,7 @@ functions:
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SlackLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
 
 resources:
   Resources:
