@@ -14,7 +14,6 @@
     "koa-bodyparser": "^4.2.1",
     "koa-logger": "^3.2.1",
     "koa-router": "^8.0.7",
-    "qs": "^6.9.1",
     "serverless-http": "^2.3.1"
   }
 }
