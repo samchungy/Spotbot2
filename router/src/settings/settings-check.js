@@ -9,7 +9,7 @@ const CHANNEL_ADMINS = config.dynamodb.settings.channel_admins;
 
 const MIDDLEWARE_RESPONSE = {
   admin_error: (users) => `:information_source: You must be a Spotbot admin for this channel to use this command. Current channel admins: ${users.map((user)=>`<@${user}>`).join(', ')}.`,
-  channel_error: `:information_source: Spotbot is not in this channel. Please add Spotbot to this channel before running this command again.`,
+  channel_error: `:information_source: Spotbot is not installed in this channel. Please add the Spotbot app to this channel and try again.`,
   settings_error: ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.',
 };
 

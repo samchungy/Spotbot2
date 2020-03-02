@@ -19,9 +19,17 @@ const settingModel = (team, channel, name, value, expiry) => {
   return {
     name: name,
     team_channel: `${team}-${channel}`,
+    team: team,
     ...value ? value : {},
     ...expiry ? {ttl: expiry} : {},
   };
+};
+
+const settingQueryModel = (key, values) => {
+  return settingTable({
+    KeyConditionExpression: key,
+    ExpressionAttributeValues: values,
+  });
 };
 
 const settingUpdateModel = (team, channel, name, values) => {
@@ -38,6 +46,21 @@ const settingUpdateModel = (team, channel, name, values) => {
     UpdateExpression: `set ${updateExpressions.join(', ')}`,
     ExpressionAttributeValues: expressionValues,
   });
+};
+
+const settingBatchRemoveModel = (team, channel, sortKeys) => {
+  const keys = [];
+  sortKeys.forEach((sort) => {
+    keys.push({
+      DeleteRequest: {
+        Key: {
+          team_channel: `${team}-${channel}`,
+          name: sort,
+        },
+      },
+    });
+  });
+  return keys;
 };
 
 const settingValues = (item) => {
@@ -59,6 +82,14 @@ const getSettingInfo = (key, keys) => {
     Key: key,
     ...keys ? {ProjectionExpression: keys.join(', ')}: {},
   });
+};
+
+const batchDeleteInfo = (settings) => {
+  return {
+    RequestItems: {
+      [SETTINGS_TABLE]: settings,
+    },
+  };
 };
 
 const batchGetInfo = (settings) => {
@@ -95,17 +126,35 @@ const batchPutSettings = (settings) => {
   return dynamoDb.batchWrite(batchPutInfo(settings)).promise();
 };
 
+const batchRemoveSettings = (settings) => {
+  return dynamoDb.batchWrite(batchDeleteInfo(settings)).promise();
+};
+
+const querySetting = (setting) => {
+  return dynamoDb.query(setting).promise();
+};
+
+
 const updateSetting = (setting) => {
   return dynamoDb.update(setting).promise();
 };
 
+const removeSetting = (setting) => {
+  return dynamoDb.delete(setting).promise();
+};
+
 module.exports = {
+  batchRemoveSettings,
   batchGetSettings,
   batchPutSettings,
   getSetting,
+  querySetting,
   putSetting,
   putRequest,
+  removeSetting,
+  settingQueryModel,
   settingModel,
+  settingBatchRemoveModel,
   settingUpdateModel,
   settingValues,
   updateSetting,

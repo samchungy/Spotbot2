@@ -676,7 +676,22 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-    
+
+#Delete
+  delete-channel:
+    events:
+      - sns: ${self:custom.prefix}-delete-channel
+    memorySize: 128
+    package:
+      include:
+        - ./components/delete/delete-channel.js
+      exclude:
+        - ./**
+    handler: components/delete/delete-channel.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+
 resources:
   Resources:
     SpotbotAuthTable:
@@ -709,6 +724,8 @@ resources:
         AttributeDefinitions:
           - AttributeName: team_channel
             AttributeType: S
+          - AttributeName: team
+            AttributeType: S
           - AttributeName: name
             AttributeType: S
         KeySchema:
@@ -720,6 +737,13 @@ resources:
         TimeToLiveSpecification:
             AttributeName: ttl
             Enabled: true
+        GlobalSecondaryIndexes: 
+          - IndexName: team-index
+            KeySchema: 
+            - AttributeName: team
+              KeyType: HASH
+            Projection: 
+              ProjectionType: KEYS_ONLY
     SpotbotSearchTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}

@@ -1,3 +1,6 @@
+const SNS = require('aws-sdk/clients/sns');
+const sns = new SNS();
+
 const DELETE_CHANNEL = process.env.SNS_PREFIX + 'delete-channel';
 const {loadSettings} = require('/opt/settings/settings-interface');
 
@@ -15,8 +18,8 @@ module.exports = ( prefix, Router ) => {
           case 'event_callback':
             const settings = await loadSettings(payload.team_id, payload.event.channel);
             params = {
-              Message: JSON.stringify({teamId: payload.team.id, channelId: payload.event.channel, settings}),
-              TopicArn: CONTROL_RESET_SET,
+              Message: JSON.stringify({teamId: payload.team_id, channelId: payload.event.channel, settings}),
+              TopicArn: DELETE_CHANNEL,
             };
             await sns.publish(params).promise();
             ctx.body = '';
