@@ -19,7 +19,7 @@ const settingModel = (team, channel, name, value, expiry) => {
   return {
     name: name,
     team_channel: `${team}-${channel}`,
-    team: team,
+    ...value ? {team: team} : {},
     ...value ? value : {},
     ...expiry ? {ttl: expiry} : {},
   };
@@ -65,7 +65,7 @@ const settingBatchRemoveModel = (team, channel, sortKeys) => {
 
 const settingValues = (item) => {
   // eslint-disable-next-line no-unused-vars, camelcase
-  const {name, team_channel, ...results} = item;
+  const {name, team_channel, team, ...results} = item;
   return results;
 };
 
