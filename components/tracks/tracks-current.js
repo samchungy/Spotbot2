@@ -38,21 +38,11 @@ module.exports.handler = async (event, context) => {
     const backToPlaylist = settings[BACK_TO_PLAYLIST];
     const playlist = settings[PLAYLIST];
 
-    let text;
+    let text; let track;
     const blocks = [];
     const status = await fetchCurrentPlayback(teamId, channelId, auth, country);
     if (status.item && status.is_playing) {
-      const track = new Track(status.item);
-
-      // Blacklist, skip if in it.
-      const blacklist = await loadBlacklist(teamId, channelId);
-      if (blacklist && blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
-        const params = {
-          Message: JSON.stringify({teamId, channelId, settings, timestamp: null, userId}),
-          TopicArn: CONTROL_SKIP_START,
-        };
-        return await sns.publish(params).promise();
-      }
+      track = new Track(status.item);
 
       text = CURRENT_RESPONSES.currently_playing(track.title);
       blocks.push(textSection(text));
@@ -82,6 +72,15 @@ module.exports.handler = async (event, context) => {
     await post(
         inChannelPost(channelId, text, blocks.length ? blocks : null),
     );
+    // Blacklist, skip if in it.
+    const blacklist = await loadBlacklist(teamId, channelId);
+    if (blacklist && blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
+      const params = {
+        Message: JSON.stringify({teamId, channelId, settings, timestamp: null, userId}),
+        TopicArn: CONTROL_SKIP_START,
+      };
+      return await sns.publish(params).promise();
+    }
   } catch (error) {
     logger.error(error);
     logger.error('Get current failed');
