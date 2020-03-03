@@ -15,7 +15,7 @@ const HINTS = {
   skip_votes: 'The number of additional votes needed to skip a song. Integers only',
   timezone: 'This is to configure the time based skip votes. Type in a location.',
   skip_votes_ah: 'The number of additional votes needed to skip a song. Integers only',
-  ghost_mode: 'Disables slash command usage visibility in the channel for track finding commands.',
+  ghost_mode: 'Disables slash command usage visibility in the channel for track related commands. /whom can still be used to find who added a track.',
 };
 
 const LABELS = {
