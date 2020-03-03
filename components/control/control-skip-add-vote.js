@@ -11,6 +11,7 @@ const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
 const SKIP_RESPONSE = {
   error: `:warning: Adding skip vote failed.`,
+  expired: ':information_source: Skip vote has expired.',
 };
 
 module.exports.handler = async (event, context) => {
