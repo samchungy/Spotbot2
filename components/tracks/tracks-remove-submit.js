@@ -13,7 +13,7 @@ const {post, postEphemeral} = require('/opt/slack/slack-api');
 
 const REMOVE_RESPONSES = {
   error: `:warning: An error occured. Please try again.`,
-  removed: (trackNames, userId) => `:put_litter_in_its_place: ${trackNames.join(', ')} ${trackNames.length > 1 ? `were`: `was`} removed from the playlist by <@${userId}>.`,
+  removed: (trackNames) => `:put_litter_in_its_place: ${trackNames.join(', ')} ${trackNames.length > 1 ? `were`: `was`} removed from the playlist.`,
 };
 
 module.exports.handler = async (event, context) => {
@@ -49,7 +49,7 @@ module.exports.handler = async (event, context) => {
       };
     }));
     await post(
-        inChannelPost(channelId, REMOVE_RESPONSES.removed(trackInfos.map((track) => track.title), userId), null),
+        inChannelPost(channelId, REMOVE_RESPONSES.removed(trackInfos.map((track) => track.title)), null),
     );
     return;
   } catch (error) {
