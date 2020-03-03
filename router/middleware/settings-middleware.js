@@ -1,5 +1,9 @@
 const {checkSettings} = require('../src/settings/settings-check');
 
+const MIDDLEWARE_RESPONSE = {
+  settings_error: ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.',
+};
+
 /**
  * Koa middleware for check settings
  * @param {Object} ctx
@@ -12,7 +16,7 @@ async function checkSettingsMiddleware(ctx, next) {
     ctx.state.settings = settings;
     await next();
   } else {
-    ctx.body = '';
+    ctx.body = MIDDLEWARE_RESPONSE.settings_error;
   }
 }
 

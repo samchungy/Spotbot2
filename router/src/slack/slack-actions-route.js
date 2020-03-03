@@ -41,6 +41,10 @@ const CONTROL_REPEAT = process.env.SNS_PREFIX + 'control-repeat';
 const CONTROL_RESET_START = process.env.SNS_PREFIX + 'control-reset-start';
 const CONTROL_RESET_REVIEW_SUBMIT = process.env.SNS_PREFIX + 'control-reset-review-submit';
 
+const MIDDLEWARE_RESPONSE = {
+  settings_error: ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.',
+};
+
 module.exports = ( prefix, Router ) => {
   const router = new Router({
     prefix: prefix,
@@ -68,7 +72,7 @@ module.exports = ( prefix, Router ) => {
                 default:
                   const settings = await checkSettings(payload.team.id, payload.channel.id, payload.user.id, payload.response_url);
                   if (!settings) {
-                    ctx.body = '';
+                    ctx.body = MIDDLEWARE_RESPONSE.settings_error;
                     break;
                   }
                   let valuePayload;
@@ -239,13 +243,15 @@ module.exports = ( prefix, Router ) => {
                 const metadata = payload.view.private_metadata;
                 const {channelId, timestamp, offset} = JSON.parse(metadata);
                 settings = await checkSettings(payload.team.id, channelId, payload.user.id);
-                if (settings) {
-                  params = {
-                    Message: JSON.stringify({teamId: payload.team.id, channelId, settings, timestamp, view: payload.view, offset, isClose: false, userId: payload.user.id}),
-                    TopicArn: CONTROL_RESET_REVIEW_SUBMIT,
-                  };
-                  await sns.publish(params).promise();
+                if (!settings) {
+                  ctx.body = MIDDLEWARE_RESPONSE.settings_error;
+                  break;
                 }
+                params = {
+                  Message: JSON.stringify({teamId: payload.team.id, channelId, settings, timestamp, view: payload.view, offset, isClose: false, userId: payload.user.id}),
+                  TopicArn: CONTROL_RESET_REVIEW_SUBMIT,
+                };
+                await sns.publish(params).promise();
                 ctx.body = '';
                 break;
               case SLACK_ACTIONS.blacklist_modal:
@@ -263,25 +269,30 @@ module.exports = ( prefix, Router ) => {
                 break;
               case SLACK_ACTIONS.remove_modal:
                 settings = await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id);
-                if (settings) {
-                  params = {
-                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings, userId: payload.user.id, view: payload.view}),
-                    TopicArn: TRACKS_REMOVE_SUBMIT,
-                  };
-                  await sns.publish(params).promise();
-                  ctx.body = '';
+                if (!settings) {
+                  ctx.body = MIDDLEWARE_RESPONSE.settings_error;
                   break;
                 }
+                params = {
+                  Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings, userId: payload.user.id, view: payload.view}),
+                  TopicArn: TRACKS_REMOVE_SUBMIT,
+                };
+                await sns.publish(params).promise();
+                ctx.body = '';
+                break;
               case SLACK_ACTIONS.device_modal:
-                if (await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id)) {
-                  params = {
-                    Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, userId: payload.user.id, view: payload.view}),
-                    TopicArn: SETTINGS_DEVICE_SWITCH,
-                  };
-                  await sns.publish(params).promise();
-                  ctx.body = '';
+                settings = await checkSettings(payload.team.id, payload.view.private_metadata, payload.user.id);
+                if (!settings) {
+                  ctx.body = MIDDLEWARE_RESPONSE.settings_error;
                   break;
                 }
+                params = {
+                  Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, userId: payload.user.id, view: payload.view}),
+                  TopicArn: SETTINGS_DEVICE_SWITCH,
+                };
+                await sns.publish(params).promise();
+                ctx.body = '';
+                break;
             }
             break;
           case SLACK_ACTIONS.view_closed:
@@ -290,13 +301,15 @@ module.exports = ( prefix, Router ) => {
                 const metadata = payload.view.private_metadata;
                 const {channelId, timestamp} = JSON.parse(metadata);
                 const settings = await checkSettings(payload.team.id, channelId, payload.user.id);
-                if (settings) {
-                  params = {
-                    Message: JSON.stringify({teamId: payload.team.id, channelId, settings, timestamp, trackUris: null, userId: payload.user.id}),
-                    TopicArn: CONTROL_RESET_SET,
-                  };
-                  await sns.publish(params).promise();
+                if (!settings) {
+                  ctx.body = MIDDLEWARE_RESPONSE.settings_error;
+                  break;
                 }
+                params = {
+                  Message: JSON.stringify({teamId: payload.team.id, channelId, settings, timestamp, trackUris: null, userId: payload.user.id}),
+                  TopicArn: CONTROL_RESET_SET,
+                };
+                await sns.publish(params).promise();
                 ctx.body = '';
                 break;
             }
