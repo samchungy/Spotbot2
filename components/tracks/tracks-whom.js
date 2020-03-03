@@ -60,7 +60,7 @@ module.exports.handler = async (event, context) => {
             if (!history) {
               text = WHOM_RESPONSE.now_playing_direct(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
             } else {
-              text = WHOM_RESPONSE.now_playing(track.title, `<@${history.userId}>`, moment(history.timeAdded).fromNow());
+              text = WHOM_RESPONSE.now_playing(track.title, `<@${history.userId}>`, moment.unix(history.timeAdded).fromNow());
             }
           } else {
             text = WHOM_RESPONSE.now_playing_direct(track.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow());
