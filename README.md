@@ -8,6 +8,8 @@
 
 # Changelog
 
+Spotbot 2.0
+
 - Individual Channel Separation (Requires different spotify accounts)
   - Adds the ability to have multiple Spotbot instances in a single Slack Workspace to control different playlists/spotify accounts
   - Feel free to add Spotbot to other channels.

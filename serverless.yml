@@ -717,7 +717,7 @@ resources:
         TimeToLiveSpecification:
             AttributeName: ttl
             Enabled: true
-    SpotbotNewSettingsTable:
+    SpotbotSettingsTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: ${self:custom.${self:custom.stage}.deletion_policy}
       Properties:
