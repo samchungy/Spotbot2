@@ -62,18 +62,17 @@ async function checkSettings(teamId, channelId) {
 }
 
 /**
- * Checks if settings are set. (Koa Middleware)
- * @param {string} teamId
- * @param {string} channelId
+ * Checks if user is an admin
  * @param {Object} settings
  * @param {string} userId
+ * @return {*}
  */
-async function checkIsAdmin(teamId, channelId, settings, userId) {
+function checkIsAdmin(settings, userId) {
   try {
     if (settings && settings[CHANNEL_ADMINS] && settings[CHANNEL_ADMINS].includes(userId)) {
-      return settings[CHANNEL_ADMINS];
+      return true;
     };
-    return false;
+    return settings[CHANNEL_ADMINS];
   } catch (error) {
     throw error;
   }

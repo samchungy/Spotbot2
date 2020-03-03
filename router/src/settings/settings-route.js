@@ -10,7 +10,7 @@ const INVALID = `:information_source: Invalid Command.`;
 
 const MIDDLEWARE_RESPONSE = {
   admin_error: (users) => `:information_source: You must be a Spotbot admin for this channel to use this command. Current channel admins: ${users.map((user)=>`<@${user}>`).join(', ')}.`,
-  setup_error: `:information_source: Spotbot is not installed in this channel. Please add the Spotbot app to this channel and try again.`,
+  setup_error: `:information_source: Spotbot is not installed in this channel. Please add @spotbot to this channel and try again.`,
   settings_error: ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.',
 };
 
@@ -40,8 +40,8 @@ module.exports = ( prefix, Router ) => {
                     break;
                   }
                 } else {
-                  admins = await checkIsAdmin(payload.team_id, payload.channel_id, settings, payload.user_id);
-                  if (!admins) {
+                  admins = checkIsAdmin(settings, payload.user_id);
+                  if (admins !== true) {
                     ctx.body = MIDDLEWARE_RESPONSE.admin_error(admins);
                     break;
                   }
@@ -60,8 +60,8 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = MIDDLEWARE_RESPONSE.settings_error;
                   break;
                 }
-                admins = await checkIsAdmin(payload.team_id, payload.channel_id, settings, payload.user_id);
-                if (!admins) {
+                admins = checkIsAdmin(settings, payload.user_id);
+                if (admins !== true) {
                   ctx.body = MIDDLEWARE_RESPONSE.admin_error(admins);
                   break;
                 }
@@ -79,8 +79,8 @@ module.exports = ( prefix, Router ) => {
                   ctx.body = MIDDLEWARE_RESPONSE.settings_error;
                   break;
                 }
-                admins = await checkIsAdmin(payload.team_id, payload.channel_id, settings, payload.user_id);
-                if (!admins) {
+                admins = checkIsAdmin(settings, payload.user_id);
+                if (admins !== true) {
                   ctx.body = MIDDLEWARE_RESPONSE.admin_error(admins);
                   break;
                 }
