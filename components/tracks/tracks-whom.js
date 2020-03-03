@@ -35,20 +35,10 @@ module.exports.handler = async (event, context) => {
     const playlist = settings[PLAYLIST];
     const auth = await authSession(teamId, channelId);
     const profile = auth.getProfile();
-    let text;
+    let text; let track;
     const status = await fetchCurrentPlayback(teamId, channelId, auth, profile.country);
     if (status.item && status.is_playing) {
-      const track = new Track(status.item);
-
-      // Blacklist, skip if in it.
-      const blacklist = await loadBlacklist(teamId, channelId);
-      if (blacklist && blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
-        const params = {
-          Message: JSON.stringify({teamId, channelId, settings, timestamp: null, userId}),
-          TopicArn: CONTROL_SKIP_START,
-        };
-        return await sns.publish(params).promise();
-      }
+      track = new Track(status.item);
 
       if (status.context && status.context.uri.includes(playlist.id)) {
         const playlistTrack = await getTrack(teamId, channelId, auth, playlist.id, profile.country, track.id);
@@ -77,6 +67,16 @@ module.exports.handler = async (event, context) => {
     await post(
         inChannelPost(channelId, text, null),
     );
+
+    // Blacklist, skip if in it.
+    const blacklist = await loadBlacklist(teamId, channelId);
+    if (blacklist && blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
+      const params = {
+        Message: JSON.stringify({teamId, channelId, settings, timestamp: null, userId}),
+        TopicArn: CONTROL_SKIP_START,
+      };
+      return await sns.publish(params).promise();
+    }
   } catch (error) {
     logger.error('Get Whom failed');
     logger.error(error);
