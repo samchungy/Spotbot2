@@ -19,7 +19,7 @@ const RESET_RESPONSE = {
   empty: ':information_source: Playlist is already empty.',
   error: ':warning: An error occured.',
   kept: (trackUris) => ` ${trackUris.length} ${trackUris.length > 1 ? `tracks` : `track`} from the past 30 minutes ${trackUris.length > 1 ? `were` : `was`} kept.`,
-  review_title: (numTracks) => `*${numTracks}* ${numTracks > 1 ? `tracks were` : `track was`} added in the past 30 minutes. Are you sure you want to remove ${numTracks > 1 ? `them` : `it`}?`,
+  review_title: (numTracks) => `*${numTracks}* ${numTracks > 1 ? `tracks were` : `track was`} added in the past 30 minutes. Are you sure you want to remove ${numTracks > 1 ? `them` : `it`}?  Closing this window will keep none.`,
   success: (userId) => `:put_litter_in_its_place: The Spotbot playlist was reset by <@${userId}>`,
   success_jump: ` Spotbot is now playing from the start of the playlist.`,
   failed_jump: ` Spotbot failed to return to the start of the playlist.`,
@@ -66,7 +66,7 @@ function getReviewBlocks(playlistTracks) {
   });
   const blocks = [
     textSection(RESET_RESPONSE.review_title(playlistTracks.length)),
-    multiSelectStaticGroups(RESET_MODAL, `Select songs to keep on the playlist`, `Tracks added in the past 10 minutes have been pre-selected. Closing this window will keep none.`, initialOptions.length ? initialOptions : null, groups, true),
+    multiSelectStaticGroups(RESET_MODAL, `Select songs to keep on the playlist`, `Tracks added in the past 10 minutes have been pre-selected.`, initialOptions.length ? initialOptions : null, groups, true),
     selectStatic(REVIEW_JUMP, `Jump to the start of the playlist?`, `This will only work if a track is selected above.`, option(`Yes`, 'true'), yesOrNo()),
   ];
   return blocks;
