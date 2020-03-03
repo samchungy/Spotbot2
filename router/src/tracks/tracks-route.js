@@ -12,6 +12,7 @@ const TRACKS_FIND_SEARCH = process.env.SNS_PREFIX + 'tracks-find-search';
 const TRACKS_REMOVE_OPEN = process.env.SNS_PREFIX + 'tracks-remove-open';
 const TRACKS_WHOM = process.env.SNS_PREFIX + 'tracks-whom';
 const EMPTY_MODAL = config.slack.actions.empty_modal;
+const GHOST_MODE = config.dynamodb.settings.ghost_mode;
 
 module.exports = ( prefix, Router ) => {
   const router = new Router({
@@ -27,7 +28,11 @@ module.exports = ( prefix, Router ) => {
           TopicArn: TRACKS_FIND_SEARCH,
         };
         await sns.publish(params).promise();
-        ctx.body = publicAck('');
+        if (settings[GHOST_MODE] == 'true') {
+          ctx.body = '';
+        } else {
+          ctx.body = publicAck('');
+        }
       })
       .post('/artist', async (ctx, next) => {
         const payload = ctx.request.body;
@@ -37,7 +42,11 @@ module.exports = ( prefix, Router ) => {
           TopicArn: TRACKS_FIND_ARTISTS_SEARCH,
         };
         await sns.publish(params).promise();
-        ctx.body = publicAck('');
+        if (settings[GHOST_MODE] == 'true') {
+          ctx.body = '';
+        } else {
+          ctx.body = publicAck('');
+        }
       })
       .post('/current', async (ctx, next) => {
         const payload = ctx.request.body;
@@ -68,7 +77,11 @@ module.exports = ( prefix, Router ) => {
           TopicArn: TRACKS_REMOVE_OPEN,
         };
         await sns.publish(params).promise();
-        ctx.body = publicAck('');
+        if (settings[GHOST_MODE] == 'true') {
+          ctx.body = '';
+        } else {
+          ctx.body = publicAck('');
+        }
       });
   return router;
 };

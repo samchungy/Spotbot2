@@ -49,6 +49,7 @@ module.exports = {
       'skip_votes': 'skip_votes',
       'skip_votes_ah': 'skip_votes_ah',
       'timezone': 'timezone',
+      'ghost_mode': 'ghost_mode',
     },
     'settings_extra': {
       'back_to_playlist_state': 'back_to_playlist_state',
