@@ -94,7 +94,7 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
           await Promise.all([
             storeBackToPlaylistState(teamId, channelId, {added: moment().unix()}),
             setHistory(teamId, channelId, history, track, userId),
-            deleteTracks(teamId, channelId, auth, playlist.id, [{uri: statusTrack.uri}]),
+            deleteTracks(teamId, channelId, auth, playlist.id, [{uri: statusTrack.uri}, {uri: track.uri}]),
           ]);
           if (statusTrack.uri != track.uri) {
             await addTracksToPlaylist(teamId, channelId, auth, playlist.id, [statusTrack.uri, track.uri]);
@@ -111,7 +111,11 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
       }
     }
     // Save history + add to playlist
-    await Promise.all([setHistory(teamId, channelId, history, track, userId), addTracksToPlaylist(teamId, channelId, auth, playlist.id, [track.uri])]);
+    await Promise.all([
+      setHistory(teamId, channelId, history, track, userId),
+      deleteTracks(teamId, channelId, auth, playlist.id, [{uri: track.uri}]),
+    ]);
+    await addTracksToPlaylist(teamId, channelId, auth, playlist.id, [track.uri]);
     return TRACK_ADD_RESPONSE.success(track.title);
   } catch (error) {
     logger.error(error);
