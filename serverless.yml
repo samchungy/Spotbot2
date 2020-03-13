@@ -20,6 +20,7 @@ custom:
     deletion_policy: Delete
   prod:
     deletion_policy: Retain
+
   prefix: ${self:service}-${self:custom.stage}
   topic: arn:aws:sns:${self:provider.region}:${self:custom.account_id}:${self:custom.prefix}
   lambda: arn:aws:lambda:${self:provider.region}:${self:custom.account_id}:function:${self:custom.prefix}
@@ -28,6 +29,8 @@ provider:
   name: aws
   region: ap-southeast-2
   runtime: nodejs12.x
+  versionFunctions: false
+  logRetentionInDays: 14 # Set the default RetentionInDays for a CloudWatch LogGroup
   environment:
     ENV: ${self:custom.stage}
     SNS_PREFIX: ${self:custom.topic}-
@@ -74,6 +77,12 @@ provider:
       - lambda:InvokeFunction
     Resource: "${self:custom.lambda}-*"
 layers:
+  # Router
+  router-core:
+    name: ${self:custom.prefix}-router-core
+    path: router/layers/layers-router-core
+    compatibleRuntimes:
+      - nodejs12.x
   # Main Layers
   core:
     name: ${self:custom.prefix}-core
@@ -112,43 +121,266 @@ layers:
     compatibleRuntimes:
       - nodejs12.x
 functions:
-  #Router
-  authorizer-slack-headers:
-    memorySize: 128
-    package:
-      include:
-        - ./authorizer/**
-      exclude:
-        - ./**
-    handler: authorizer/authorizer-headers.handler
-  router:
+  router-control-open:
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
     memorySize: 256
     package:
       include:
-        - ./router/**
+        - ./router/router-control-open.js
       exclude:
         - ./**
-    handler: router/server.handler
+    handler: router/router-control-open.handler
     events:
       - http:
-          method: any
-          path: api/{proxy+}
-          authorizer: 
-            name: authorizer-slack-headers
-            identitySource: method.request.header.X-Slack-Request-Timestamp, method.request.header.X-Slack-Signature
-            type: request
+          method: POST
+          path: api/control
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+  router-control-pause:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-control-pause.js
+      exclude:
+        - ./**
+    handler: router/router-control-pause.handler
+    events:
       - http:
-          method: get
+          method: POST
+          path: api/control/pause
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+  router-control-play:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-control-play.js
+      exclude:
+        - ./**
+    handler: router/router-control-play.handler
+    events:
+      - http:
+          method: POST
+          path: api/control/play
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+  router-control-reset:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-control-reset.js
+      exclude:
+        - ./**
+    handler: router/router-control-reset.handler
+    events:
+      - http:
+          method: POST
+          path: api/control/reset
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+  router-control-skip:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-control-skip.js
+      exclude:
+        - ./**
+    handler: router/router-control-skip.handler
+    events:
+      - http:
+          method: POST
+          path: api/control/skip
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+  router-settings:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-settings.js
+      exclude:
+        - ./**
+    handler: router/router-settings.handler
+    events:
+      - http:
+          method: POST
+          path: api/settings
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  router-spotify-auth-callback:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-spotify-auth-callback.js
+      exclude:
+        - ./**
+    handler: router/router-spotify-auth-callback.handler
+    events:
+      - http:
+          method: GET
           path: spotify-auth-callback
     layers:
+      - { Ref: RouterDashcoreLambdaLayer }
       - { Ref: CoreLambdaLayer }
-      - { Ref: SpotifyLambdaLayer }
+  router-slack-actions:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-slack-actions.js
+      exclude:
+        - ./**
+    handler: router/router-slack-actions.handler
+    events:
+      - http:
+          method: POST
+          path: api/slack/actions
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
       - { Ref: SlackLambdaLayer }
-
+  router-slack-events:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-slack-events.js
+      exclude:
+        - ./**
+    handler: router/router-slack-events.handler
+    events:
+      - http:
+          method: POST
+          path: api/slack/events
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+  router-slack-options:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-slack-options.js
+      exclude:
+        - ./**
+    handler: router/router-slack-options.handler
+    events:
+      - http:
+          method: POST
+          path: api/slack/options
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+  router-tracks-find-artists:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-tracks-find-artists.js
+      exclude:
+        - ./**
+    handler: router/router-tracks-find-artists.handler
+    events:
+      - http:
+          method: POST
+          path: api/tracks/artist
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+  router-tracks-remove:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-tracks-remove.js
+      exclude:
+        - ./**
+    handler: router/router-tracks-remove.handler
+    events:
+      - http:
+          method: POST
+          path: api/tracks/remove
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  router-tracks-current:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-tracks-current.js
+      exclude:
+        - ./**
+    handler: router/router-tracks-current.handler
+    events:
+      - http:
+          method: POST
+          path: api/tracks/current
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+  router-tracks-find:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-tracks-find.js
+      exclude:
+        - ./**
+    handler: router/router-tracks-find.handler
+    events:
+      - http:
+          method: POST
+          path: api/tracks/find
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+  router-tracks-whom:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-tracks-whom.js
+      exclude:
+        - ./**
+    handler: router/router-tracks-whom.handler
+    events:
+      - http:
+          method: POST
+          path: api/tracks/whom
+    layers:
+      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: CoreLambdaLayer }
   #Settings
-  settings-auth-change:
+  settings-auth-change: 
     events:
       - sns: ${self:custom.prefix}-settings-auth-change
     memorySize: 128
