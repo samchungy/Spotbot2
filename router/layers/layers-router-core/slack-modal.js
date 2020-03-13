@@ -19,6 +19,7 @@ async function openModal(teamId, channelId, triggerId, callback, title, submit, 
     return await sendModal(triggerId, modal);
   } catch (error) {
     logger.error(error);
+    throw error;
   }
 }
 
