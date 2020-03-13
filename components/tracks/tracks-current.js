@@ -66,21 +66,24 @@ module.exports.handler = async (event, context) => {
       } else {
         blocks.push(contextSection(null, CURRENT_RESPONSES.context_off(`<${playlist.url}|${playlist.name}>`, backToPlaylist === 'true')));
       }
+      // Blacklist, skip if in it.
+      const blacklist = await loadBlacklist(teamId, channelId);
+      if (blacklist && blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
+        await post(
+            inChannelPost(channelId, text, blocks.length ? blocks : null),
+        );
+        const params = {
+          Message: JSON.stringify({teamId, channelId, settings, timestamp: null, userId}),
+          TopicArn: CONTROL_SKIP_START,
+        };
+        return await sns.publish(params).promise();
+      }
     } else {
       text = CURRENT_RESPONSES.not_playing;
     }
     await post(
         inChannelPost(channelId, text, blocks.length ? blocks : null),
     );
-    // Blacklist, skip if in it.
-    const blacklist = await loadBlacklist(teamId, channelId);
-    if (blacklist && blacklist.blacklist.find((blacklistTrack)=> track.id === blacklistTrack.id)) {
-      const params = {
-        Message: JSON.stringify({teamId, channelId, settings, timestamp: null, userId}),
-        TopicArn: CONTROL_SKIP_START,
-      };
-      return await sns.publish(params).promise();
-    }
   } catch (error) {
     logger.error(error);
     logger.error('Get current failed');
