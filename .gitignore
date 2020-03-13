@@ -9,3 +9,4 @@ report*
 
 # dotenv
 *.env
+.env.*
