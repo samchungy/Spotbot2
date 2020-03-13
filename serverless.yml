@@ -771,7 +771,7 @@ functions:
   tracks-current:
     events:
       - sns: ${self:custom.prefix}-tracks-current
-    memorySize: 192
+    memorySize: 256
     package:
       include:
         - ./components/tracks/tracks-current.js
@@ -799,7 +799,7 @@ functions:
   tracks-find-artists-search:
     events:
       - sns: ${self:custom.prefix}-tracks-find-artists-search
-    memorySize: 192
+    memorySize: 256
     package:
       include:
         - ./components/tracks/tracks-find-artists-search.js
@@ -813,7 +813,7 @@ functions:
   tracks-find-artists-get-artists:
     events:
       - sns: ${self:custom.prefix}-tracks-find-artists-get-artists
-    memorySize: 192
+    memorySize: 256
     package:
       include:
         - ./components/tracks/tracks-find-artists-get-artists.js
@@ -827,7 +827,7 @@ functions:
   tracks-find-artists-get-tracks:
     events:
       - sns: ${self:custom.prefix}-tracks-find-artists-get-tracks
-    memorySize: 192
+    memorySize: 256
     package:
       include:
         - ./components/tracks/tracks-find-artists-get-tracks.js
@@ -841,7 +841,7 @@ functions:
   tracks-find-search:
     events:
       - sns: ${self:custom.prefix}-tracks-find-search
-    memorySize: 192
+    memorySize: 256
     package:
       include:
         - ./components/tracks/tracks-find-search.js
@@ -855,7 +855,7 @@ functions:
   tracks-find-get-tracks:
     events:
       - sns: ${self:custom.prefix}-tracks-find-get-tracks
-    memorySize: 192
+    memorySize: 256
     package:
       include:
         - ./components/tracks/tracks-find-get-tracks.js
@@ -897,7 +897,7 @@ functions:
   tracks-whom:
     events:
       - sns: ${self:custom.prefix}-tracks-whom
-    memorySize: 192
+    memorySize: 256
     package:
       include:
         - ./components/tracks/tracks-whom.js
