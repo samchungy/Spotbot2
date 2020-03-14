@@ -21,16 +21,18 @@ module.exports.handler = async (event, context) => {
     const payload = JSON.parse(event.body);
     switch (payload.type) {
       case 'url_verification':
-        ctx.body = payload.challenge;
+        body = payload.challenge;
         break;
       case 'event_callback':
-        const settings = await checkIsSetup(payload.team_id, payload.event.channel);
-        params = {
-          Message: JSON.stringify({teamId: payload.team_id, channelId: payload.event.channel, settings}),
-          TopicArn: DELETE_CHANNEL,
-        };
-        await sns.publish(params).promise();
-        break;
+        if (payload.event && ['group_left', 'channel_left'].includes(payload.event.type)) {
+          const settings = await checkIsSetup(payload.team_id, payload.event.channel);
+          params = {
+            Message: JSON.stringify({teamId: payload.team_id, channelId: payload.event.channel, settings}),
+            TopicArn: DELETE_CHANNEL,
+          };
+          await sns.publish(params).promise();
+          break;
+        }
     }
   } catch (error) {
     logger.error('Slack event router failed');
