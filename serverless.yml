@@ -78,7 +78,7 @@ provider:
     Resource: "${self:custom.lambda}-*"
 layers:
   # Router
-  router-core:
+  router:
     name: ${self:custom.prefix}-router-core
     path: router/layers/layers-router-core
     compatibleRuntimes:
@@ -136,7 +136,7 @@ functions:
           method: POST
           path: api/control
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-control-pause:
     environment:
@@ -153,7 +153,7 @@ functions:
           method: POST
           path: api/control/pause
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-control-play:
     environment:
@@ -170,7 +170,7 @@ functions:
           method: POST
           path: api/control/play
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-control-reset:
     environment:
@@ -187,7 +187,7 @@ functions:
           method: POST
           path: api/control/reset
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-control-skip:
     environment:
@@ -204,7 +204,7 @@ functions:
           method: POST
           path: api/control/skip
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-settings:
     environment:
@@ -221,7 +221,7 @@ functions:
           method: POST
           path: api/settings
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
       - { Ref: SlackLambdaLayer }
   router-spotify-auth-callback:
@@ -239,7 +239,7 @@ functions:
           method: GET
           path: spotify-auth-callback
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-slack-actions:
     environment:
@@ -256,7 +256,7 @@ functions:
           method: POST
           path: api/slack/actions
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
       - { Ref: SlackLambdaLayer }
   router-slack-events:
@@ -274,7 +274,7 @@ functions:
           method: POST
           path: api/slack/events
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-slack-options:
     environment:
@@ -291,7 +291,7 @@ functions:
           method: POST
           path: api/slack/options
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-tracks-find-artists:
     environment:
@@ -308,7 +308,7 @@ functions:
           method: POST
           path: api/tracks/artist
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-tracks-remove:
     environment:
@@ -325,7 +325,7 @@ functions:
           method: POST
           path: api/tracks/remove
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
       - { Ref: SlackLambdaLayer }
   router-tracks-current:
@@ -343,7 +343,7 @@ functions:
           method: POST
           path: api/tracks/current
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-tracks-find:
     environment:
@@ -360,7 +360,7 @@ functions:
           method: POST
           path: api/tracks/find
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   router-tracks-whom:
     environment:
@@ -377,7 +377,7 @@ functions:
           method: POST
           path: api/tracks/whom
     layers:
-      - { Ref: RouterDashcoreLambdaLayer }
+      - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
   #Settings
   settings-auth-change: 
