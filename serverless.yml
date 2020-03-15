@@ -20,7 +20,6 @@ custom:
     deletion_policy: Delete
   prod:
     deletion_policy: Retain
-
   prefix: ${self:service}-${self:custom.stage}
   topic: arn:aws:sns:${self:provider.region}:${self:custom.account_id}:${self:custom.prefix}
   lambda: arn:aws:lambda:${self:provider.region}:${self:custom.account_id}:function:${self:custom.prefix}
@@ -121,6 +120,7 @@ layers:
     compatibleRuntimes:
       - nodejs12.x
 functions:
+  #Router
   router-control-open:
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
@@ -502,7 +502,7 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
   settings-get-options-playlists:
-    memorySize: 128
+    memorySize: 192
     package:
       include:
         - ./components/settings/settings-get-options-playlists.js
@@ -565,7 +565,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-  
   #Control
   control-clear-one:
     events:
@@ -766,7 +765,6 @@ functions:
       - { Ref: SlackLambdaLayer }
       - { Ref: ControlDashpanelLambdaLayer }
       - { Ref: ControlDashskipLambdaLayer }
-
 #Tracks
   tracks-current:
     events:
@@ -908,7 +906,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-
 #Delete
   delete-channel:
     events:
