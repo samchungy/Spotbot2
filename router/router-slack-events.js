@@ -3,7 +3,7 @@ const sns = new SNS();
 
 const {checkIsSetup} = require('/opt/check-settings');
 const slackAuthorized = require('/opt/authorizer');
-const DELETE_CHANNEL = process.env.SNS_PREFIX + 'delete-channel';
+const SETUP_DELETE_CHANNEL = process.env.SNS_PREFIX + 'setup-delete-channel';
 
 const logger = require(process.env.LOGGER);
 
@@ -28,7 +28,7 @@ module.exports.handler = async (event, context) => {
           const settings = await checkIsSetup(payload.team_id, payload.event.channel);
           params = {
             Message: JSON.stringify({teamId: payload.team_id, channelId: payload.event.channel, settings}),
-            TopicArn: DELETE_CHANNEL,
+            TopicArn: SETUP_DELETE_CHANNEL,
           };
           await sns.publish(params).promise();
           break;

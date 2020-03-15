@@ -906,17 +906,17 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-#Delete
-  delete-channel:
+#Setup
+  setup-delete-channel:
     events:
-      - sns: ${self:custom.prefix}-delete-channel
+      - sns: ${self:custom.prefix}-setup-delete-channel
     memorySize: 128
     package:
       include:
-        - ./components/delete/delete-channel.js
+        - ./components/setup/setup-delete-channel.js
       exclude:
         - ./**
-    handler: components/delete/delete-channel.handler
+    handler: components/setup/setup-delete-channel.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SlackLambdaLayer }

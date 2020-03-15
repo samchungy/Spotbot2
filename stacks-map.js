@@ -4,7 +4,7 @@ module.exports = (resource, logicalId) => {
   if (logicalId.startsWith('settings') || isSns('settings', logicalId)) return {destination: 'Settings'};
   if (logicalId.startsWith('tracks') || isSns('tracks', logicalId)) return {destination: 'Tracks'};
   if (logicalId.startsWith('control') || isSns('control', logicalId)) return {destination: 'Control'};
-  if (logicalId.startsWith('delete') || isSns('delete', logicalId)) return {destination: 'Delete'};
+  if (logicalId.startsWith('setup') || isSns('setup', logicalId)) return {destination: 'Delete'};
   // Falls back to default
 };
 
