@@ -36,7 +36,7 @@ async function getBlocks(teamId, channelId, auth, devices) {
     const status = await fetchCurrentPlayback(teamId, channelId, auth);
     if (status.device) {
       const statusDevice = new Device(status.device);
-      const initial = option(`Current Device: ${statusDevice.name}`, statusDevice.id);
+      const initial = option(`Current Device: ${statusDevice.name}`, statusDevice.id ? statusDevice.id : 'null');
       const options = [
         initial,
         ...devices.filter((device) => device.id != status.device.id).map((device) => {
