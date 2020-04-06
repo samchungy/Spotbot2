@@ -15,7 +15,7 @@ async function play(teamId, channelId, auth, deviceId, context, offset, ms) {
   const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
   return await requester(teamId, channelId, auth, 'Play', async () => {
     await spotifyApi.play({
-      device_id: deviceId,
+      ...deviceId ? {device_id: deviceId} : {},
       ...context ? {context_uri: context} : {},
       ...offset ? {offset: offset} : {},
       ...ms ? {position_ms: ms} : {},
