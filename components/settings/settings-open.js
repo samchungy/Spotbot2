@@ -4,8 +4,8 @@ const logger = require(process.env.LOGGER);
 const {postEphemeral, updateModal} = require('/opt/slack/slack-api');
 const {slackModal} = require('/opt/slack/format/slack-format-modal');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
-const {getAuthBlock} = require('/opt/settings-blocks/settings-auth-blocks');
-const {getSettingsBlocks} = require('/opt/settings-blocks/settings-blocks');
+const {getAuthBlock} = require('./layers/settings-auth-blocks');
+const {getSettingsBlocks} = require('./layers/settings-blocks');
 
 const SETTINGS_MODAL = config.slack.actions.settings_modal;
 
