@@ -17,8 +17,8 @@ const HINTS = {
   auth_verify_button: 'Verify',
   auth_urL_fail: 'Try again',
   auth_url_button: ':link: Authenticate with Spotify',
-  reauth_confirm: `This will disable this channel's Spotbot functionality until Spotbot is reauthenticated.`,
-  reauth_url_button: ':gear: Re-authenticate with Spotify',
+  reauth_confirm: `This will disable this channel's Spotbot functionality until Spotbot is re-authenticated.`,
+  reauth_url_button: ':gear: Reset Spotify Authentication',
 };
 
 const LABELS = {
