@@ -15,7 +15,7 @@ const HELP = 'To get started, add the Spotbot to a channel and then run `/spotbo
 const INVALID = `:information_source: Invalid Command.`;
 const MIDDLEWARE_RESPONSE = {
   admin_error: (users) => `:information_source: You must be a Spotbot admin for this channel to use this command. Current channel admins: ${users.map((user)=>`<@${user}>`).join(', ')}.`,
-  setup_error: `:information_source: Spotbot is not installed in this channel. Please add @spotbot to this channel and try again.`,
+  setup_error: ':information_source: Spotbot is not installed in this channel. Please run `/invite @spotbot` and try again.',
   settings_error: ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.',
 };
 
