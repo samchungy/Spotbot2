@@ -71,7 +71,7 @@ module.exports.handler = async (event, context) => {
           case 'blacklist':
           case 'device':
             if (!settings) {
-              body = ':information_source: Spotbot is not setup in this channel. Use `/spotbot` settings to setup Spotbot.';
+              body = ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.';
               return {
                 statusCode,
                 body,

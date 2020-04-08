@@ -26,7 +26,7 @@ module.exports.handler = async (event, context) => {
     const payload = qs.parse(event.body);
     const settings = await checkIsSetup(payload.team_id, payload.channel_id);
     if (!settings) {
-      body = ':information_source: Spotbot is not setup in this channel. Use `/spotbot` settings to setup Spotbot.';
+      body = ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.';
       return {
         statusCode,
         body,
