@@ -99,11 +99,6 @@ layers:
     compatibleRuntimes:
       - nodejs12.x
   # Other Layers
-  settings-blocks:
-    name: ${self:custom.prefix}-settings-blocks
-    path: components/settings/layers/layers-settings
-    compatibleRuntimes:
-      - nodejs12.x
   control-panel:
     name: ${self:custom.prefix}-control-panel
     path: components/control/layers/layers-control-panel
@@ -394,7 +389,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: SettingsDashblocksLambdaLayer }
   settings-auth-update-view:
     events:
       - sns: ${self:custom.prefix}-settings-auth-update-view
@@ -402,6 +396,8 @@ functions:
     package:
       include:
         - ./components/settings/settings-auth-update-view.js
+        - ./components/settings/layers/settings-blocks.js
+        - ./components/settings/layers/settings-auth-blocks.js
       exclude:
         - ./**
     handler: components/settings/settings-auth-update-view.handler
@@ -409,7 +405,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: SettingsDashblocksLambdaLayer }
   settings-auth-validate:
     memorySize: 128
     package:
@@ -531,6 +526,8 @@ functions:
     package:
       include:
         - ./components/settings/settings-open.js
+        - ./components/settings/layers/settings-blocks.js
+        - ./components/settings/layers/settings-auth-blocks.js
       exclude:
         - ./**
     handler: components/settings/settings-open.handler
