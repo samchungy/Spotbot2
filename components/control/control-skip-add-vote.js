@@ -2,7 +2,7 @@ const logger = require(process.env.LOGGER);
 
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
-const {addVote} = require('/opt/control-skip/control-skip');
+const {addVote} = require('./layers/control-skip');
 const {loadSkip} = require('/opt/settings/settings-extra-interface');
 const {textSection} = require('/opt/slack/format/slack-format-blocks');
 const {postEphemeral, reply} = require('/opt/slack/slack-api');
