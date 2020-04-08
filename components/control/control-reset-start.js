@@ -5,7 +5,7 @@ const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {getReviewTracks} = require('/opt/control-reset/control-reset');
+const {getReviewTracks} = require('./layers/control-reset');
 const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const {actionSection, buttonActionElement, textSection} = require('/opt/slack/format/slack-format-blocks');

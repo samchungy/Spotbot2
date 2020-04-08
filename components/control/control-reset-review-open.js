@@ -4,7 +4,7 @@ const logger = require(process.env.LOGGER);
 const moment = require(process.env.MOMENT);
 
 const {reply, updateModal} = require('/opt/slack/slack-api');
-const {getReviewTracks} = require('/opt/control-reset/control-reset');
+const {getReviewTracks} = require('./layers/control-reset');
 const {deleteReply} = require('/opt/slack/format/slack-format-reply');
 const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
