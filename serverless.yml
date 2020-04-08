@@ -109,11 +109,6 @@ layers:
     path: components/control/layers/layers-control-reset
     compatibleRuntimes:
       - nodejs12.x
-  control-skip:
-    name: ${self:custom.prefix}-control-skip
-    path: components/control/layers/layers-control-skip
-    compatibleRuntimes:
-      - nodejs12.x
 functions:
   #Router
   router-control-open:
@@ -737,6 +732,7 @@ functions:
     package:
       include:
         - ./components/control/control-skip-add-vote.js
+        - ./components/control/layers/control-skip.js
       exclude:
         - ./**
     handler: components/control/control-skip-add-vote.handler
@@ -745,7 +741,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
       - { Ref: ControlDashpanelLambdaLayer }
-      - { Ref: ControlDashskipLambdaLayer }
   control-skip-start:
     events:
       - sns: ${self:custom.prefix}-control-skip-start
@@ -753,6 +748,7 @@ functions:
     package:
       include:
         - ./components/control/control-skip-start.js
+        - ./components/control/layers/control-skip.js
       exclude:
         - ./**
     handler: components/control/control-skip-start.handler
@@ -761,7 +757,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
       - { Ref: ControlDashpanelLambdaLayer }
-      - { Ref: ControlDashskipLambdaLayer }
 #Tracks
   tracks-current:
     events:
