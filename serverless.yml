@@ -104,11 +104,6 @@ layers:
     path: components/control/layers/layers-control-panel
     compatibleRuntimes:
       - nodejs12.x
-  control-reset:
-    name: ${self:custom.prefix}-control-reset
-    path: components/control/layers/layers-control-reset
-    compatibleRuntimes:
-      - nodejs12.x
 functions:
   #Router
   router-control-open:
@@ -655,6 +650,7 @@ functions:
     package:
       include:
         - ./components/control/control-reset-start.js
+        - ./components/control/layers/control-reset.js
       exclude:
         - ./**
     handler: components/control/control-reset-start.handler
@@ -663,7 +659,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
       - { Ref: ControlDashpanelLambdaLayer }
-      - { Ref: ControlDashresetLambdaLayer}
   control-reset-set:
     events:
       - sns: ${self:custom.prefix}-control-reset-set
@@ -686,6 +681,7 @@ functions:
     package:
       include:
         - ./components/control/control-reset-review-open.js
+        - ./components/control/layers/control-reset.js
       exclude:
         - ./**
     handler: components/control/control-reset-review-open.handler
@@ -694,7 +690,6 @@ functions:
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
       - { Ref: ControlDashpanelLambdaLayer }
-      - { Ref: ControlDashresetLambdaLayer}
   control-reset-review-submit:
     events:
       - sns: ${self:custom.prefix}-control-reset-review-submit
