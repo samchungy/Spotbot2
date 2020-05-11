@@ -1,7 +1,6 @@
 module.exports = {
   'spotify_api': {
     'maximum_request_attempts': 1,
-    'redirect_url': 'http://localhost:3000/settings/auth/callback',
     'scopes': [
       'user-read-private',
       'user-read-email',
@@ -30,14 +29,23 @@ module.exports = {
     'recent_limit': 5,
   },
   'dynamodb': {
-    'all_settings': 'all_settings',
-    'auth': {
-      'auth': 'auth',
+    'main_settings': 'main_settings',
+    'auth_spotify': {
+      'key': 'spotify_auth',
       'access': 'access_token',
       'expires': 'expires',
       'profile': 'profile',
       'refresh': 'refresh_token',
       'state': 'state',
+      'view_id': 'view_id',
+    },
+    'auth_sonos': {
+      'auth': 'sonos_auth',
+      'access': 'access_token',
+      'expires': 'expires',
+      'profile': 'profile',
+      'refresh': 'refresh_token',
+      'state': 'sonos_state',
       'view_id': 'view_id',
     },
     'settings': {
@@ -92,6 +100,7 @@ module.exports = {
     },
     'actions': {
       'blacklist_modal': 'blacklist_modal',
+      'sonos_modal': 'sonos_modal',
       'settings_modal': 'settings_modal',
       'device_modal': 'device_modal',
       'remove_modal': 'remove_modal',
@@ -135,5 +144,4 @@ module.exports = {
       'ephemeral': null,
     },
   },
-}
-;
+};
