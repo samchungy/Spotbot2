@@ -1,6 +1,6 @@
 const qs = require('qs');
-const Lambda = require('aws-sdk/clients/lambda');
-const lambda = new Lambda();
+const lambda = require('/opt/lambda');
+
 
 const slackAuthorized = require('/opt/authorizer');
 const {checkIsSetup} = require('/opt/check-settings');

@@ -1,5 +1,5 @@
-const SNS = require('aws-sdk/clients/sns');
-const sns = new SNS();
+const sns = require('/opt/sns');
+
 
 const {checkIsSetup} = require('/opt/check-settings');
 const slackAuthorized = require('/opt/authorizer');

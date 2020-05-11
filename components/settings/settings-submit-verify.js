@@ -10,8 +10,8 @@ const VERIFY_RESPONSE = {
   integer_error: 'Please enter a valid integer',
   not_authenticated: 'Please authenticate an account with Spotify',
 };
-const SNS = require('aws-sdk/clients/sns');
-const sns = new SNS();
+const sns = require('/opt/sns');
+
 
 const {isEmpty, isPositiveInteger} = require('/opt/utils/util-objects');
 

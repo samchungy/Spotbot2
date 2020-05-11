@@ -1,5 +1,5 @@
-const SNS = require('aws-sdk/clients/sns');
-const sns = new SNS();
+const sns = require('/opt/sns');
+
 
 const moment = require(process.env.MOMENT);
 const logger = require(process.env.LOGGER);

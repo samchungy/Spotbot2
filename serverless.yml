@@ -5,24 +5,40 @@ package:
 plugins:
   - serverless-dotenv-plugin
   - serverless-plugin-split-stacks
+  - serverless-dynamodb-local
+  - serverless-offline
+  - serverless-offline-lambda
+  - serverless-offline-sns
 
 custom:
-  # dynamodb:
-  #   stages:
-  #     - ${self:provider.stage}
-  #   start:
-  #     port: 8000
-  #     dbPath: .dynamodb/db
-  #     migrate: true
-  account_id: 897201036940
   stage: ${opt:stage, self:provider.stage}
+  #Serverless Offline
+  lambda:
+    prefix: ${self:service}-${self:custom.stage}
+  dynamodb:
+    stages:
+      - local
+    start:
+      port: 8000
+      dbPath: .dynamodb/db
+      migrate: true
+  serverless-offline:
+    host: 0.0.0.0
+    printOutput: true
+  serverless-offline-sns:
+    port: 4002
   dev:
+    account_id: 897201036940
+    deletion_policy: Delete
+  local: 
+    account_id: 123456789012
     deletion_policy: Delete
   prod:
+    account_id: 897201036940
     deletion_policy: Retain
   prefix: ${self:service}-${self:custom.stage}
-  topic: arn:aws:sns:${self:provider.region}:${self:custom.account_id}:${self:custom.prefix}
-  lambda: arn:aws:lambda:${self:provider.region}:${self:custom.account_id}:function:${self:custom.prefix}
+  topic_arn: arn:aws:sns:${self:provider.region}:${self:custom.${self:custom.stage}.account_id}:${self:custom.prefix}
+  lambda_arn: arn:aws:lambda:${self:provider.region}:${self:custom.${self:custom.stage}.account_id}:function:${self:custom.prefix}
 
 provider:
   name: aws
@@ -31,9 +47,10 @@ provider:
   versionFunctions: false
   logRetentionInDays: 14 # Set the default RetentionInDays for a CloudWatch LogGroup
   environment:
+    NODE_PATH: "./:/opt/nodejs/node_modules"
     ENV: ${self:custom.stage}
-    SNS_PREFIX: ${self:custom.topic}-
-    LAMBDA_PREFIX: ${self:custom.lambda}-
+    SNS_PREFIX: ${self:custom.topic_arn}-
+    LAMBDA_PREFIX: ${self:custom.prefix}-
     REGION: ${self:provider.region}
     #Tables
     AUTH_TABLE: ${self:custom.prefix}-auth
@@ -62,30 +79,35 @@ provider:
       - dynamodb:UpdateItem
       - dynamodb:DeleteItem
     Resource: [
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.SETTINGS_TABLE}*",
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.SEARCH_TABLE}*",
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.AUTH_TABLE}*",
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.HISTORY_TABLE}*"
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.${self:custom.stage}.account_id}:table/${self:provider.environment.SETTINGS_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.${self:custom.stage}.account_id}:table/${self:provider.environment.SEARCH_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.${self:custom.stage}.account_id}:table/${self:provider.environment.AUTH_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.${self:custom.stage}.account_id}:table/${self:provider.environment.HISTORY_TABLE}*"
     ]
   - Effect: Allow
     Action:
       - sns:Publish
-    Resource: "${self:custom.topic}-*"
+    Resource: "${self:custom.topic_arn}-*"
   - Effect: Allow
     Action:
       - lambda:InvokeFunction
-    Resource: "${self:custom.lambda}-*"
+    Resource: "${self:custom.lambda_arn}-*"
 layers:
   # Router
   router:
     name: ${self:custom.prefix}-router-core
-    path: router/layers/layers-router-core
+    path: layers/layers-router-core
     compatibleRuntimes:
       - nodejs12.x
   # Main Layers
   core:
     name: ${self:custom.prefix}-core
     path: layers/layers-core
+    compatibleRuntimes:
+      - nodejs12.x
+  sonos:
+    name: ${self:custom.prefix}-sonos
+    path: layers/layers-sonos
     compatibleRuntimes:
       - nodejs12.x
   slack:
@@ -240,6 +262,24 @@ functions:
       - http:
           method: POST
           path: api/slack/actions
+    layers:
+      - { Ref: RouterLambdaLayer }
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+  router-sonos-auth-callback:
+    environment:
+      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+    memorySize: 256
+    package:
+      include:
+        - ./router/router-sonos-auth-callback.js
+      exclude:
+        - ./**
+    handler: router/router-sonos-auth-callback.handler
+    events:
+      - http:
+          method: GET
+          path: sonos-auth-callback
     layers:
       - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
@@ -525,7 +565,87 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: SettingsDashblocksLambdaLayer }
+  settings-sonos-open:
+    events:
+      - sns: ${self:custom.prefix}-settings-sonos-open
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-sonos-open.js
+        - ./components/settings/layers/settings-sonos-blocks.js
+        - ./components/settings/layers/settings-sonos-auth-blocks.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-sonos-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SonosLambdaLayer }
+  settings-sonos-auth-update-view:
+    events:
+      - sns: ${self:custom.prefix}-settings-sonos-auth-update-view
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-sonos-auth-update-view.js
+        - ./components/settings/layers/settings-sonos-blocks.js
+        - ./components/settings/layers/settings-sonos-auth-blocks.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-sonos-auth-update-view.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SonosLambdaLayer }
+  settings-sonos-auth-validate:
+    events:
+      - sns: ${self:custom.prefix}-settings-sonos-auth-validate
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-sonos-auth-validate.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-sonos-auth-validate.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SonosLambdaLayer }
+  settings-sonos-auth-delete:
+    events:
+      - sns: ${self:custom.prefix}-settings-sonos-auth-delete
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-sonos-auth-delete.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-sonos-auth-delete.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SonosLambdaLayer }
+  settings-sonos-groups-open:
+    events:
+      - sns: ${self:custom.prefix}-settings-sonos-groups-open
+    memorySize: 128
+    package:
+      include:
+        - ./components/settings/settings-sonos-groups-open.js
+        - ./components/settings/layers/settings-sonos-blocks.js
+        - ./components/settings/layers/settings-sonos-auth-blocks.js
+      exclude:
+        - ./**
+    handler: components/settings/settings-sonos-groups-open.handler
+    layers:
+      - { Ref: CoreLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
+      - { Ref: SonosLambdaLayer }
   settings-submit-save:
     events:
       - sns: ${self:custom.prefix}-settings-submit-save

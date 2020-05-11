@@ -1,8 +1,8 @@
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
 
-const SNS = require('aws-sdk/clients/sns');
-const sns = new SNS();
+const sns = require('/opt/sns');
+
 const {changeSettings} = require('/opt/settings/settings-interface');
 const {removeAuth} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
 

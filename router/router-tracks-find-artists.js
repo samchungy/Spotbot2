@@ -1,6 +1,6 @@
 const qs = require('qs');
-const SNS = require('aws-sdk/clients/sns');
-const sns = new SNS();
+const sns = require('/opt/sns');
+
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 

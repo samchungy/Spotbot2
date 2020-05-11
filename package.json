@@ -4,7 +4,11 @@
   "description": "Spotify Bot for Slack",
   "main": "server/server.js",
   "scripts": {
-    "test": "export LOG_LEVEL=error && jest --testPathIgnorePatterns=mocks"
+    "deploy-local": "docker-compose down && docker-compose up && docker-compose down",
+    "dev": "sls offline --printOutput -s dev --env development",
+    "local": "gulp local & sls offline start -s local --env local",
+    "deploy-dev": "sls deploy -s dev --env development",
+    "deploy-prod": "sls deploy -s prod --env production"
   },
   "repository": {
     "type": "git",
@@ -17,18 +21,31 @@
   },
   "homepage": "https://github.com/samchungy/Spotbot2#readme",
   "dependencies": {
-    "serverless": "^1.63.0",
-    "serverless-dotenv-plugin": "^2.3.2",
-    "serverless-http": "^2.3.1",
-    "serverless-plugin-split-stacks": "^1.9.3"
+    "fs": "0.0.1-security",
+    "glob": "^7.1.6",
+    "glob-promise": "^3.4.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-merge-json": "^2.1.0",
+    "gulp-rename": "^2.0.0",
+    "merge-stream": "^2.0.0",
+    "path": "^0.12.7",
+    "serverless": "^1.68.0",
+    "serverless-dotenv-plugin": "^2.4.2",
+    "serverless-offline-lambda": "^1.0.6",
+    "serverless-plugin-split-stacks": "^1.9.3",
+    "shelljs": "^0.8.4"
   },
   "devDependencies": {
     "dotenv": "^8.2.0",
     "eslint": "^6.8.0",
     "eslint-config-google": "^0.14.0",
-    "jest": "^24.9.0",
+    "gulp": "^4.0.2",
+    "gulp-exec": "^4.0.0",
+    "jest": "^25.4.0",
+    "nodemon": "^2.0.3",
     "serverless-dynamodb-local": "^0.2.39",
     "serverless-offline": "^5.12.1",
+    "serverless-offline-sns": "^0.68.0",
     "supertest": "^4.0.2"
   }
 }

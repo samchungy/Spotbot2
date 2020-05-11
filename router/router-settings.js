@@ -1,6 +1,6 @@
 const qs = require('qs');
-const SNS = require('aws-sdk/clients/sns');
-const sns = new SNS();
+const sns = require('/opt/sns');
+
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
 
@@ -22,6 +22,8 @@ const MIDDLEWARE_RESPONSE = {
 const SETTINGS_OPEN = process.env.SNS_PREFIX + 'settings-open';
 const SETTINGS_BLACKLIST_OPEN = process.env.SNS_PREFIX + 'settings-blacklist-open';
 const SETTINGS_DEVICE_SELECT = process.env.SNS_PREFIX + 'settings-device-select';
+const SETTINGS_SONOS_OPEN = process.env.SNS_PREFIX + 'settings-sonos-open';
+
 
 module.exports.handler = async (event, context) => {
   let statusCode = 200; let body = '';
@@ -34,13 +36,17 @@ module.exports.handler = async (event, context) => {
         body,
       };
     }
-    const protocol = event.headers['X-Forwarded-Proto'];
-    const host = event.requestContext.domainName;
+    const stage = event.requestContext.stage === 'local' ? `` : `/${event.requestContext.stage}`;
+    const url = `${event.headers['X-Forwarded-Proto']}://${event.headers.Host}${stage}`;
     const payload = qs.parse(event.body);
     if (payload.text) {
       const textSplit = payload.text.split(' ');
-      if (textSplit.length == 0) {
+      if (textSplit.length == 0 || textSplit[0] == 'help') {
         body = HELP;
+        return {
+          statusCode,
+          body,
+        };
       } else {
         const settings = await checkIsSetup(payload.team_id, payload.channel_id);
         let params; let admins;
@@ -61,15 +67,16 @@ module.exports.handler = async (event, context) => {
                 };
               }
             }
-            const settingsPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotbot Settings', 'Submit', 'Cancel');
+            const settingsPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotbot Settings', null, 'Cancel');
             params = {
-              Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: settingsPayload.view.id, userId: payload.user_id, url: `${protocol}://${host}`}),
+              Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: settingsPayload.view.id, userId: payload.user_id, url}),
               TopicArn: SETTINGS_OPEN,
             };
             await sns.publish(params).promise();
             break;
           case 'blacklist':
           case 'device':
+          case 'sonos':
             if (!settings) {
               body = ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.';
               return {
@@ -85,25 +92,32 @@ module.exports.handler = async (event, context) => {
                 body,
               };
             }
-            if (textSplit[0] == 'blacklist') {
-              const blacklistPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, `Spotbot Blacklist`, 'Save', 'Close');
-              params = {
-                Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: blacklistPayload.view.id, userId: payload.user_id}),
-                TopicArn: SETTINGS_BLACKLIST_OPEN,
-              };
-              await sns.publish(params).promise();
-              break;
-            } else {
-              const devicePayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotify Devices', 'Switch to Device', 'Cancel');
-              params = {
-                Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: devicePayload.view.id, userId: payload.user_id}),
-                TopicArn: SETTINGS_DEVICE_SELECT,
-              };
-              await sns.publish(params).promise();
-              break;
+            switch (textSplit[0]) {
+              case 'blacklist':
+                const blacklistPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, `Spotbot Blacklist`, null, 'Cancel');
+                params = {
+                  Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: blacklistPayload.view.id, userId: payload.user_id}),
+                  TopicArn: SETTINGS_BLACKLIST_OPEN,
+                };
+                await sns.publish(params).promise();
+                break;
+              case 'device':
+                const devicePayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotify Devices', null, 'Cancel');
+                params = {
+                  Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: devicePayload.view.id, userId: payload.user_id}),
+                  TopicArn: SETTINGS_DEVICE_SELECT,
+                };
+                await sns.publish(params).promise();
+                break;
+              case 'sonos':
+                const sonosPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Sonos Settings', null, 'Cancel');
+                params = {
+                  Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: sonosPayload.view.id, userId: payload.user_id, url}),
+                  TopicArn: SETTINGS_SONOS_OPEN,
+                };
+                await sns.publish(params).promise();
+                break;
             }
-          case 'help':
-            body = HELP;
             break;
           default:
             body = INVALID;

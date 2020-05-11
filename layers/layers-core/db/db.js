@@ -1,9 +1,11 @@
 const DynamoDB = require('aws-sdk/clients/dynamodb');
-// const options = {
-//   'region': 'localhost',
-//   'endpoint': 'http://localhost:8000',
-// };
-
-const dynamodb = new DynamoDB.DocumentClient();
+const dynamodb = new DynamoDB.DocumentClient(
+    process.env.ENV == 'local' ? {
+      endpoint: 'http://localhost:8000',
+      region: 'localhost',
+      accessKeyId: 'DEFAULT_ACCESS_KEY',
+      secretAccessKey: 'DEFAULT_SECRET',
+    } : {},
+);
 
 module.exports = dynamodb;

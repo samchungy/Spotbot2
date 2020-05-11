@@ -1,0 +1,10 @@
+version: '3'
+services:
+  dev:
+    build: .
+    command:  bash -c "npm run local"
+    volumes:
+      - .:/usr/src/service
+    working_dir: /usr/src/service
+    ports:
+      - '3000:3000'

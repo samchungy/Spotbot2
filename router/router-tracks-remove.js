@@ -1,6 +1,6 @@
 const qs = require('qs');
-const SNS = require('aws-sdk/clients/sns');
-const sns = new SNS();
+const sns = require('/opt/sns');
+
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
 
@@ -32,7 +32,7 @@ module.exports.handler = async (event, context) => {
         body,
       };
     }
-    const removePayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Remove Tracks', 'Confirm', 'Cancel');
+    const removePayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Remove Tracks', null, 'Cancel');
     const params = {
       Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: removePayload.view.id, userId: payload.user_id}),
       TopicArn: TRACKS_REMOVE_OPEN,

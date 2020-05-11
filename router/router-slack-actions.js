@@ -1,8 +1,8 @@
 const qs = require('qs');
-const SNS = require('aws-sdk/clients/sns');
-const sns = new SNS();
-const Lambda = require('aws-sdk/clients/lambda');
-const lambda = new Lambda();
+const sns = require('/opt/sns');
+
+const lambda = require('/opt/lambda');
+
 
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
@@ -11,8 +11,9 @@ const {updateReply} = require('/opt/slack/format/slack-format-reply');
 const {reply} = require('/opt/slack/slack-api');
 
 const slackAuthorized = require('/opt/authorizer');
-const {openModal} = require('/opt/slack-modal');
+const {openModal, pushView} = require('/opt/slack-modal');
 const {checkIsSetup} = require('/opt/check-settings');
+const {isEmpty} = require('/opt/utils/util-objects');
 
 const MIDDLEWARE_RESPONSE = {
   admin_error: (users) => `:information_source: You must be a Spotbot admin for this channel to use this command. Current channel admins: ${users.map((user)=>`<@${user}>`).join(', ')}.`,
@@ -31,6 +32,7 @@ const SETTINGS_AUTH_CHANGE = process.env.SNS_PREFIX + 'settings-auth-change';
 const SETTINGS_DEVICE_SWITCH = process.env.SNS_PREFIX + 'settings-device-switch';
 const SETTINGS_SUBMIT_VERIFY = process.env.LAMBDA_PREFIX + 'settings-submit-verify';
 const SETTINGS_BLACKLIST_SUBMIT_VERIFY = process.env.LAMBDA_PREFIX + 'settings-blacklist-submit-verify';
+const SETTINGS_SONOS_GROUPS_OPEN = process.env.SNS_PREFIX + 'settings-sonos-groups-open';
 
 const CONTROL_RESET_REVIEW_OPEN = process.env.SNS_PREFIX + 'control-reset-review-open';
 const CONTROL_RESET_SET = process.env.SNS_PREFIX + 'control-reset-set';
@@ -66,6 +68,7 @@ module.exports.handler = async (event, context) => {
     }
     const eventPayload = qs.parse(event.body);
     if (eventPayload) {
+      let params;
       const payload = JSON.parse(eventPayload.payload);
       switch (payload.type) {
         case SLACK_ACTIONS.block_actions:
@@ -73,37 +76,47 @@ module.exports.handler = async (event, context) => {
             switch (payload.actions[0].action_id) {
               // AUTH
               case AUTH.auth_url:
+              case 'SONOS_AUTH':
                 break;
               case AUTH.reauth:
-                const protocol = event.headers['X-Forwarded-Proto'];
-                const host = event.requestContext.domainName;
+                const stage = event.requestContext.stage === 'local' ? `` : `/${event.requestContext.stage}`;
+                const url = `${event.headers['X-Forwarded-Proto']}://${event.headers.Host}${stage}`;
                 params = {
-                  Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, viewId: payload.view.id, url: `${protocol}://${host}`}),
+                  Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, viewId: payload.view.id, url}),
                   TopicArn: SETTINGS_AUTH_CHANGE,
                 };
                 await sns.publish(params).promise();
                 break;
               default:
-                const settings = await checkIsSetup(payload.team.id, payload.channel.id);
+                const teamId = payload.team.id;
+                const channelId = payload.channel ? payload.channel.id : payload.view.private_metadata;
+                const settings = await checkIsSetup(teamId, channelId);
                 if (!settings) {
                   body = MIDDLEWARE_RESPONSE.settings_error;
                   break;
                 }
-                let valuePayload;
                 switch (payload.actions[0].action_id) {
-                  case SLACK_ACTIONS.reset_review_confirm:
-                    valuePayload = JSON.parse(payload.actions[0].value);
-                    const resetPayload = await openModal(payload.team_id, valuePayload.channelId, payload.trigger_id, SLACK_ACTIONS.empty_modal, 'Reset - Tracks Review', 'Confirm', 'Close');
+                  case 'SONOS_GROUPS':
+                    const sonosGroupsPayload = await pushView(teamId, channelId, payload.trigger_id, SLACK_ACTIONS.empty_modal, 'Sonos Settings - Groups', null, 'Cancel');
                     params = {
-                      Message: JSON.stringify({teamId: payload.team.id, channelId: valuePayload.channelId, settings, timestamp: valuePayload.timestamp, viewId: resetPayload.view.id, responseUrl: payload.response_url}),
+                      Message: JSON.stringify({teamId, channelId, settings, viewId: sonosGroupsPayload.view.id, userId: payload.user.id}),
+                      TopicArn: SETTINGS_SONOS_GROUPS_OPEN,
+                    };
+                    await sns.publish(params).promise();
+                    break;
+                  case SLACK_ACTIONS.reset_review_confirm:
+                    const resetReviewConfirmPayload = JSON.parse(payload.actions[0].value);
+                    const resetPayload = await openModal(payload.team_id, payload.channel.id, payload.trigger_id, SLACK_ACTIONS.empty_modal, 'Reset - Tracks Review', null, 'Cancel');
+                    params = {
+                      Message: JSON.stringify({teamId, channelId, settings, timestamp: resetReviewConfirmPayload.timestamp, viewId: resetPayload.view.id, responseUrl: payload.response_url}),
                       TopicArn: CONTROL_RESET_REVIEW_OPEN,
                     };
                     await sns.publish(params).promise();
                     break;
                   case SLACK_ACTIONS.reset_review_deny:
-                    valuePayload = JSON.parse(payload.actions[0].value);
+                    const resetReviewDenyPayload = JSON.parse(payload.actions[0].value);
                     params = {
-                      Message: JSON.stringify({teamId: payload.team.id, channelId: valuePayload.channelId, settings, timestamp: valuePayload.timestamp, userId: payload.user.id, jump: false, responseUrl: payload.response_url}),
+                      Message: JSON.stringify({teamId, channelId, settings, timestamp: resetReviewDenyPayload.timestamp, userId: payload.user.id, jump: false, responseUrl: payload.response_url}),
                       TopicArn: CONTROL_RESET_SET,
                     };
                     await sns.publish(params).promise();
@@ -112,14 +125,14 @@ module.exports.handler = async (event, context) => {
                   // ARTISTS
                   case ARTISTS.view_artist_tracks:
                     params = {
-                      Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, userId: payload.user.id, artistId: payload.actions[0].value, triggerId: payload.trigger_id, responseUrl: payload.response_url}),
+                      Message: JSON.stringify({teamId, channelId, userId: payload.user.id, artistId: payload.actions[0].value, triggerId: payload.trigger_id, responseUrl: payload.response_url}),
                       TopicArn: TRACKS_FIND_ARTISTS_GET_TRACKS,
                     };
                     await sns.publish(params).promise();
                     break;
                   case ARTISTS.see_more_artists:
                     params = {
-                      Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, userId: payload.user.id, triggerId: payload.actions[0].value, responseUrl: payload.response_url}),
+                      Message: JSON.stringify({teamId, channelId, userId: payload.user.id, triggerId: payload.actions[0].value, responseUrl: payload.response_url}),
                       TopicArn: TRACKS_FIND_ARTISTS_GET_ARTISTS,
                     };
                     await sns.publish(params).promise();
@@ -133,14 +146,14 @@ module.exports.handler = async (event, context) => {
                     break;
                   case TRACKS.see_more_results:
                     params = {
-                      Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, userId: payload.user.id, triggerId: payload.actions[0].value, responseUrl: payload.response_url}),
+                      Message: JSON.stringify({teamId, channelId, userId: payload.user.id, triggerId: payload.actions[0].value, responseUrl: payload.response_url}),
                       TopicArn: TRACKS_FIND_GET_TRACKS,
                     };
                     await sns.publish(params).promise();
                     break;
                   case TRACKS.add_to_playlist:
                     params = {
-                      Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, userId: payload.user.id, trackId: payload.actions[0].value, responseUrl: payload.response_url}),
+                      Message: JSON.stringify({teamId, channelId, settings, userId: payload.user.id, trackId: payload.actions[0].value, responseUrl: payload.response_url}),
                       TopicArn: TRACKS_FIND_ADD,
                     };
                     await sns.publish(params).promise();
@@ -148,28 +161,28 @@ module.exports.handler = async (event, context) => {
                   // CONTROLS
                   case CONTROLS.play:
                     params = {
-                      Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                      Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                       TopicArn: CONTROL_PLAY,
                     };
                     await sns.publish(params).promise();
                     break;
                   case CONTROLS.pause:
                     params = {
-                      Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                      Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                       TopicArn: CONTROL_PAUSE,
                     };
                     await sns.publish(params).promise();
                     break;
                   case CONTROLS.skip:
                     params = {
-                      Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                      Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                       TopicArn: CONTROL_SKIP_START,
                     };
                     await sns.publish(params).promise();
                     break;
                   case SLACK_ACTIONS.skip_vote:
                     params = {
-                      Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, userId: payload.user.id, responseUrl: payload.response_url}),
+                      Message: JSON.stringify({teamId, channelId, settings, userId: payload.user.id, responseUrl: payload.response_url}),
                       TopicArn: CONTROL_SKIP_ADD_VOTE,
                     };
                     await sns.publish(params).promise();
@@ -178,35 +191,35 @@ module.exports.handler = async (event, context) => {
                     switch (payload.actions[0].selected_option.value) {
                       case CONTROLS.jump_to_start:
                         params = {
-                          Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                          Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                           TopicArn: CONTROL_JUMP,
                         };
                         await sns.publish(params).promise();
                         break;
                       case CONTROLS.shuffle:
                         params = {
-                          Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                          Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                           TopicArn: CONTROL_SHUFFLE,
                         };
                         await sns.publish(params).promise();
                         break;
                       case CONTROLS.repeat:
                         params = {
-                          Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                          Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                           TopicArn: CONTROL_REPEAT,
                         };
                         await sns.publish(params).promise();
                         break;
                       case CONTROLS.reset:
                         params = {
-                          Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                          Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                           TopicArn: CONTROL_RESET_START,
                         };
                         await sns.publish(params).promise();
                         break;
                       case CONTROLS.clear_one:
                         params = {
-                          Message: JSON.stringify({teamId: payload.team.id, channelId: payload.channel.id, settings, timestamp: payload.message.ts, userId: payload.user.id}),
+                          Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
                           TopicArn: CONTROL_CLEAR_ONE,
                         };
                         await sns.publish(params).promise();
@@ -229,7 +242,7 @@ module.exports.handler = async (event, context) => {
                 Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, view: payload.view, userId: payload.user.id}),
               };
               const {Payload: settingsErrorsPayload} = await lambda.invoke(params).promise();
-              errors = JSON.parse(settingsErrorsPayload);
+              errors = settingsErrorsPayload.length ? JSON.parse(settingsErrorsPayload) : null;
               if (errors && !isEmpty(errors)) {
                 body = errors;
               }
