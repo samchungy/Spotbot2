@@ -1,7 +1,6 @@
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
-const {loadArtists, changeArtists} = require('/opt/tracks/tracks-interface');
-const {changeQuery, changeQueryValue, loadQuery} = require('/opt/tracks/tracks-model');
+const {loadSearch, removeThreeSearches} = require('/opt/search/search-interface');
 const {actionSection, buttonActionElement, contextSection, imageSection, textSection} = require('/opt/slack/format/slack-format-blocks');
 const {postEphemeral, reply} = require('/opt/slack/slack-api');
 const {ephemeralPost, updateReply} = require('/opt/slack/format/slack-format-reply');
@@ -26,7 +25,7 @@ module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, triggerId, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
 
   try {
-    const artistSearch = await loadArtists(teamId, channelId, triggerId, loadQuery);
+    const artistSearch = await loadSearch(teamId, channelId, triggerId);
     if (!artistSearch) {
       return await reply(
           updateReply(ARTISTS_RESPONSES.expired, null),
@@ -61,7 +60,7 @@ module.exports.handler = async (event, context) => {
           ],
       ),
     ];
-    await changeArtists(teamId, channelId, triggerId, changeQuery, changeQueryValue);
+    await removeThreeSearches(teamId, channelId, triggerId);
 
     // This is an update request
     if (responseUrl) {

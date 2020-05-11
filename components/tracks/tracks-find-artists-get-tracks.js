@@ -5,8 +5,7 @@ const logger = require(process.env.LOGGER);
 const moment = require(process.env.MOMENT);
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchArtistTracks} = require('/opt/spotify/spotify-api/spotify-api-tracks');
-const {modelSearch} = require('/opt/tracks/tracks-model');
-const {storeTracks} = require('/opt/tracks/tracks-interface');
+const {storeSearch} = require('/opt/search/search-interface');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 const {reply} = require('/opt/slack/slack-api');
 const {updateReply} = require('/opt/slack/format/slack-format-reply');
@@ -30,8 +29,8 @@ async function getArtistTracks(teamId, channelId, artistId, triggerId) {
     const expiry = moment().add('1', 'day').unix();
     const profile = auth.getProfile();
     const spotifyTracks = await fetchArtistTracks(teamId, channelId, auth, profile.country, artistId);
-    const search = modelSearch(spotifyTracks.tracks.map((track) => new Track(track)), artistId);
-    await storeTracks(teamId, channelId, triggerId, search, expiry);
+    const tracks = spotifyTracks.tracks.map((track) => new Track(track));
+    await storeSearch(teamId, channelId, triggerId, tracks, artistId, expiry);
     return {success: true, response: null};
   } catch (error) {
     logger.error(error);

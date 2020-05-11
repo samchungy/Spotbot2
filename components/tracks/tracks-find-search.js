@@ -6,11 +6,10 @@ const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchSearchTracks} = require('/opt/spotify/spotify-api/spotify-api-search');
-const {storeTracks} = require('/opt/tracks/tracks-interface');
+const {storeSearch} = require('/opt/search/search-interface');
 const {postEphemeral} = require('/opt/slack/slack-api');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
-const {modelSearch} = require('/opt/tracks/tracks-model');
 const LIMIT = config.spotify_api.tracks.limit; // 24 Search results = 8 pages.
 
 const TRACKS_FIND_GET_TRACKS = process.env.SNS_PREFIX + 'tracks-find-get-tracks';
@@ -44,9 +43,9 @@ async function findAndStore(teamId, channelId, query, triggerId) {
     if (!numTracks) {
       return {success: false, response: TRACK_RESPONSE.no_tracks + `"${query}".`};
     }
-    const search = modelSearch(searchResults.tracks.items.map((track) => new Track(track)), query);
     const expiry = moment().add('1', 'day').unix();
-    await storeTracks(teamId, channelId, triggerId, search, expiry);
+    const tracks = searchResults.tracks.items.map((track) => new Track(track));
+    await storeSearch(teamId, channelId, triggerId, tracks, query, expiry);
     return {success: true, response: null};
   } catch (error) {
     logger.error(error);

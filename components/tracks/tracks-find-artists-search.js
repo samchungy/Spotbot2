@@ -6,11 +6,10 @@ const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
 const {fetchArtists} = require('/opt/spotify/spotify-api/spotify-api-search');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {storeArtists} = require('/opt/tracks/tracks-interface');
+const {storeSearch} = require('/opt/search/search-interface');
 const {postEphemeral} = require('/opt/slack/slack-api');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const Artist = require('/opt/spotify/spotify-objects/util-spotify-artist');
-const {modelSearch} = require('/opt/tracks/tracks-model');
 
 const TRACKS_FIND_ARTISTS_GET_ARTISTS = process.env.SNS_PREFIX + 'tracks-find-artists-get-artists';
 
@@ -81,8 +80,8 @@ async function findAndStoreArtists(teamId, channelId, query, triggerId) {
       return {success: false, response: ARTISTS_RESPONSES.no_artists(query)};
     }
     const expiry = moment().add('1', 'day').unix();
-    const search = modelSearch(searchResults.artists.items.map((artist) => new Artist(artist)), query);
-    await storeArtists(teamId, channelId, triggerId, search, expiry);
+    const artists = searchResults.artists.items.map((artist) => new Artist(artist));
+    await storeSearch(teamId, channelId, triggerId, artists, query, expiry);
     return {success: true, response: null};
   } catch (error) {
     logger.error(error);
