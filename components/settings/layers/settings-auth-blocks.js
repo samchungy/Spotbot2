@@ -99,8 +99,8 @@ async function getAuthBlock(teamId, channelId, viewId, url) {
 async function getAuthorizationURL(teamId, channelId, auth, viewId, url) {
   try {
     // TODO Store triggerId as Spotify Auth state.
-    const state = modelState(teamId, channelId, viewId, url);
-    const [, authUrl] = await Promise.all([storeState(teamId, channelId, {state: state}, moment().add(1, 'hour').unix()), fetchAuthorizeURL(teamId, channelId, auth, encodeURI(JSON.stringify(state)), `${url}/${process.env.ENV}/${SETTINGS_AUTH.auth_url}`)]);
+    const state = modelState(teamId, channelId, viewId);
+    const [, authUrl] = await Promise.all([storeState(teamId, channelId, {state: state}, moment().add(1, 'hour').unix()), fetchAuthorizeURL(teamId, channelId, auth, encodeURI(JSON.stringify(state)), `${url}/${SETTINGS_AUTH.auth_url}`)]);
     return authUrl;
   } catch (error) {
     logger.error(error);
