@@ -22,16 +22,8 @@ const modelState = (teamId, channelId, viewId) => {
   };
 };
 
-const allSettingsKeyExpression = `team_channel=:team_channel`;
-const allSettingsValues = (teamId, channelId) => {
-  return {
-    ':team_channel': `${teamId}-${channelId}`,
-  };
-};
 
 module.exports = {
-  allSettingsKeyExpression,
-  allSettingsValues,
   modelDevice,
   modelPlaylist,
   modelState,

@@ -1,31 +1,51 @@
-const config = require(process.env.CONFIG);
-const {changeSetting, loadSetting, batchDeleteSettings, querySettings, storeSetting} = require('./settings-dal');
+const CONFIG = require(process.env.CONFIG);
+const {getSettings, putSettings, updateSettings, querySettings} = require('/opt/db/settings-dal');
 
-const SETTINGS_EXTRA = config.dynamodb.settings_extra;
-const ALL_SETTINGS = config.dynamodb.all_settings;
+const MAIN_SETTINGS = CONFIG.dynamodb.main_settings;
+const DEVICES = CONFIG.dynamodb.settings_extra.spotify_devices;
+const PLAYLISTS = CONFIG.dynamodb.settings_extra.spotify_playlists;
 
-// Functions for other modules to use
-const changeSettings = (teamId, channelId, values) => changeSetting(teamId, channelId, ALL_SETTINGS, values);
+const changeSettings = (teamId, channelId, settings) => {
+  console.log(settings);
+  const expressionNames = {};
+  const expressionValues = {};
+  const updateExpression = 'set ' + Object.entries(settings)
+      .map(([key, value]) => {
+        const expName = `#${key[0].toUpperCase() + key.substr(1)}`;
+        const expValue = `:${key}`;
+        expressionNames[expName] = key;
+        expressionValues[expValue] = value;
+        return `${expName}=${expValue}`;
+      })
+      .join();
 
-const loadDevices = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS_EXTRA.spotify_devices);
-const loadPlaylists = (teamId, channelId) => loadSetting(teamId, channelId, SETTINGS_EXTRA.spotify_playlists);
-const loadSettings = (teamId, channelId, keys) => loadSetting(teamId, channelId, ALL_SETTINGS, keys);
+  return updateSettings(teamId, channelId, MAIN_SETTINGS, expressionNames, expressionValues, updateExpression);
+};
 
-const storeDevices = (teamId, channelId, value, expiry) => storeSetting(teamId, channelId, SETTINGS_EXTRA.spotify_devices, value, expiry);
-const storePlaylists = (teamId, channelId, value, expiry) => storeSetting(teamId, channelId, SETTINGS_EXTRA.spotify_playlists, value, expiry);
-const storeSettings = (teamId, channelId, value) => storeSetting(teamId, channelId, ALL_SETTINGS, value);
+const loadDevices = (teamId, channelId) => getSettings(teamId, channelId, DEVICES);
+const loadPlaylists = (teamId, channelId) => getSettings(teamId, channelId, PLAYLISTS);
+const loadSettings = (teamId, channelId) => getSettings(teamId, channelId, MAIN_SETTINGS);
 
-const deleteSettings = (teamId, channelId, sortKeys) => batchDeleteSettings(teamId, channelId, sortKeys);
+const storeDevices = (teamId, channelId, value, expiry) => putSettings(teamId, channelId, DEVICES, value, expiry);
+const storePlaylists = (teamId, channelId, value, expiry) => putSettings(teamId, channelId, PLAYLISTS, value, expiry);
+const storeSettings = (teamId, channelId, value) => putSettings(teamId, channelId, MAIN_SETTINGS, value);
 
-const searchAllSettings = (allSettingsKeyExpression, allSettingsExpressionValues) => querySettings(allSettingsKeyExpression, allSettingsExpressionValues);
+const removeAllSettings = (teamId, channelId, keys) => batchDeleteSettings(teamId, channelId, keys);
+
+const searchAllSettings = (teamId, channelId) => {
+  const expressionNames = {'#TeamChannel': `team_channel`};
+  const expressionValues = {':teamChannel': `${teamId}-${channelId}`};
+  const keyExpression = '#TeamChannel=:teamChannel';
+  return querySettings(expressionNames, expressionValues, keyExpression);
+};
 
 module.exports = {
   changeSettings,
-  deleteSettings,
   searchAllSettings,
   loadDevices,
   loadPlaylists,
   loadSettings,
+  removeAllSettings,
   storeDevices,
   storePlaylists,
   storeSettings,

@@ -1,27 +1,65 @@
-const config = require(process.env.CONFIG);
-const {changeAuth, loadAuth, removeAuth, storeAuth} = require('./spotify-auth-dal');
+const {getAuth, deleteAuth, putAuth, updateAuth} = require('/opt/db/auth-dal');
 
-const AUTH = config.dynamodb.auth;
+const CONFIG = require(process.env.CONFIG);
 
-// Loading Functions
-const changeSpotifyAuth = (teamId, channelId, values) => changeAuth(teamId, channelId, AUTH.auth, values);
+const MAIN_KEY = CONFIG.dynamodb.auth_spotify.key;
+const ACCESS_TOKEN = CONFIG.dynamodb.auth_spotify.access;
+const REFRESH_TOKEN = CONFIG.dynamodb.auth_spotify.refresh;
+const EXPIRES = CONFIG.dynamodb.auth_spotify.expires;
+const STATE = CONFIG.dynamodb.auth_spotify.state;
+const PROFILE = CONFIG.dynamodb.auth_spotify.profile;
 
-const loadSpotifyAuth = (teamId, channelId, keys) => loadAuth(teamId, channelId, AUTH.auth, keys);
-const loadState = (teamId, channelId) => loadAuth(teamId, channelId, AUTH.state);
+const changeProfile = (team, channel, id, country) => {
+  const expressionNames = {'#Profile': PROFILE};
+  const expressionValues = {':profile': modelProfile(id, country)};
+  const updateExpression = 'set #Profile = :profile';
+  return updateAuth(team, channel, MAIN_KEY, expressionNames, expressionValues, updateExpression);
+};
 
-const removeSpotifyAuth = (teamId, channelId) => removeAuth(teamId, channelId, AUTH.auth);
-const removeState = (teamId, channelId) => removeAuth(teamId, channelId, AUTH.state);
+const changeTokens = (team, channel, accessToken, expires) => {
+  const expressionNames = {
+    '#Access': ACCESS_TOKEN,
+    '#Expires': EXPIRES,
+  };
+  const expressionValues = {
+    ':access': accessToken,
+    ':expires': expires,
+  };
+  const updateExpression = 'set #Access = :access, #Expires = :expires';
+  const conditionExpression = '#Expires < :expires'; // Race Condition Checker
+  return updateAuth(team, channel, MAIN_KEY, expressionNames, expressionValues, updateExpression, conditionExpression);
+};
 
-const storeSpotifyAuth = (teamId, channelId, value) => storeAuth(teamId, channelId, AUTH.auth, value);
-const storeState = (teamId, channelId, value, expiry) => storeAuth(teamId, channelId, AUTH.state, value, expiry);
+const loadAuth = (teamId, channelId) => getAuth(teamId, channelId, MAIN_KEY);
+const loadState = (teamId, channelId) => getAuth(teamId, channelId, STATE);
 
+const storeAuth = (teamId, channelId, accessToken, refreshToken, expires) => putAuth(teamId, channelId, MAIN_KEY, modelAuth(accessToken, refreshToken, expires));
+const storeState = (teamId, channelId, value, expiry) => putAuth(teamId, channelId, STATE, value, expiry);
+
+const removeAuth = (teamId, channelId) => deleteAuth(teamId, channelId, MAIN_KEY);
+const removeState = (teamId, channelId) => deleteAuth(teamId, channelId, STATE);
+
+const modelAuth = (accessToken, refreshToken, expires) => ({
+  [ACCESS_TOKEN]: accessToken,
+  [REFRESH_TOKEN]: refreshToken,
+  [EXPIRES]: expires,
+  [PROFILE]: null,
+});
+
+const modelProfile = (id, country) => ({
+  country: country,
+  id: id,
+});
 
 module.exports = {
-  changeSpotifyAuth,
-  loadSpotifyAuth,
+  modelAuth,
+  modelProfile,
+  changeProfile,
+  changeTokens,
+  loadAuth,
   loadState,
-  removeSpotifyAuth,
-  removeState,
-  storeSpotifyAuth,
+  storeAuth,
   storeState,
+  removeAuth,
+  removeState,
 };
