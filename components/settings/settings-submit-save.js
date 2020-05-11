@@ -50,15 +50,14 @@ module.exports.handler = async (event, context) => {
         }
       }
     }
+
     // Only save if we have something to update.
     if (!isEmpty(settings)) {
       // If new DB
       if (!dbSettings) {
         await storeSettings(teamId, channelId, settings);
       } else {
-        await changeSettings(teamId, channelId, Object.entries(settings).map(([key, value]) => {
-          return {key: key, value: value};
-        }));
+        await changeSettings(teamId, channelId, settings);
       }
     }
 

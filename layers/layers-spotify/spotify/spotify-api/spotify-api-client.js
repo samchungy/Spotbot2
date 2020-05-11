@@ -13,7 +13,7 @@ async function setTokens(teamId, channelId, auth, url) {
   const now = moment();
   // New Authentication
   if (auth.getAccess()) {
-    if (moment(auth.getExpires()).isBefore(now)) {
+    if (moment.unix(auth.getExpires()).isBefore(now)) {
       // Our Token has expired, try to refresh
       await refreshAccessToken(teamId, channelId, auth);
     }

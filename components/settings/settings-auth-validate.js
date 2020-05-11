@@ -4,17 +4,15 @@ const moment = require(process.env.MOMENT);
 const SNS = require('aws-sdk/clients/sns');
 const sns = new SNS();
 
-const {loadState, storeSpotifyAuth, changeSpotifyAuth} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
+
+const {loadState, storeAuth, changeProfile} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {modelSpotifyAuth, modelProfile} = require('/opt/spotify/spotify-auth/spotify-auth-model');
 const {fetchTokens} = require('/opt/spotify/spotify-api/spotify-api-auth');
 const {fetchProfile} = require('/opt/spotify/spotify-api/spotify-api-profile');
 const {isEqual} = require('/opt/utils/util-objects');
 
 const SETTINGS_AUTH_UPDATE_VIEW = process.env.SNS_PREFIX + 'settings-auth-update-view';
 const SETTINGS_AUTH = config.dynamodb.settings_auth;
-
-const PROFILE = config.dynamodb.auth.profile;
 
 /**
  * Check that the state for Authorization is valid
@@ -50,15 +48,12 @@ module.exports.handler = async (event, context) => {
     }
     // Get Tokens from Spotify
     let auth = await authSession(stateJson.teamId, stateJson.channelId);
-    const {access_token: accessToken, refresh_token: refreshToken} = await fetchTokens(stateJson.teamId, stateJson.channelId, auth, code, `${url}/${process.env.ENV}/${SETTINGS_AUTH.auth_url}`);
+    const {access_token: accessToken, refresh_token: refreshToken} = await fetchTokens(stateJson.teamId, stateJson.channelId, auth, code, `${url}/${SETTINGS_AUTH.auth_url}`);
     // Store our tokens in our DB & Get Spotify URI for authenticator
-    const authModel = modelSpotifyAuth(accessToken, refreshToken, moment().add(55, 'm').toISOString(), null);
-    await storeSpotifyAuth(stateJson.teamId, stateJson.channelId, authModel);
+    await storeAuth(stateJson.teamId, stateJson.channelId, accessToken, refreshToken, moment().add(55, 'm').unix());
     auth = await authSession(stateJson.teamId, stateJson.channelId);
     const profile = await fetchProfile(stateJson.teamId, stateJson.channelId, auth);
-    await changeSpotifyAuth(stateJson.teamId, stateJson.channelId, [
-      {key: PROFILE, value: modelProfile(profile.id, profile.country)},
-    ]);
+    await changeProfile(stateJson.teamId, stateJson.channelId, profile.id, profile.country);
     const params = {
       Message: JSON.stringify({teamId: stateJson.teamId, channelId: stateJson.channelId, viewId: stateJson.viewId}),
       TopicArn: SETTINGS_AUTH_UPDATE_VIEW,

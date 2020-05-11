@@ -22,7 +22,9 @@ module.exports.handler = async (event, context) => {
       ...authBlock,
       ...!authError ? await getSettingsBlocks(settings) : [],
     ];
-    const modal = slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, channelId);
+    const modal = authError ?
+      slackModal(SETTINGS_MODAL, `Spotbot Settings`, null, `Close`, blocks, false, channelId) :
+      slackModal(SETTINGS_MODAL, `Spotbot Settings`, `Save`, `Cancel`, blocks, false, channelId);
     await updateModal(viewId, modal);
   } catch (error) {
     logger.error('Open Settings Failed');

@@ -1,13 +1,14 @@
-const config = require(process.env.CONFIG);
-const {loadSpotifyAuth} = require('./spotify-auth-interface');
+const CONFIG = require(process.env.CONFIG);
+const {loadAuth} = require('./spotify-auth-interface');
 
-const ACCESS = config.dynamodb.auth.access;
-const REFRESH = config.dynamodb.auth.refresh;
-const EXPIRES = config.dynamodb.auth.expires;
-const PROFILE = config.dynamodb.auth.profile;
+const ACCESS = CONFIG.dynamodb.auth_spotify.access;
+const REFRESH = CONFIG.dynamodb.auth_spotify.refresh;
+const EXPIRES = CONFIG.dynamodb.auth_spotify.expires;
+const PROFILE = CONFIG.dynamodb.auth_spotify.profile;
 
 const authSession = async (teamId, channelId, profile) => {
-  const auth = await loadSpotifyAuth(teamId, channelId);
+  const auth = await loadAuth(teamId, channelId);
+
   const updateAuth = (access, expires) => {
     auth[ACCESS] = access;
     auth[EXPIRES] = expires;
