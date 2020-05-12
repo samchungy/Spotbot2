@@ -21,10 +21,7 @@ module.exports.handler = async (event, context) => {
     const {teamId, channelId, viewId, url} = JSON.parse(event.Records[0].Sns.Message);
     await Promise.all([
       removeAuth(teamId, channelId),
-      changeSettings(teamId, channelId, [
-        {key: DEFAULT_DEVICE, value: null},
-        {key: PLAYLIST, value: null},
-      ]),
+      changeSettings(teamId, channelId, {[DEFAULT_DEVICE]: null, [PLAYLIST]: null}),
     ]);
     const params = {
       Message: JSON.stringify({teamId, channelId, viewId, url}),
