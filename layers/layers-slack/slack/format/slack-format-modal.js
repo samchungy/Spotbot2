@@ -7,11 +7,13 @@ const slackModal = (callbackId, title, submitText, closeText, blocks, notify, me
       text: title,
       emoji: true,
     },
-    submit: {
-      type: 'plain_text',
-      text: submitText,
-      emoji: true,
-    },
+    ...submitText ? {
+      submit: {
+        type: 'plain_text',
+        text: submitText,
+        emoji: true,
+      },
+    } : {},
     close: {
       type: 'plain_text',
       text: closeText,
