@@ -90,7 +90,7 @@ module.exports.handler = async (event, context) => {
               default:
                 const teamId = payload.team.id;
                 const channelId = payload.channel ? payload.channel.id : payload.view.private_metadata;
-                const settings = await checkIsSetup(teamId, channelId);
+                const {settings} = await checkIsSetup(teamId, channelId);
                 if (!settings) {
                   body = MIDDLEWARE_RESPONSE.settings_error;
                   break;
@@ -250,7 +250,8 @@ module.exports.handler = async (event, context) => {
             case SLACK_ACTIONS.reset_modal:
               const metadata = payload.view.private_metadata;
               const {channelId, timestamp, offset} = JSON.parse(metadata);
-              settings = await checkIsSetup(payload.team.id, channelId);
+              isSetup = await checkIsSetup(payload.team.id, channelId);
+              settings = isSetup.settings;
               if (!settings) {
                 body = MIDDLEWARE_RESPONSE.settings_error;
                 break;
@@ -273,7 +274,8 @@ module.exports.handler = async (event, context) => {
               }
               break;
             case SLACK_ACTIONS.remove_modal:
-              settings = await checkIsSetup(payload.team.id, payload.view.private_metadata);
+              isSetup = await checkIsSetup(payload.team.id, payload.view.private_metadata);
+              settings = isSetup.settings;
               if (!settings) {
                 body = MIDDLEWARE_RESPONSE.settings_error;
                 break;
@@ -285,7 +287,8 @@ module.exports.handler = async (event, context) => {
               await sns.publish(params).promise();
               break;
             case SLACK_ACTIONS.device_modal:
-              settings = await checkIsSetup(payload.team.id, payload.view.private_metadata);
+              isSetup = await checkIsSetup(payload.team.id, payload.view.private_metadata);
+              settings = isSetup.settings;
               if (!settings) {
                 body = MIDDLEWARE_RESPONSE.settings_error;
                 break;
@@ -303,7 +306,7 @@ module.exports.handler = async (event, context) => {
             case SLACK_ACTIONS.reset_modal:
               const metadata = payload.view.private_metadata;
               const {channelId, timestamp} = JSON.parse(metadata);
-              const settings = await checkIsSetup(payload.team.id, channelId);
+              const {settings} = await checkIsSetup(payload.team.id, channelId);
               if (!settings) {
                 body = MIDDLEWARE_RESPONSE.settings_error;
                 break;

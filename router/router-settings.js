@@ -48,11 +48,11 @@ module.exports.handler = async (event, context) => {
           body,
         };
       } else {
-        const settings = await checkIsSetup(payload.team_id, payload.channel_id);
+        const {settings, isSetup} = await checkIsSetup(payload.team_id, payload.channel_id);
         let params; let admins;
         switch (textSplit[0]) {
           case 'settings':
-            if (!settings) {
+            if (!isSetup) {
               if (!(await checkIsInChannel(payload.channel_id))) {
                 body = MIDDLEWARE_RESPONSE.setup_error;
                 break;
@@ -69,7 +69,7 @@ module.exports.handler = async (event, context) => {
             }
             const settingsPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotbot Settings', null, 'Cancel');
             params = {
-              Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings: settings, viewId: settingsPayload.view.id, userId: payload.user_id, url}),
+              Message: JSON.stringify({teamId: payload.team_id, channelId: payload.channel_id, settings, viewId: settingsPayload.view.id, userId: payload.user_id, url}),
               TopicArn: SETTINGS_OPEN,
             };
             await sns.publish(params).promise();

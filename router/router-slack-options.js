@@ -28,7 +28,7 @@ module.exports.handler = async (event, context) => {
     }
     const eventPayload = qs.parse(event.body);
     const payload = JSON.parse(eventPayload.payload);
-    const settings = await checkIsSetup(payload.team.id, payload.view.private_metadata);
+    const {settings} = await checkIsSetup(payload.team.id, payload.view.private_metadata);
     let params;
     switch (payload.action_id) {
       case SETTINGS.playlist:
