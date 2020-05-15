@@ -1,17 +1,15 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
-const {changeSettings, loadSettings, storeSettings} = require('/opt/settings/settings-interface');
+const {changeSettings, loadDevices, loadPlaylists, loadSettings, storeSettings} = require('/opt/db/settings-interface');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const {postEphemeral} = require('/opt/slack/slack-api');
 const {isEqual, isEmpty} = require('/opt/utils/util-objects');
 
-// Transform Device and Playlist values
-const {loadDevices, loadPlaylists} = require('/opt/settings/settings-interface');
 const {modelDevice, modelPlaylist} = require('/opt/settings/settings-model');
 const {createPlaylist} = require('/opt/spotify/spotify-api/spotify-api-playlists');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {removeState} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
+const {removeState} = require('/opt/db/spotify-auth-interface');
 
 const SETTINGS = config.dynamodb.settings;
 const SETTINGS_HELPER = config.dynamodb.settings_helper;

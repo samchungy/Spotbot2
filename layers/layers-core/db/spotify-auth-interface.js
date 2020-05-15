@@ -51,9 +51,16 @@ const modelProfile = (id, country) => ({
   id: id,
 });
 
+const modelState = (teamId, channelId, viewId) => ({
+  teamId: teamId,
+  channelId: channelId,
+  viewId: viewId,
+});
+
 module.exports = {
   modelAuth,
   modelProfile,
+  modelState,
   changeProfile,
   changeTokens,
   loadAuth,

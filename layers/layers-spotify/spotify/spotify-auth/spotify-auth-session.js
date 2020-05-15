@@ -1,5 +1,5 @@
 const CONFIG = require(process.env.CONFIG);
-const {loadAuth} = require('./spotify-auth-interface');
+const {loadAuth} = require('/opt/db/spotify-auth-interface');
 
 const ACCESS = CONFIG.dynamodb.auth_spotify.access;
 const REFRESH = CONFIG.dynamodb.auth_spotify.refresh;
