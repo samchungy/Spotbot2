@@ -1,4 +1,4 @@
-const {getAuth, deleteAuth, putAuth, updateAuth} = require('/opt/db/auth-dal');
+const {getAuth, deleteAuth, putAuth, updateAuth} = require('./auth-dal');
 
 const CONFIG = require(process.env.CONFIG);
 

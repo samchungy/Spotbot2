@@ -1,6 +1,6 @@
 module.exports = {
   'spotify_api': {
-    'maximum_request_attempts': 1,
+    'maximum_request_attempts': 3,
     'scopes': [
       'user-read-private',
       'user-read-email',
@@ -81,6 +81,9 @@ module.exports = {
     },
     'blacklist': {
       'limit': 80,
+    },
+    'skip': {
+      'max_history': 10,
     },
   },
   'settings': {

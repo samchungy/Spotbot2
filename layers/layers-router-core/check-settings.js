@@ -1,6 +1,6 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
-const {loadSettings} = require('/opt/settings/settings-interface');
+const {loadSettings} = require('/opt/db/settings-interface');
 
 const PLAYLIST = config.dynamodb.settings.playlist;
 
@@ -13,13 +13,13 @@ async function checkIsSetup(teamId, channelId) {
   try {
     const settings = await loadSettings(teamId, channelId);
     if (settings && settings[PLAYLIST]) {
-      return settings;
+      return {settings, isSetup: true};
     } else {
-      return false;
+      return {settings, isSetup: false};
     };
   } catch (error) {
     logger.error(error);
-    return false;
+    return {settings: null, isSetup: false};
   }
 }
 

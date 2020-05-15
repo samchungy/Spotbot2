@@ -1,12 +1,11 @@
 const CONFIG = require(process.env.CONFIG);
-const {getSettings, putSettings, updateSettings, querySettings} = require('/opt/db/settings-dal');
+const {getSettings, putSettings, updateSettings, querySettings} = require('./settings-dal');
 
 const MAIN_SETTINGS = CONFIG.dynamodb.main_settings;
 const DEVICES = CONFIG.dynamodb.settings_extra.spotify_devices;
 const PLAYLISTS = CONFIG.dynamodb.settings_extra.spotify_playlists;
 
 const changeSettings = (teamId, channelId, settings) => {
-  console.log(settings);
   const expressionNames = {};
   const expressionValues = {};
   const updateExpression = 'set ' + Object.entries(settings)
