@@ -1,19 +1,23 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
+const SKIP_MAX_HISTORY = config.dynamodb.skip.max_history;
+
+const {deleteTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
 const {skip} = require('/opt/spotify/spotify-api/spotify-api-playback');
 // const {loadBlacklist} = require('../settings/blacklist/blacklist-dal');
-const {changeSkip, storeSkip} = require('/opt/settings/settings-extra-interface');
-const {modelSkip} = require('/opt/settings/settings-extra-model');
 const {actionSection, buttonActionElement, contextSection, textSection} = require('/opt/slack/format/slack-format-blocks');
-const {deleteChat, postEphemeral, post, updateChat} = require('/opt/slack/slack-api');
+const {deleteChat, post, postEphemeral, updateChat} = require('/opt/slack/slack-api');
 const {deleteMessage, ephemeralPost, inChannelPost, messageUpdate} = require('/opt/slack/format/slack-format-reply');
-const {responseUpdate} = require('/opt/control-panel/control-panel');
-const {sleep} = require('/opt/utils/util-timeout');
+const {changeSkipAddVote, changeSkipAddHistory, changeSkipTrimHistory} = require('/opt/settings/settings-extra-interface');
+const {loadBlacklist} = require('/opt/settings/settings-extra-interface');
+
+const onPlaylist = (status, playlist) => (status.context && status.context.uri.includes(playlist.id));
 
 const SKIP_VOTE = config.slack.actions.skip_vote;
 const SKIP_RESPONSE = {
   already: ':information_source: You have already voted on this.',
+  blacklist: (title, deleted) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} is on the blacklist and was skipped.${deleted ? ` The track was deleted from the playlist.` : ``}`,
   button: `:black_right_pointing_double_triangle_with_vertical_bar: Skip`,
   confirmation: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} was skipped by ${SKIP_RESPONSE.users(users)}.`,
   failed: ':warning: Skip Failed.',
@@ -24,48 +28,6 @@ const SKIP_RESPONSE = {
 };
 
 /**
- * Stores skip in history, skips track.
- * @param {string} teamId
- * @param {string} channelId
- * @param {Object} auth
- * @param {Object} track
- * @param {Object} currentSkip
- */
-async function setSkip(teamId, channelId, auth, track, currentSkip) {
-  try {
-    if (!currentSkip) {
-      // First time write
-      await Promise.all([
-        storeSkip(teamId, channelId, modelSkip(null, null, null, null, null, [track])),
-        skip(teamId, channelId, auth),
-      ]);
-    } else {
-      // We have a skip object, update it.
-      if (currentSkip.history) {
-        currentSkip.history.unshift(track);
-      } else {
-        currentSkip.history = [track];
-      }
-      const newSkip = modelSkip(null, null, null, null, null, currentSkip.history);
-      if (currentSkip.skip) {
-        await Promise.all([
-          changeSkip(teamId, channelId, Object.entries(newSkip).map(([key, value]) => {
-            return {key: key, value: value};
-          })),
-          skip(teamId, channelId, auth),
-        ]);
-      } else {
-        await skip(teamId, channelId, auth);
-      }
-      await sleep(650);
-    }
-  } catch (error) {
-    logger.error('Skipping failed');
-    throw error;
-  }
-}
-
-/**
  * Skip Message Block
  * @param {String} userId
  * @param {Number} votesNeeded
@@ -74,84 +36,115 @@ async function setSkip(teamId, channelId, auth, track, currentSkip) {
  * @param {Array} users
  * @return {Array} Skip Block
  */
-function getSkipBlock(userId, votesNeeded, trackName, trackId, users) {
+const getSkipBlock = (userId, votesNeeded, trackName, trackId, users) => {
   return [
     textSection(SKIP_RESPONSE.request(userId, trackName)),
     contextSection(null, SKIP_RESPONSE.votesNeeded(votesNeeded)),
     contextSection(null, SKIP_RESPONSE.voters(users)),
     actionSection(SKIP_VOTE, [buttonActionElement(SKIP_VOTE, SKIP_RESPONSE.button, trackId)]),
   ];
-}
+};
 
-/**
- * Add vote to post
- * @param {string} teamId
- * @param {string} channelId
- * @param {Object} auth
- * @param {Object} settings
- * @param {string} userId
- * @param {Object} currentSkip
- * @param {Object} statusTrack
- */
-async function addVote(teamId, channelId, auth, settings, userId, currentSkip, statusTrack) {
-  try {
-    if (currentSkip.votes.users.includes(userId)) {
-      // User voted already, ephemeral message to user
-      return await postEphemeral(
-          ephemeralPost(channelId, userId, SKIP_RESPONSE.already, null),
+const addVote = async (teamId, channelId, auth, userId, currentSkip, statusTrack) => {
+  // User voted already, ephemeral message to user
+  if (currentSkip.votes.users.includes(userId)) {
+    return postEphemeral(
+        ephemeralPost(channelId, userId, SKIP_RESPONSE.already, null),
+    );
+  }
+
+  // Add Vote
+  currentSkip.votes.users.push(userId);
+  const votesNeeded = currentSkip.votes.votesNeeded - currentSkip.votes.users.length;
+
+  // Check if we're at the threshold
+  if (votesNeeded) {
+    // Still have votes to go
+    const skipBlock = getSkipBlock(userId, votesNeeded, statusTrack.title, statusTrack.id, currentSkip.votes.users);
+    const success = await changeSkipAddVote(teamId, channelId, userId, statusTrack.id, currentSkip.votes.votesNeeded)
+        .then(() => true)
+        .catch((err) => {
+          logger.error(err);
+          // Race Condition uh oh
+          if (err.code === 'ConditionalCheckFailedException') {
+          // Try delete the Slack post first - Let Slack resolve our race
+            return resolveSkip(teamId, channelId, auth, userId, currentSkip, statusTrack).then(() => false);
+          }
+          throw err;
+        });
+
+    if (success) {
+      return updateChat(
+          messageUpdate(channelId, currentSkip.skip.timestamp, SKIP_RESPONSE.request(currentSkip.votes.users[0], currentSkip.skip.track.title), skipBlock),
       );
     }
-    // Add Vote
-    currentSkip.votes.users.push(userId);
-    currentSkip.votes.votesNeeded = currentSkip.votes.votesNeeded - 1;
+  } else {
+    return resolveSkip(teamId, channelId, auth, userId, currentSkip, statusTrack);
+  }
+};
 
-    // Check if we're at the threshold
-    if (currentSkip.votes.votesNeeded) {
-      // Still have votes to go
-      const skipBlock = getSkipBlock(userId, currentSkip.votes.votesNeeded, statusTrack.title, statusTrack.id, currentSkip.votes.users);
-      const newSkip = modelSkip(null, null, null, currentSkip.votes.users, currentSkip.votes.votesNeeded, null);
-      return await Promise.all([
-        updateChat(
-            messageUpdate(channelId, currentSkip.skip.timestamp, SKIP_RESPONSE.request(currentSkip.votes.users[0], currentSkip.skip.track.title), skipBlock),
-        ),
-        changeSkip(teamId, channelId, Object.entries(newSkip)
-            .map(([key, value]) => {
-              return {key: key, value: value};
-            })),
-      ]);
-    } else {
-      // Attempt to skip
-      try {
-        await deleteChat(
-            deleteMessage(channelId, currentSkip.skip.timestamp),
-        );
-        await Promise.all([
-          setSkip(teamId, channelId, auth, statusTrack, currentSkip),
-          post(
-              inChannelPost(channelId, SKIP_RESPONSE.confirmation(statusTrack.title, currentSkip.votes.users), null),
-          ),
-        ]);
-        return await responseUpdate(teamId, channelId, auth, settings, currentSkip.skip.panelTimestamp, true, null, null);
-      } catch (error) {
-        logger.error(error);
-        // Expected behaviour, we have 2 competing skip clicks. Just allow the first to succeed.
-        if (error.data && error.data.error && error.data.error.includes('message_not_found')) {
-          return;
+const resolveSkip = async (teamId, channelId, auth, userId, currentSkip, statusTrack) => {
+  // Slack shall resolve our Skip "Race" if any.
+  const deleted = await deleteChat(deleteMessage(channelId, currentSkip.skip.timestamp))
+      .then(() => true)
+      .catch((err) => {
+        if (err.data && err.data.error && err.data.error.includes('message_not_found')) {
+          return false;
         }
-        await Promise.all([
-          deleteChat(
-              deleteMessage(channelId, currentSkip.skip.timestamp),
-          ),
-          post(
-              inChannelPost(channelId, SKIP_RESPONSE.failed, null),
-          ),
-        ]);
-        throw error;
-      }
+        throw err;
+      });
+
+  if (deleted) {
+    if (currentSkip.votes.users.length !== currentSkip.votes.votesNeeded) { // Race Conditioned
+      currentSkip = await loadSkip(teamId, channelId);
+      currentSkip.votes.users.push(userId);
     }
-  } catch (error) {
-    logger.error(error);
-    logger.error('Add Vote failed');
+    return Promise.all([
+      post(
+          inChannelPost(channelId, SKIP_RESPONSE.confirmation(statusTrack.title, currentSkip.votes.users), null),
+      ),
+      skipTrack(teamId, channelId, auth, statusTrack),
+    ]);
+  } // Else do nothing, the other racing skip will resolve
+};
+
+const skipTrack = (teamId, channelId, auth, track) => {
+  return Promise.all([
+    changeSkipAddHistory(teamId, channelId, track)
+        .then(async (data) => {
+          if (data && data.Attributes && data.Attributes.history && data.Attributes.history.length >= SKIP_MAX_HISTORY) {
+            await changeSkipTrimHistory(teamId, channelId);
+          }
+        })
+        .catch((err) => err.code === 'ConditionalCheckFailedException' ? Promise.resolve() : Promise.reject(err)),
+    skip(teamId, channelId, auth),
+  ]);
+};
+
+/**
+ * Checks if track is on Blacklist - skips and/or deletes track.
+ * @param {string} teamId
+ * @param {string} channelId
+ * @param {*} auth
+ * @param {*} playlist
+ * @param {*} status
+ * @param {*} statusTrack
+ * @return {boolean} Returns true if not on playlist
+ */
+const onBlacklist = async (teamId, channelId, auth, playlist, status, statusTrack) => {
+  const promises = [];
+  const blacklist = await loadBlacklist(teamId, channelId);
+  if (blacklist && blacklist.blacklist && blacklist.blacklist.find((track) => statusTrack.uri === track.uri)) {
+    promises.push(skipTrack(teamId, channelId, auth, track));
+    if (onPlaylist(status, playlist)) {
+      promises.push(deleteTracks(teamId, channelId, auth, playlist.id, [{uri: statusTrack.uri}]));
+    }
+    promises.push(post(inChannelPost(channelId, SKIP_RESPONSE.blacklist(statusTrack.title))));
+    await Promise.all(promises);
+    // TODO Call current track
+    return true;
+  } else {
+    return false;
   }
 };
 
@@ -159,5 +152,6 @@ async function addVote(teamId, channelId, auth, settings, userId, currentSkip, s
 module.exports = {
   addVote,
   getSkipBlock,
-  setSkip,
+  onBlacklist,
+  skipTrack,
 };
