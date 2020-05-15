@@ -9,14 +9,11 @@ const {refreshAccessToken} = require('./spotify-api-refresh');
  * @param {string} auth
  * @param {string} url
  */
-async function setTokens(teamId, channelId, auth, url) {
-  const now = moment();
-  // New Authentication
-  if (auth.getAccess()) {
-    if (moment.unix(auth.getExpires()).isBefore(now)) {
-      // Our Token has expired, try to refresh
-      await refreshAccessToken(teamId, channelId, auth);
-    }
+const setTokens = async (teamId, channelId, auth, url) => {
+  const now = moment().unix();
+  if (auth.getAccess() && auth.getExpires() < now) {
+    // Our Token has expired, try to refresh
+    await refreshAccessToken(teamId, channelId, auth);
   }
   spotifyWebApi.setAccessToken(auth.getAccess());
   spotifyWebApi.setRefreshToken(auth.getRefresh());

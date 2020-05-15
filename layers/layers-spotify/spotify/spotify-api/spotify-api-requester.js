@@ -1,8 +1,9 @@
+const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 const {refreshAccessToken} = require('./spotify-api-refresh');
 const {AuthError} = require('/opt/errors/errors-auth');
 const {sleep} = require('/opt/utils/util-timeout');
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = config.spotify_api.maximum_request_attempts;
 
 const requester = async (teamId, channelId, auth, name, api) => {
   const callApi = (attempt=0, reAuthed=false) => {
@@ -10,26 +11,21 @@ const requester = async (teamId, channelId, auth, name, api) => {
         .catch(async (error) => {
           logger.error(`Spotify API ${name} failed - ${JSON.stringify(error)}`);
           if (attempt > MAX_ATTEMPTS) {
-            Promise.reject(new Error(`Maximum retries ${MAX_ATTEMPTS} exceeeded.`));
+            throw new Error(`Maximum retries ${MAX_ATTEMPTS} exceeeded.`);
           }
           // If it is a Spotify Error, gracefully handle it
           if (error.name.includes(`WebapiError`) && error.statusCode) {
-            // Retry 500 errors
+            // Retry 500 errors with backoff
             if (error.statusCode >= 500 && error.statusCode < 600) {
-              // Wait before the next execution.
               await sleep(1000*attempt+1);
               return api(attempt+1);
             } else if (error.statusCode == 401) {
-              // Check if auth has failed twice
+              // Check if auth has failed already
               if (reAuthed) {
-                Promise.reject(new AuthError());
+                throw new AuthError();
               }
               // Try to re-authenticte
-              await refreshAccessToken(teamId, channelId, auth)
-                  .catch((err) => {
-                    logger.error(`Spotify re-authentication failed - ${JSON.stringify(err)}`);
-                    Promise.reject(new AuthError());
-                  });
+              await refreshAccessToken(teamId, channelId, auth);
               return api(attempt+1, true);
             }
           }

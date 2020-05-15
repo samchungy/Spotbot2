@@ -12,12 +12,12 @@ const requester = require('./spotify-api-requester');
  * @param {Number} offset
  */
 async function fetchSearchTracks(teamId, channelId, auth, query, market, limit) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
-  return await requester(teamId, channelId, auth, `Find Search Tracks: "${query}"`, async () => {
-    return (await spotifyApi.searchTracks(query, {
+  return requester(teamId, channelId, auth, `Find Search Tracks: "${query}"`, async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
+    return spotifyApi.searchTracks(query, {
       market: market,
       limit: limit,
-    })).body;
+    }).then((data) => data.body);
   });
 }
 
@@ -30,16 +30,17 @@ async function fetchSearchTracks(teamId, channelId, auth, query, market, limit) 
  * @param {string} market
  * @param {Number} limit
  * @param {Number} offset
+ * @return {Promise}
  */
-async function fetchArtists(teamId, channelId, auth, query, market, limit) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
-  return await requester(teamId, channelId, auth, `Get Artists`, async () => {
-    return (await spotifyApi.searchArtists(query, {
+const fetchArtists = (teamId, channelId, auth, query, market, limit) => {
+  return requester(teamId, channelId, auth, `Get Artists`, async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
+    return spotifyApi.searchArtists(query, {
       market: market,
       limit: limit,
-    })).body;
+    }).then((data) => data.body);
   });
-}
+};
 
 module.exports = {
   fetchArtists,

@@ -9,12 +9,13 @@ const requester = require('./spotify-api-requester');
  * @param {string} market
  * @param {string} trackId
  */
-async function fetchTrackInfo(teamId, channelId, auth, market, trackId) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
+const fetchTrackInfo = async (teamId, channelId, auth, market, trackId) => {
   return await requester(teamId, channelId, auth, `Get Track Info`, async () => {
-    return (await spotifyApi.getTrack(trackId, {market: market})).body;
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
+    return spotifyApi.getTrack(trackId, {market: market})
+        .then((data)=>data.body);
   });
-}
+};
 
 /**
  * Fetches track info from Spotfiy
@@ -24,12 +25,13 @@ async function fetchTrackInfo(teamId, channelId, auth, market, trackId) {
  * @param {string} market
  * @param {Array} trackIds
  */
-async function fetchTracksInfo(teamId, channelId, auth, market, trackIds) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
+const fetchTracksInfo = async (teamId, channelId, auth, market, trackIds) => {
   return await requester(teamId, channelId, auth, `Get Track Info`, async () => {
-    return (await spotifyApi.getTracks(trackIds, {market: market})).body;
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
+    return spotifyApi.getTracks(trackIds, {market: market})
+        .then((data)=>data.body);
   });
-}
+};
 
 /**
  * Fetches artist tracks from Spotfiy
@@ -39,12 +41,13 @@ async function fetchTracksInfo(teamId, channelId, auth, market, trackIds) {
  * @param {string} market
  * @param {string} artistId
  */
-async function fetchArtistTracks(teamId, channelId, auth, market, artistId) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
+const fetchArtistTracks = async (teamId, channelId, auth, market, artistId) => {
   return await requester(teamId, channelId, auth, `Get Artist Tracks`, async () => {
-    return (await spotifyApi.getArtistTopTracks(artistId, market)).body;
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
+    return spotifyApi.getArtistTopTracks(artistId, market)
+        .then((data)=>data.body);
   });
-}
+};
 
 
 module.exports = {

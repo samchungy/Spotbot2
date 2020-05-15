@@ -8,14 +8,14 @@ const requester = require('./spotify-api-requester');
  * @param {Object} auth
  * @param {string} market
  */
-async function fetchCurrentPlayback(teamId, channelId, auth, market) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return (await requester(teamId, channelId, auth, 'Get Current Playback', async () => {
+const fetchCurrentPlayback = async (teamId, channelId, auth, market) => {
+  return requester(teamId, channelId, auth, 'Get Current Playback', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
     return spotifyApi.getMyCurrentPlaybackState({
       ...market ? {market: market} : {},
     });
-  })).body;
-}
+  }).then((data) => data.body);
+};
 
 /**
  * Fetches user current playback in Spotify
@@ -24,14 +24,14 @@ async function fetchCurrentPlayback(teamId, channelId, auth, market) {
  * @param {Object} auth
  * @param {Number} limit
  */
-async function fetchRecent(teamId, channelId, auth, limit) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return (await requester(teamId, channelId, auth, 'Get Recent Tracks', async () => {
+const fetchRecent = async (teamId, channelId, auth, limit) => {
+  return requester(teamId, channelId, auth, 'Get Recent Tracks', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
     return spotifyApi.getMyRecentlyPlayedTracks({
       limit: limit,
     });
-  })).body;
-}
+  }).then((data) => data.body);
+};
 
 module.exports = {
   fetchCurrentPlayback,

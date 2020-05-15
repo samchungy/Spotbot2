@@ -1,6 +1,8 @@
 const config = require(process.env.CONFIG);
+
 const spotifyWebApi = require('./spotify-api-client');
 const requester = require('./spotify-api-requester');
+
 const COLLABORATIVE = config.spotify_api.playlists.collaborative;
 const PUBLIC = config.spotify_api.playlists.public;
 const LIMIT = config.spotify_api.playlists.tracks.limit;
@@ -13,12 +15,13 @@ const LIMIT = config.spotify_api.playlists.tracks.limit;
  * @param {string} playlistId
  * @param {Array} trackUris
  */
-async function addTracksToPlaylist(teamId, channelId, auth, playlistId, trackUris) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return (await requester(teamId, channelId, auth, 'Add tracks to playlists', async () => {
-    return await spotifyApi.addTracksToPlaylist(playlistId, trackUris);
-  }));
-}
+const addTracksToPlaylist = async (teamId, channelId, auth, playlistId, trackUris) => {
+  return requester(teamId, channelId, auth, 'Add tracks to playlists', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+    return spotifyApi.addTracksToPlaylist(playlistId, trackUris)
+        .then((data) => data.body);
+  });
+};
 
 /**
  * Fetches user playlists from Spotify
@@ -28,10 +31,13 @@ async function addTracksToPlaylist(teamId, channelId, auth, playlistId, trackUri
  * @param {number} offset
  * @param {number} limit
  */
-async function fetchPlaylists(teamId, channelId, auth, offset, limit) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return (await requester(teamId, channelId, auth, 'Get All Playlists', async () => await spotifyApi.getUserPlaylists({limit: limit, offset: offset}))).body;
-}
+const fetchPlaylists = async (teamId, channelId, auth, offset, limit) => {
+  return requester(teamId, channelId, auth, 'Get All Playlists', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+    return spotifyApi.getUserPlaylists({limit: limit, offset: offset})
+        .then((data) => data.body);
+  });
+};
 
 /**
  * Creates a new playlist on Spotify
@@ -41,10 +47,13 @@ async function fetchPlaylists(teamId, channelId, auth, offset, limit) {
  * @param {string} profileId
  * @param {string} name
  */
-async function createPlaylist(teamId, channelId, auth, profileId, name) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return (await requester(teamId, channelId, auth, 'Create a new playlist', async () => await spotifyApi.createPlaylist(profileId, name, {collaborative: COLLABORATIVE, public: PUBLIC}))).body;
-}
+const createPlaylist = async (teamId, channelId, auth, profileId, name) => {
+  return requester(teamId, channelId, auth, 'Create a new playlist', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+    return spotifyApi.createPlaylist(profileId, name, {collaborative: COLLABORATIVE, public: PUBLIC})
+        .then((data) => data.body);
+  });
+};
 
 /**
  * Replace tracks in playlist on Spotify
@@ -54,10 +63,13 @@ async function createPlaylist(teamId, channelId, auth, profileId, name) {
  * @param {string} playlistId
  * @param {Array} uris
  */
-async function replaceTracks(teamId, channelId, auth, playlistId, uris) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return (await requester(teamId, channelId, auth, 'Replace Tracks', async () => await spotifyApi.replaceTracksInPlaylist(playlistId, uris))).body;
-}
+const replaceTracks = async (teamId, channelId, auth, playlistId, uris) => {
+  return requester(teamId, channelId, auth, 'Replace Tracks', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+    await spotifyApi.replaceTracksInPlaylist(playlistId, uris)
+        .then((data) => data.body);
+  });
+};
 
 /**
  * Get Tracks from playlist on Spotify
@@ -69,15 +81,17 @@ async function replaceTracks(teamId, channelId, auth, playlistId, uris) {
  * @param {Number} offset
  * @param {Number} limit
  */
-async function fetchTracks(teamId, channelId, auth, playlistId, market, offset, limit) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return (await requester(teamId, channelId, auth, 'Fetch Tracks', async () => await spotifyApi.getPlaylistTracks(playlistId, {
-    ...limit ? {limit: limit} : {limit: LIMIT},
-    ...market ? {market: market} : {},
-    offset: offset,
-    fields: 'items(track(id,uri,name,artists,explicit,is_playable),added_by.id,added_at)',
-  }))).body;
-}
+const fetchTracks = async (teamId, channelId, auth, playlistId, market, offset, limit) => {
+  return requester(teamId, channelId, auth, 'Fetch Tracks', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+    return spotifyApi.getPlaylistTracks(playlistId, {
+      ...limit ? {limit: limit} : {limit: LIMIT},
+      ...market ? {market: market} : {},
+      offset: offset,
+      fields: 'items(track(id,uri,name,artists,explicit,is_playable),added_by.id,added_at)',
+    }).then((data) => data.body);
+  });
+};
 
 /**
  * Get Playlist
@@ -86,12 +100,14 @@ async function fetchTracks(teamId, channelId, auth, playlistId, market, offset, 
  * @param {Object} auth
  * @param {String} playlistId
  */
-async function fetchPlaylistTotal(teamId, channelId, auth, playlistId) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return (await requester(teamId, channelId, auth, 'Fetch Playlist', async () => await spotifyApi.getPlaylist(playlistId, {
-    fields: 'tracks.total',
-  }))).body;
-}
+const fetchPlaylistTotal = async (teamId, channelId, auth, playlistId) => {
+  return requester(teamId, channelId, auth, 'Fetch Playlist', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+    return spotifyApi.getPlaylist(playlistId, {
+      fields: 'tracks.total',
+    }).then((data) => data.body);
+  });
+};
 
 /**
  * Delete Playlist Tracks
@@ -101,10 +117,13 @@ async function fetchPlaylistTotal(teamId, channelId, auth, playlistId) {
  * @param {String} playlistId
  * @param {Array} trackUris
  */
-async function deleteTracks(teamId, channelId, auth, playlistId, trackUris) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
-  return (await requester(teamId, channelId, auth, 'Delete playlist tracks', async () => await spotifyApi.removeTracksFromPlaylist(playlistId, trackUris))).body;
-}
+const deleteTracks = async (teamId, channelId, auth, playlistId, trackUris) => {
+  return requester(teamId, channelId, auth, 'Delete playlist tracks', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth );
+    return spotifyApi.removeTracksFromPlaylist(playlistId, trackUris)
+        .then((data) => data.body);
+  });
+};
 
 module.exports = {
   addTracksToPlaylist,

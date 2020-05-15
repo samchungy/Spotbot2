@@ -7,10 +7,13 @@ const requester = require('./spotify-api-requester');
  * @param {string} channelId
  * @param {Object} auth
  */
-async function fetchProfile(teamId, channelId, auth) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return (await requester(teamId, channelId, auth, 'Get Spotify Profile', async () => await spotifyApi.getMe())).body;
-}
+const fetchProfile = async (teamId, channelId, auth) => {
+  return requester(teamId, channelId, auth, 'Get Spotify Profile', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+    return spotifyApi.getMe()
+        .then((data) => data.body);
+  });
+};
 
 /**
  * Fetches a specific user profile
@@ -19,10 +22,13 @@ async function fetchProfile(teamId, channelId, auth) {
  * @param {Object} auth
  * @param {string} user
  */
-async function fetchUserProfile(teamId, channelId, auth, user) {
-  const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
-  return (await requester(teamId, channelId, auth, 'Get Spotify User Profile', async () => await spotifyApi.getUser(user))).body;
-}
+const fetchUserProfile = async (teamId, channelId, auth, user) => {
+  return requester(teamId, channelId, auth, 'Get Spotify User Profile', async () => {
+    const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
+    return spotifyApi.getUser(user)
+        .then((data)=>data.body);
+  });
+};
 
 module.exports = {
   fetchProfile,
