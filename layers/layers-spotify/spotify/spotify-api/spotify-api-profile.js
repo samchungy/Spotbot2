@@ -8,7 +8,7 @@ const requester = require('./spotify-api-requester');
  * @param {Object} auth
  */
 const fetchProfile = async (teamId, channelId, auth) => {
-  return requester(teamId, channelId, auth, 'Get Spotify Profile', async () => {
+  return await requester(teamId, channelId, auth, 'Get Spotify Profile', async () => {
     const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
     return spotifyApi.getMe()
         .then((data) => data.body);
@@ -23,7 +23,7 @@ const fetchProfile = async (teamId, channelId, auth) => {
  * @param {string} user
  */
 const fetchUserProfile = async (teamId, channelId, auth, user) => {
-  return requester(teamId, channelId, auth, 'Get Spotify User Profile', async () => {
+  return await requester(teamId, channelId, auth, 'Get Spotify User Profile', async () => {
     const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
     return spotifyApi.getUser(user)
         .then((data)=>data.body);

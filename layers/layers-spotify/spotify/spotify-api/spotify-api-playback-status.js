@@ -9,7 +9,7 @@ const requester = require('./spotify-api-requester');
  * @param {string} market
  */
 const fetchCurrentPlayback = async (teamId, channelId, auth, market) => {
-  return requester(teamId, channelId, auth, 'Get Current Playback', async () => {
+  return await requester(teamId, channelId, auth, 'Get Current Playback', async () => {
     const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
     return spotifyApi.getMyCurrentPlaybackState({
       ...market ? {market: market} : {},
@@ -25,7 +25,7 @@ const fetchCurrentPlayback = async (teamId, channelId, auth, market) => {
  * @param {Number} limit
  */
 const fetchRecent = async (teamId, channelId, auth, limit) => {
-  return requester(teamId, channelId, auth, 'Get Recent Tracks', async () => {
+  return await requester(teamId, channelId, auth, 'Get Recent Tracks', async () => {
     const spotifyApi = await spotifyWebApi(teamId, channelId, auth);
     return spotifyApi.getMyRecentlyPlayedTracks({
       limit: limit,
