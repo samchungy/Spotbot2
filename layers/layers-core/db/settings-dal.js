@@ -60,12 +60,13 @@ const querySettings = (expressionAttributeNames, expressionAttributeValues, keyC
       });
 };
 
-const updateSettings = (teamId, channelId, key, expressionAttributeNames, expressionAttributeValues, updateExpression, conditionExpression) => {
+const updateSettings = (teamId, channelId, key, expressionAttributeNames, expressionAttributeValues, updateExpression, conditionExpression, returnValues='NONE') => {
   const item = settingsTable({
     Key: settingsKey(teamId, channelId, key),
     ExpressionAttributeNames: expressionAttributeNames,
-    ExpressionAttributeValues: expressionAttributeValues,
+    ...expressionAttributeValues ? {ExpressionAttributeValues: expressionAttributeValues} : {},
     UpdateExpression: updateExpression,
+    ReturnValues: returnValues,
     ...conditionExpression ? {ConditionExpression: conditionExpression} : {},
   });
   return dynamoDb.update(item).promise()

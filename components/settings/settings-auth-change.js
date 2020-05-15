@@ -3,8 +3,8 @@ const config = require(process.env.CONFIG);
 
 const sns = require('/opt/sns');
 
-const {changeSettings} = require('/opt/settings/settings-interface');
-const {removeAuth} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
+const {changeSettings} = require('/opt/db/settings-interface');
+const {removeAuth} = require('/opt/db/spotify-auth-interface');
 
 const SETTINGS_AUTH_UPDATE_VIEW = process.env.SNS_PREFIX + 'settings-auth-update-view';
 

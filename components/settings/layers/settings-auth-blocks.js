@@ -4,7 +4,7 @@ const logger = require(process.env.LOGGER);
 
 const {fetchProfile} = require('/opt/spotify/spotify-api/spotify-api-profile');
 const {fetchAuthorizeURL} = require('/opt/spotify/spotify-api/spotify-api-auth');
-const {storeState} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
+const {storeState} = require('/opt/db/spotify-auth-interface');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {AuthError, PremiumError} = require('/opt/errors/errors-auth');
 const {buttonSection} = require('/opt/slack/format/slack-format-modal');

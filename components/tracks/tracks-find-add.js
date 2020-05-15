@@ -9,8 +9,7 @@ const {addTracksToPlaylist, deleteTracks} = require('/opt/spotify/spotify-api/sp
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
 const {play} = require('/opt/spotify/spotify-api/spotify-api-playback');
 const {fetchTrackInfo} = require('/opt/spotify/spotify-api/spotify-api-tracks');
-const {changeTrackHistory, loadTrackHistory, storeTrackHistory} = require('/opt/history/history-interface');
-const {modelHistory} = require('/opt/history/history-model');
+const {changeTrackHistory, loadTrackHistory, storeTrackHistory} = require('/opt/db/history-interface');
 const {sleep} = require('/opt/utils/util-timeout');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 const {loadBackToPlaylistState, loadBlacklist, storeBackToPlaylistState} = require('/opt/settings/settings-extra-interface');
@@ -134,10 +133,9 @@ async function addTrack(teamId, channelId, settings, userId, trackId) {
 async function setHistory(teamId, channelId, history, track, userId) {
   const expiry = moment().add('1', 'month').unix();
   if (history) {
-    await changeTrackHistory(teamId, channelId, track.id, changeQuery, changeQueryValue(userId, moment().unix(), expiry), changeQueryNames);
+    await changeTrackHistory(teamId, channelId, track.id, userId, moment().unix(), expiry);
   } else {
-    const newHistory = modelHistory(track.id, track.artistsIds, userId, moment().unix(), 1);
-    await storeTrackHistory(teamId, channelId, track.id, newHistory, expiry);
+    await storeTrackHistory(teamId, channelId, track.id, track.artistsIds, userId, moment().unix(), 1, expiry);
   }
 }
 

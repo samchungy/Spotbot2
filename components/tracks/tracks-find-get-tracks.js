@@ -1,6 +1,6 @@
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
-const {loadSearch, removeThreeSearches} = require('/opt/search/search-interface');
+const {loadSearch, removeThreeSearches} = require('/opt/db/search-interface');
 const {actionSection, buttonActionElement, contextSection, imageSection, textSection} = require('/opt/slack/format/slack-format-blocks');
 const {postEphemeral, reply} = require('/opt/slack/slack-api');
 const {ephemeralPost, updateReply} = require('/opt/slack/format/slack-format-reply');

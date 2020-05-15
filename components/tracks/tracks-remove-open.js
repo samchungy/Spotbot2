@@ -5,14 +5,13 @@ const PLAYLIST = config.dynamodb.settings.playlist;
 const LIMIT = config.spotify_api.playlists.tracks.limit;
 const REMOVE_MODAL = config.slack.actions.remove_modal;
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {queryUserTrackHistory} = require('/opt/history/history-interface');
+const {searchUserTrackHistory} = require('/opt/db/history-interface');
 const {fetchPlaylistTotal, fetchTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
 const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const {textSection} = require('/opt/slack/format/slack-format-blocks');
 const {updateModal, postEphemeral} = require('/opt/slack/slack-api');
 const {option, multiSelectStatic, slackModal} = require('/opt/slack/format/slack-format-modal');
-const {userTrackKeyConditionExpression, userTrackFilterExpression, userTrackQueryAttributeNames, userTrackQueryAttributeValues} = require('/opt/history/history-model');
 
 const REMOVE_RESPONSES = {
   error: `:warning: An error occured. Please try again.`,
@@ -40,8 +39,9 @@ module.exports.handler = async (event, context) => {
       return (uniqueIds[index-(index - unique.length)] == track.id) ? [...unique, track] : unique;
     }, []);
     let query = [];
+    console.log(uniqueIds);
     if (uniqueIds.length) {
-      query = await queryAllTracks(teamId, channelId, userId, uniqueIds);
+      query = await searchUserTrackHistory(teamId, channelId, userId, uniqueIds);
     }
 
     if (!query.length) {
@@ -120,12 +120,7 @@ async function queryAllTracks(teamId, channelId, userId, trackIds) {
   for (let offset=0; offset<attempts; offset++) {
     const i = offset*99;
     promises.push(
-        queryUserTrackHistory(
-            userTrackKeyConditionExpression,
-            userTrackQueryAttributeNames,
-            userTrackQueryAttributeValues(teamId, channelId, userId, trackIds.slice(i, i+maxTracks)),
-            userTrackFilterExpression(trackIds.slice(i, i+maxTracks)),
-        ),
+        searchUserTrackHistory(teamId, channelId, userId, trackIds.slice(i, i+maxTracks)),
     );
   }
   return (await Promise.all(promises)).flat();

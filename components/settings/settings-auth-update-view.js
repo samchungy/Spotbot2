@@ -1,7 +1,7 @@
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
 
-const {loadSettings} = require('/opt/settings/settings-interface');
+const {loadSettings} = require('/opt/db/settings-interface');
 const {updateModal} = require('/opt/slack/slack-api');
 const {slackModal} = require('/opt/slack/format/slack-format-modal');
 const {getAuthBlock} = require('./layers/settings-auth-blocks');

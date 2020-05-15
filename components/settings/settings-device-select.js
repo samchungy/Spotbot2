@@ -1,6 +1,6 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
-const {loadSettings} = require('/opt/settings/settings-interface');
+const {loadSettings} = require('/opt/db/settings-interface');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
