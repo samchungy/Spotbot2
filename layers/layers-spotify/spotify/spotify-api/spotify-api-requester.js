@@ -1,7 +1,13 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
+
+// Spotify
 const {refreshAccessToken} = require('./spotify-api-refresh');
+
+// Errors
 const {AuthError} = require('/opt/errors/errors-auth');
+
+// Utility Function
 const {sleep} = require('/opt/utils/util-timeout');
 const MAX_ATTEMPTS = config.spotify_api.maximum_request_attempts;
 

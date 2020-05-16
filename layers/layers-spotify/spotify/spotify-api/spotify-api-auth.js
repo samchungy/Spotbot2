@@ -11,10 +11,10 @@ const SCOPES = config.spotify_api.scopes;
  * @param {string} state
  * @param {string} url
  */
-async function fetchAuthorizeURL(teamId, channelId, auth, state, url) {
+const fetchAuthorizeURL = async (teamId, channelId, auth, state, url) => {
   const spotifyApi = await spotifyWebApi(teamId, channelId, auth, url);
   return await requester(teamId, channelId, auth, 'Create Authorize URL', async () => await spotifyApi.createAuthorizeURL(SCOPES, state, true));
-}
+};
 
 /**
  * Fetches tokens from Spotify
@@ -24,10 +24,10 @@ async function fetchAuthorizeURL(teamId, channelId, auth, state, url) {
  * @param {string} code
  * @param {string} url
  */
-async function fetchTokens(teamId, channelId, auth, code, url) {
+const fetchTokens = async (teamId, channelId, auth, code, url) => {
   const spotifyApi = await spotifyWebApi(teamId, channelId, auth, url);
   return (await requester(teamId, channelId, auth, 'Authorization Code Grant', async () => await spotifyApi.authorizationCodeGrant(code))).body;
-}
+};
 
 module.exports = {
   fetchAuthorizeURL,
