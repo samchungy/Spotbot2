@@ -7,19 +7,20 @@ const lambda = require('/opt/lambda');
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
 
+// Slack
 const {updateReply} = require('/opt/slack/format/slack-format-reply');
 const {reply} = require('/opt/slack/slack-api');
-
-const slackAuthorized = require('/opt/authorizer');
 const {openModal, pushView} = require('/opt/slack-modal');
+const slackAuthorized = require('/opt/authorizer');
+
+// Settings
 const {checkIsSetup} = require('/opt/check-settings');
+
+// Util
 const {isEmpty} = require('/opt/utils/util-objects');
 
-const MIDDLEWARE_RESPONSE = {
-  admin_error: (users) => `:information_source: You must be a Spotbot admin for this channel to use this command. Current channel admins: ${users.map((user)=>`<@${user}>`).join(', ')}.`,
-  setup_error: `:information_source: Spotbot is not installed in this channel. Please add @spotbot to this channel and try again.`,
-  settings_error: ':information_source: Spotbot is not setup in this channel. Use `/spotbot settings` to setup Spotbot.',
-};
+// Errors
+const {SetupError} = require('/opt/errors/errors-settings');
 
 const SLACK_ACTIONS = config.slack.actions;
 const AUTH = config.dynamodb.settings_auth;
@@ -55,278 +56,451 @@ const CONTROL_RESET_START = process.env.SNS_PREFIX + 'control-reset-start';
 const CONTROL_RESET_REVIEW_SUBMIT = process.env.SNS_PREFIX + 'control-reset-review-submit';
 
 
-module.exports.handler = async (event, context) => {
-  let statusCode = 200; let body = '';
-  try {
-    if (!slackAuthorized(event)) {
-      statusCode = 401;
-      body = 'Unauathorized';
-      return {
-        statusCode,
-        body,
+const authRouter = async (actionId, payload, event) => {
+  switch (actionId) {
+    case AUTH.auth_url:
+    case 'SONOS_AUTH':
+      return;
+    case AUTH.reauth: {
+      const stage = event.requestContext.stage === 'local' ? `` : `/${event.requestContext.stage}`;
+      const url = `${event.headers['X-Forwarded-Proto']}://${event.headers.Host}${stage}`;
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.view.private_metadata,
+          viewId: payload.view.id,
+          url,
+        }),
+        TopicArn: SETTINGS_AUTH_CHANGE,
       };
+      return await sns.publish(params).promise();
     }
-    const eventPayload = qs.parse(event.body);
-    if (eventPayload) {
-      let params;
-      const payload = JSON.parse(eventPayload.payload);
-      switch (payload.type) {
-        case SLACK_ACTIONS.block_actions:
-          if (payload.actions.length > 0) {
-            switch (payload.actions[0].action_id) {
-              // AUTH
-              case AUTH.auth_url:
-              case 'SONOS_AUTH':
-                break;
-              case AUTH.reauth:
-                const stage = event.requestContext.stage === 'local' ? `` : `/${event.requestContext.stage}`;
-                const url = `${event.headers['X-Forwarded-Proto']}://${event.headers.Host}${stage}`;
-                params = {
-                  Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, viewId: payload.view.id, url}),
-                  TopicArn: SETTINGS_AUTH_CHANGE,
-                };
-                await sns.publish(params).promise();
-                break;
-              default:
-                const teamId = payload.team.id;
-                const channelId = payload.channel ? payload.channel.id : payload.view.private_metadata;
-                const {settings} = await checkIsSetup(teamId, channelId);
-                if (!settings) {
-                  body = MIDDLEWARE_RESPONSE.settings_error;
-                  break;
-                }
-                switch (payload.actions[0].action_id) {
-                  case 'SONOS_GROUPS':
-                    const sonosGroupsPayload = await pushView(teamId, channelId, payload.trigger_id, SLACK_ACTIONS.empty_modal, 'Sonos Settings - Groups', null, 'Cancel');
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, settings, viewId: sonosGroupsPayload.view.id, userId: payload.user.id}),
-                      TopicArn: SETTINGS_SONOS_GROUPS_OPEN,
-                    };
-                    await sns.publish(params).promise();
-                    break;
-                  case SLACK_ACTIONS.reset_review_confirm:
-                    const resetReviewConfirmPayload = JSON.parse(payload.actions[0].value);
-                    const resetPayload = await openModal(payload.team_id, payload.channel.id, payload.trigger_id, SLACK_ACTIONS.empty_modal, 'Reset - Tracks Review', null, 'Cancel');
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, settings, timestamp: resetReviewConfirmPayload.timestamp, viewId: resetPayload.view.id, responseUrl: payload.response_url}),
-                      TopicArn: CONTROL_RESET_REVIEW_OPEN,
-                    };
-                    await sns.publish(params).promise();
-                    break;
-                  case SLACK_ACTIONS.reset_review_deny:
-                    const resetReviewDenyPayload = JSON.parse(payload.actions[0].value);
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, settings, timestamp: resetReviewDenyPayload.timestamp, userId: payload.user.id, jump: false, responseUrl: payload.response_url}),
-                      TopicArn: CONTROL_RESET_SET,
-                    };
-                    await sns.publish(params).promise();
-                    break;
+  }
+  return false;
+};
 
-                  // ARTISTS
-                  case ARTISTS.view_artist_tracks:
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, userId: payload.user.id, artistId: payload.actions[0].value, triggerId: payload.trigger_id, responseUrl: payload.response_url}),
-                      TopicArn: TRACKS_FIND_ARTISTS_GET_TRACKS,
-                    };
-                    await sns.publish(params).promise();
-                    break;
-                  case ARTISTS.see_more_artists:
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, userId: payload.user.id, triggerId: payload.actions[0].value, responseUrl: payload.response_url}),
-                      TopicArn: TRACKS_FIND_ARTISTS_GET_ARTISTS,
-                    };
-                    await sns.publish(params).promise();
-                    break;
-                    // TRACKS
-                  case TRACKS.cancel_search: // Artist Search also uses this
-                    await reply(
-                        updateReply(`:information_source: Search cancelled.`, null),
-                        payload.response_url,
-                    );
-                    break;
-                  case TRACKS.see_more_results:
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, userId: payload.user.id, triggerId: payload.actions[0].value, responseUrl: payload.response_url}),
-                      TopicArn: TRACKS_FIND_GET_TRACKS,
-                    };
-                    await sns.publish(params).promise();
-                    break;
-                  case TRACKS.add_to_playlist:
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, settings, userId: payload.user.id, trackId: payload.actions[0].value, responseUrl: payload.response_url}),
-                      TopicArn: TRACKS_FIND_ADD,
-                    };
-                    await sns.publish(params).promise();
-                    break;
-                  // CONTROLS
-                  case CONTROLS.play:
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                      TopicArn: CONTROL_PLAY,
-                    };
-                    await sns.publish(params).promise();
-                    break;
-                  case CONTROLS.pause:
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                      TopicArn: CONTROL_PAUSE,
-                    };
-                    await sns.publish(params).promise();
-                    break;
-                  case CONTROLS.skip:
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                      TopicArn: CONTROL_SKIP_START,
-                    };
-                    await sns.publish(params).promise();
-                    break;
-                  case SLACK_ACTIONS.skip_vote:
-                    params = {
-                      Message: JSON.stringify({teamId, channelId, settings, userId: payload.user.id, responseUrl: payload.response_url}),
-                      TopicArn: CONTROL_SKIP_ADD_VOTE,
-                    };
-                    await sns.publish(params).promise();
-                    break;
-                  case OVERFLOW:
-                    switch (payload.actions[0].selected_option.value) {
-                      case CONTROLS.jump_to_start:
-                        params = {
-                          Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                          TopicArn: CONTROL_JUMP,
-                        };
-                        await sns.publish(params).promise();
-                        break;
-                      case CONTROLS.shuffle:
-                        params = {
-                          Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                          TopicArn: CONTROL_SHUFFLE,
-                        };
-                        await sns.publish(params).promise();
-                        break;
-                      case CONTROLS.repeat:
-                        params = {
-                          Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                          TopicArn: CONTROL_REPEAT,
-                        };
-                        await sns.publish(params).promise();
-                        break;
-                      case CONTROLS.reset:
-                        params = {
-                          Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                          TopicArn: CONTROL_RESET_START,
-                        };
-                        await sns.publish(params).promise();
-                        break;
-                      case CONTROLS.clear_one:
-                        params = {
-                          Message: JSON.stringify({teamId, channelId, settings, timestamp: payload.message.ts, userId: payload.user.id}),
-                          TopicArn: CONTROL_CLEAR_ONE,
-                        };
-                        await sns.publish(params).promise();
-                        break;
-                    }
-                    break;
-                }
-                break;
-            }
-            break;
-          }
-        case SLACK_ACTIONS.view_submission:
-          let errors; let settings;
-          switch (payload.view.callback_id) {
-            case SLACK_ACTIONS.empty_modal:
-            // MODALS
-            case SLACK_ACTIONS.settings_modal:
-              params = {
-                FunctionName: SETTINGS_SUBMIT_VERIFY, // the lambda function we are going to invoke
-                Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, view: payload.view, userId: payload.user.id}),
-              };
-              const {Payload: settingsErrorsPayload} = await lambda.invoke(params).promise();
-              errors = settingsErrorsPayload.length ? JSON.parse(settingsErrorsPayload) : null;
-              if (errors && !isEmpty(errors)) {
-                body = errors;
-              }
-              break;
-            case SLACK_ACTIONS.reset_modal:
-              const metadata = payload.view.private_metadata;
-              const {channelId, timestamp, offset} = JSON.parse(metadata);
-              isSetup = await checkIsSetup(payload.team.id, channelId);
-              settings = isSetup.settings;
-              if (!settings) {
-                body = MIDDLEWARE_RESPONSE.settings_error;
-                break;
-              }
-              params = {
-                Message: JSON.stringify({teamId: payload.team.id, channelId, settings, timestamp, view: payload.view, offset, isClose: false, userId: payload.user.id}),
-                TopicArn: CONTROL_RESET_REVIEW_SUBMIT,
-              };
-              await sns.publish(params).promise();
-              break;
-            case SLACK_ACTIONS.blacklist_modal:
-              params = {
-                FunctionName: SETTINGS_BLACKLIST_SUBMIT_VERIFY,
-                Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, view: payload.view, userId: payload.user.id}),
-              };
-              const {Payload: blacklistErrorsPayload} = await lambda.invoke(params).promise();
-              errors = JSON.parse(blacklistErrorsPayload);
-              if (errors && !isEmpty(errors)) {
-                body = errors;
-              }
-              break;
-            case SLACK_ACTIONS.remove_modal:
-              isSetup = await checkIsSetup(payload.team.id, payload.view.private_metadata);
-              settings = isSetup.settings;
-              if (!settings) {
-                body = MIDDLEWARE_RESPONSE.settings_error;
-                break;
-              }
-              params = {
-                Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings, userId: payload.user.id, view: payload.view}),
-                TopicArn: TRACKS_REMOVE_SUBMIT,
-              };
-              await sns.publish(params).promise();
-              break;
-            case SLACK_ACTIONS.device_modal:
-              isSetup = await checkIsSetup(payload.team.id, payload.view.private_metadata);
-              settings = isSetup.settings;
-              if (!settings) {
-                body = MIDDLEWARE_RESPONSE.settings_error;
-                break;
-              }
-              params = {
-                Message: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, userId: payload.user.id, view: payload.view}),
-                TopicArn: SETTINGS_DEVICE_SWITCH,
-              };
-              await sns.publish(params).promise();
-              break;
-          }
-          break;
-        case SLACK_ACTIONS.view_closed:
-          switch (payload.view.callback_id) {
-            case SLACK_ACTIONS.reset_modal:
-              const metadata = payload.view.private_metadata;
-              const {channelId, timestamp} = JSON.parse(metadata);
-              const {settings} = await checkIsSetup(payload.team.id, channelId);
-              if (!settings) {
-                body = MIDDLEWARE_RESPONSE.settings_error;
-                break;
-              }
-              params = {
-                Message: JSON.stringify({teamId: payload.team.id, channelId, settings, timestamp, trackUris: null, userId: payload.user.id}),
-                TopicArn: CONTROL_RESET_SET,
-              };
-              await sns.publish(params).promise();
-              break;
-          }
+const settingsActionRouter = async (callbackId, payload) => {
+  switch (callbackId) {
+    case 'SONOS_GROUPS': {
+      const modalPayload = await pushView(payload.team.id, payload.channel.id, payload.trigger_id, SLACK_ACTIONS.empty_modal, 'Sonos Settings - Groups', null, 'Cancel');
+      params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          viewId: modalPayload.view.id,
+          userId: payload.user.id,
+        }),
+        TopicArn: SETTINGS_SONOS_GROUPS_OPEN,
+      };
+      await sns.publish(params).promise();
+      break;
+    }
+  }
+  return false;
+};
+
+const settingsSubmitRouter = async (callbackId, payload) => {
+  switch (callbackId) {
+    case SLACK_ACTIONS.settings_modal: {
+      const params = {
+        FunctionName: SETTINGS_SUBMIT_VERIFY, // the lambda function we are going to invoke
+        Payload: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.view.private_metadata,
+          view: payload.view,
+          userId: payload.user.id,
+        }),
+      };
+      const {Payload: lambdaPayload} = await lambda.invoke(params).promise();
+      const errors = lambdaPayload.length ? JSON.parse(lambdaPayload) : null;
+      if (errors && !isEmpty(errors)) {
+        return lambdaPayload;
+      }
+      return;
+    }
+    case SLACK_ACTIONS.blacklist_modal: {
+      const params = {
+        FunctionName: SETTINGS_BLACKLIST_SUBMIT_VERIFY,
+        Payload: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.view.private_metadata,
+          view: payload.view,
+          userId: payload.user.id,
+        }),
+      };
+      const {Payload: lambdaPayload} = await lambda.invoke(params).promise();
+      const errors = JSON.parse(lambdaPayload);
+      if (errors && !isEmpty(errors)) {
+        return lambdaPayload;
+      }
+      return;
+    }
+    case SLACK_ACTIONS.device_modal: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.view.private_metadata,
+          userId: payload.user.id,
+          view: payload.view,
+        }),
+        TopicArn: SETTINGS_DEVICE_SWITCH,
+      };
+      await sns.publish(params).promise();
+      return;
+    }
+  }
+  return false;
+};
+
+const controlActionsRouter = async (actionId, payload) => {
+  switch (actionId) {
+    case CONTROLS.play: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          userId: payload.user.id,
+        }),
+        TopicArn: CONTROL_PLAY,
+      };
+      return await sns.publish(params).promise();
+    }
+    case CONTROLS.pause: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          userId: payload.user.id,
+        }),
+        TopicArn: CONTROL_PAUSE,
+      };
+      return await sns.publish(params).promise();
+    }
+    case CONTROLS.skip: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          userId: payload.user.id,
+        }),
+        TopicArn: CONTROL_SKIP_START,
+      };
+      return await sns.publish(params).promise();
+    }
+    case SLACK_ACTIONS.skip_vote: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          userId: payload.user.id,
+          responseUrl: payload.response_url,
+        }),
+        TopicArn: CONTROL_SKIP_ADD_VOTE,
+      };
+      return await sns.publish(params).promise();
+    }
+    case SLACK_ACTIONS.reset_review_confirm: {
+      const modalPayload = await openModal(payload.team.id, payload.channel.id, payload.trigger_id, SLACK_ACTIONS.empty_modal, 'Reset - Tracks Review', null, 'Cancel');
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          viewId: modalPayload.view.id,
+          responseUrl: payload.response_url,
+        }),
+        TopicArn: CONTROL_RESET_REVIEW_OPEN,
+      };
+      await sns.publish(params).promise();
+      break;
+    }
+    case SLACK_ACTIONS.reset_review_deny: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          userId: payload.user.id,
+          jump: false,
+          responseUrl: payload.response_url,
+        }),
+        TopicArn: CONTROL_RESET_SET,
+      };
+      await sns.publish(params).promise();
+      break;
+    }
+    case OVERFLOW: {
+      switch (payload.actions[0].selected_option.value) {
+        case CONTROLS.jump_to_start: {
+          const params = {
+            Message: JSON.stringify({
+              teamId: payload.team.id,
+              channelId: payload.channel.id,
+              settings: await checkIsSetup(payload.team.id, payload.channel.id),
+              userId: payload.user.id,
+            }),
+            TopicArn: CONTROL_JUMP,
+          };
+          return await sns.publish(params).promise();
+        }
+        case CONTROLS.shuffle: {
+          const params = {
+            Message: JSON.stringify({
+              teamId: payload.team.id,
+              channelId: payload.channel.id,
+              settings: await checkIsSetup(payload.team.id, payload.channel.id),
+              userId: payload.user.id,
+            }),
+            TopicArn: CONTROL_SHUFFLE,
+          };
+          return await sns.publish(params).promise();
+        }
+        case CONTROLS.repeat: {
+          const params = {
+            Message: JSON.stringify({
+              teamId: payload.team.id,
+              channelId: payload.channel.id,
+              settings: await checkIsSetup(payload.team.id, payload.channel.id),
+              userId: payload.user.id,
+            }),
+            TopicArn: CONTROL_REPEAT,
+          };
+          return await sns.publish(params).promise();
+        }
+        case CONTROLS.reset: {
+          params = {
+            Message: JSON.stringify({
+              teamId: payload.team.id,
+              channelId: payload.channel.id,
+              settings: await checkIsSetup(payload.team.id, payload.channel.id),
+              userId: payload.user.id,
+            }),
+            TopicArn: CONTROL_RESET_START,
+          };
+          return await sns.publish(params).promise();
+        }
+        case CONTROLS.clear_one: {
+          params = {
+            Message: JSON.stringify({
+              teamId: payload.team.id,
+              channelId: payload.channel.id,
+              settings: await checkIsSetup(payload.team.id, payload.channel.id),
+              userId: payload.user.id,
+            }),
+            TopicArn: CONTROL_CLEAR_ONE,
+          };
+          return await sns.publish(params).promise();
+        }
       }
     }
-  } catch (error) {
-    logger.error('Slack actions router failed');
-    logger.error(error);
-    body = ':warning: An error occured. Please try again.';
   }
-  return {
-    statusCode,
-    body,
-  };
+  return false;
+};
+
+const controlSubmitRouter = async (callbackId, payload) => {
+  switch (callbackId) {
+    case SLACK_ACTIONS.reset_modal: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.view.private_metadata,
+          settings: await checkIsSetup(payload.team.id, payload.view.private_metadata),
+          view: payload.view,
+          isClose: false,
+          userId: payload.user.id,
+        }),
+        TopicArn: CONTROL_RESET_REVIEW_SUBMIT,
+      };
+      await sns.publish(params).promise();
+      return;
+    }
+  }
+  return false;
+};
+
+const controlCloseRouter = async (callbackId, payload) => {
+  switch (callbackId) {
+    case SLACK_ACTIONS.reset_modal: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.view.private_metadata,
+          settings: await checkIsSetup(payload.team.id, payload.view.private_metadata),
+          trackUris: null,
+          userId: payload.user.id,
+        }),
+        TopicArn: CONTROL_RESET_SET,
+      };
+      await sns.publish(params).promise();
+      return;
+    }
+  }
+  return false;
+};
+
+const tracksActionsRouter = async (actionId, payload) => {
+  switch (actionId) {
+    // TRACKS
+    case TRACKS.cancel_search: { // Artist Search also uses this
+      await reply(
+          updateReply(`:information_source: Search cancelled.`, null),
+          payload.response_url,
+      );
+      return;
+    }
+    case TRACKS.see_more_results: {
+      await checkIsSetup(payload.team.id, payload.channel.id);
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          userId: payload.user.id,
+          triggerId: payload.actions[0].value,
+          responseUrl: payload.response_url,
+        }),
+        TopicArn: TRACKS_FIND_GET_TRACKS,
+      };
+      await sns.publish(params).promise();
+      return;
+    }
+    case TRACKS.add_to_playlist: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          userId: payload.user.id,
+          trackId: payload.actions[0].value,
+          responseUrl: payload.response_url,
+        }),
+        TopicArn: TRACKS_FIND_ADD,
+      };
+      await sns.publish(params).promise();
+      return;
+    }
+    // ARTISTS
+    case ARTISTS.view_artist_tracks: {
+      await checkIsSetup(payload.team.id, payload.channel.id);
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          userId: payload.user.id,
+          artistId: payload.actions[0].value,
+          triggerId: payload.trigger_id,
+          responseUrl: payload.response_url,
+        }),
+        TopicArn: TRACKS_FIND_ARTISTS_GET_TRACKS,
+      };
+      await sns.publish(params).promise();
+      return;
+    }
+    case ARTISTS.see_more_artists: {
+      await checkIsSetup(payload.team.id, payload.channel.id);
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          userId: payload.user.id,
+          triggerId: payload.actions[0].value,
+          responseUrl: payload.response_url,
+        }),
+        TopicArn: TRACKS_FIND_ARTISTS_GET_ARTISTS,
+      };
+      await sns.publish(params).promise();
+      return;
+    }
+  }
+  return false;
+};
+
+const tracksSubmitRouter = async (callbackId, payload) => {
+  switch (callbackId) {
+    case SLACK_ACTIONS.remove_modal: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.view.private_metadata,
+          settings: await checkIsSetup(payload.team.id, payload.view.private_metadata),
+          userId: payload.user.id,
+          view: payload.view,
+        }),
+        TopicArn: TRACKS_REMOVE_SUBMIT,
+      };
+      await sns.publish(params).promise();
+      return;
+    }
+  }
+  return false;
+};
+
+module.exports.handler = async (event, context) => {
+  if (!slackAuthorized(event)) {
+    return {statusCode: 401, body: 'Unauathorized'};
+  }
+  return await router(event, context)
+      .then((data) => ({statusCode: 200, body: data ? data : ''}))
+      .catch((err) => {
+        if (err instanceof SetupError) {
+          return {statusCode: 200, body: err.message};
+        }
+        logger.error('Uncategorized Error in Slack Actions Router');
+        logger.error(err);
+      });
+};
+
+const router = async (event, context) => {
+  const eventPayload = qs.parse(event.body);
+  if (eventPayload) {
+    const payload = JSON.parse(eventPayload.payload);
+    switch (payload.type) {
+      case SLACK_ACTIONS.block_actions: {
+        if (payload.actions.length > 0) {
+          const actionId = payload.actions[0].action_id;
+          const authRouterRun = await authRouter(actionId, payload, event);
+          if (authRouterRun !== false) {
+            return authRouterRun;
+          }
+          const controlRouterRun = await controlActionsRouter(actionId, payload);
+          if (controlRouterRun !== false) {
+            return authRouterRun;
+          }
+          const tracksActionsRouterRun = await tracksActionsRouter(actionId, payload);
+          if (tracksActionsRouterRun !== false) {
+            return tracksActionsRouterRun;
+          }
+          const settingsActionRouterRun = await settingsActionRouter(actionId, payload);
+          if (settingsActionRouterRun !== false) {
+            return settingsActionRouterRun;
+          }
+        }
+        break;
+      }
+      case SLACK_ACTIONS.view_submission:
+        const settingsSubmitRouterRun = await settingsSubmitRouter(payload.view.callback_id, payload);
+        if (settingsSubmitRouterRun !== false) {
+          return settingsSubmitRouterRun;
+        }
+        const tracksSubmitRouterRun = await tracksSubmitRouter(payload.view.callback_id, payload);
+        if (tracksSubmitRouterRun !== false) {
+          return tracksSubmitRouterRun;
+        }
+        const controlSubmitRouterRun = await controlSubmitRouter(payload.view.callback_id, payload);
+        if (controlSubmitRouterRun !== false) {
+          return controlSubmitRouterRun;
+        }
+        break;
+      case SLACK_ACTIONS.view_closed: {
+        const controlCloseRouterRun = await controlCloseRouter(payload.view.callback_id, payload);
+        if (controlCloseRouterRun !== false) {
+          return controlCloseRouterRun;
+        }
+      }
+    }
+  }
 };
