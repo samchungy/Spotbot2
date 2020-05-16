@@ -9,8 +9,7 @@ const {skip} = require('/opt/spotify/spotify-api/spotify-api-playback');
 const {actionSection, buttonActionElement, contextSection, textSection} = require('/opt/slack/format/slack-format-blocks');
 const {deleteChat, post, postEphemeral, updateChat} = require('/opt/slack/slack-api');
 const {deleteMessage, ephemeralPost, inChannelPost, messageUpdate} = require('/opt/slack/format/slack-format-reply');
-const {changeSkipAddVote, changeSkipAddHistory, changeSkipTrimHistory} = require('/opt/settings/settings-extra-interface');
-const {loadBlacklist} = require('/opt/settings/settings-extra-interface');
+const {changeSkipAddVote, changeSkipAddHistory, changeSkipTrimHistory, loadBlacklist} = require('/opt/db/settings-extra-interface');
 
 const onPlaylist = (status, playlist) => (status.context && status.context.uri.includes(playlist.id));
 

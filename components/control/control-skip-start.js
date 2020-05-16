@@ -15,7 +15,7 @@ const {inChannelPost} = require('/opt/slack/format/slack-format-reply');
 
 // Skip
 const {addVote, getSkipBlock, onBlacklist, skipTrack} = require('./layers/control-skip');
-const {createNewSkip, loadSkip} = require('/opt/settings/settings-extra-interface');
+const {createNewSkip, loadSkip} = require('/opt/db/settings-extra-interface');
 
 const PLAYLIST = config.dynamodb.settings.playlist;
 const SKIP_VOTES = config.dynamodb.settings.skip_votes;

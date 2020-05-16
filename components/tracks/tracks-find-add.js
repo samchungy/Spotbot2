@@ -12,10 +12,9 @@ const {fetchTrackInfo} = require('/opt/spotify/spotify-api/spotify-api-tracks');
 const {changeTrackHistory, loadTrackHistory, storeTrackHistory} = require('/opt/db/history-interface');
 const {sleep} = require('/opt/utils/util-timeout');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
-const {loadBackToPlaylistState, loadBlacklist, storeBackToPlaylistState} = require('/opt/settings/settings-extra-interface');
+const {loadBackToPlaylistState, loadBlacklist, storeBackToPlaylistState} = require('/opt/db/settings-extra-interface');
 const {post, reply} = require('/opt/slack/slack-api');
 const {inChannelPost, deleteReply} = require('/opt/slack/format/slack-format-reply');
-const {changeQuery, changeQueryValue, changeQueryNames} = require('/opt/history/history-model');
 
 const REPEAT_DURATION = config.dynamodb.settings.disable_repeats_duration;
 const BACK_TO_PLAYLIST = config.dynamodb.settings.back_to_playlist;

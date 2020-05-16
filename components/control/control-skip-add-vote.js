@@ -14,7 +14,7 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Skip
 const {addVote} = require('./layers/control-skip');
-const {loadSkip} = require('/opt/settings/settings-extra-interface');
+const {loadSkip} = require('/opt/db/settings-extra-interface');
 
 const SKIP_RESPONSE = {
   error: `:warning: Adding skip vote failed.`,
