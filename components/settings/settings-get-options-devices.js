@@ -1,15 +1,25 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 const moment = require(process.env.MOMENT);
+
+// Spotify
 const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {storeDevices} = require('/opt/db/settings-interface');
-const {option} = require('/opt/slack/format/slack-format-modal');
-const {modelDevice} = require('/opt/settings/settings-model');
 const Device = require('/opt/spotify/spotify-objects/util-spotify-device');
+
+// Settings
+const {modelDevice, storeDevices} = require('/opt/db/settings-interface');
+
+// Slack
+const {option} = require('/opt/slack/format/slack-format-modal');
+const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 const SETTINGS_HELPER = config.dynamodb.settings_helper;
 const DEFAULT_DEVICE = config.dynamodb.settings.default_device;
+
+const GET_DEVICES = {
+  failed: 'Fetching Spotify devices in settings failed',
+};
 
 /**
  * Fetch all spotifyDevices from Spotify
@@ -17,56 +27,44 @@ const DEFAULT_DEVICE = config.dynamodb.settings.default_device;
  * @param {string} channelId
  * @param {Object} settings
  */
-async function getAllDevices(teamId, channelId, settings) {
-  try {
-    const auth = await authSession(teamId, channelId);
-    const {[DEFAULT_DEVICE]: defaultDevice} = settings ? settings : {};
-    const spotifyDevices = await fetchDevices(teamId, channelId, auth);
+const getAllDevices = async (teamId, channelId, settings) => {
+  const auth = await authSession(teamId, channelId);
+  const {[DEFAULT_DEVICE]: defaultDevice} = settings ? settings : {};
+  const spotifyDevices = await fetchDevices(teamId, channelId, auth);
 
-    const devices = [
-      ...defaultDevice ? [defaultDevice] : [], // If default device, add to list
-      ...spotifyDevices.devices
-          .filter((device) => (!defaultDevice || device.id != defaultDevice.id))
-          .map((device) => {
-            const deviceObj = new Device(device);
-            return modelDevice(deviceObj.name, device.id);
-          }),
-    ];
+  const devices = [
+    ...defaultDevice ? [defaultDevice] : [], // If default device, add to list
+    ...spotifyDevices.devices
+        .filter((device) => (!defaultDevice || device.id !== defaultDevice.id))
+        .map((device) => {
+          const deviceObj = new Device(device);
+          return modelDevice(deviceObj.name, device.id);
+        }),
+  ];
+  return devices;
+};
 
-    return devices;
-  } catch (error) {
-    logger.error('all devices from Spotify failed');
-    throw error;
-  }
-}
+const startFetchingDevices = async (teamId, channelId, settings) => {
+  const spotifyDevices = await getAllDevices(teamId, channelId, settings);
+  await storeDevices(teamId, channelId, {value: spotifyDevices}, moment().add(1, 'hour').unix());
+  const devices = [
+    option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices), // Add a none option
+    ...spotifyDevices
+        .filter((device) => device.id != SETTINGS_HELPER.no_devices)
+        .map((device) => option(device.name, device.id)),
+  ];
+  return {
+    options: devices,
+  };
+};
 
-/**
- * Return device devices for the settings panel.
- * @param {Object} event
- * @param {Object} context
- */
 module.exports.handler = async (event, context) => {
-  try {
-    // LAMBDA FUNCTION
-    const {teamId, channelId, settings} = event;
-
-    const spotifyDevices = await getAllDevices(teamId, channelId, settings);
-    const [, devices] = await Promise.all([
-      storeDevices(teamId, channelId, {value: spotifyDevices}, moment().add(1, 'hour').unix()),
-      // Convert Devices to Options
-      (() => [
-        option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices), // Add a none option
-        ...spotifyDevices
-            .filter((device) => device.id != SETTINGS_HELPER.no_devices)
-            .map((device) => option(device.name, device.id)),
-      ])(),
-    ]);
-
-    return {
-      options: devices,
-    };
-  } catch (error) {
-    logger.error('Getting all Spotify spotifyDevices failed');
-    throw error;
-  }
+  // LAMBDA FUNCTION
+  const {teamId, channelId, userId, settings} = event;
+  return await startFetchingDevices(teamId, channelId, settings)
+      .catch((err)=>{
+        logger.error(err);
+        logger.error(GET_DEVICES.failed);
+        reportErrorToSlack(teamId, channelId, userId, GET_DEVICES.failed);
+      });
 };

@@ -55,10 +55,8 @@ const contextSection = (blockId, text) => {
   };
 };
 
-const divider = () => {
-  return {
-    'type': 'divider',
-  };
+const divider = {
+  'type': 'divider',
 };
 
 const imageAccessory = (imageUrl, imageAlt) => {

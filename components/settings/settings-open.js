@@ -1,15 +1,19 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
+// Slack
 const {updateModal} = require('/opt/slack/slack-api');
 const {slackModal} = require('/opt/slack/format/slack-format-modal');
+const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
+
+// Settings
 const {getAuthBlock} = require('./layers/settings-auth-blocks');
 const {getSettingsBlocks} = require('./layers/settings-blocks');
 
 const SETTINGS_MODAL = config.slack.actions.settings_modal;
 
 const OPEN_RESPONSE = {
-  fail: 'Opening settings failed.',
+  failed: 'Opening settings failed',
 };
 
 const openSettings = async (teamId, channelId, settings, viewId, url) => {

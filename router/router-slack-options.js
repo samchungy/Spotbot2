@@ -29,12 +29,11 @@ module.exports.handler = async (event, context) => {
     const eventPayload = qs.parse(event.body);
     const payload = JSON.parse(eventPayload.payload);
     const {settings} = await checkIsSetup(payload.team.id, payload.view.private_metadata);
-    let params;
     switch (payload.action_id) {
       case SETTINGS.playlist:
         params = {
           FunctionName: SETTINGS_GET_OPTIONS_PLAYLISTS, // the lambda function we are going to invoke
-          Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings: settings, query: payload.value}),
+          Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings, query: payload.value, user: payload.user.id}),
         };
         const {Payload: playlistPayload} = await lambda.invoke(params).promise();
         body = playlistPayload;
@@ -42,7 +41,7 @@ module.exports.handler = async (event, context) => {
       case SETTINGS.default_device:
         params = {
           FunctionName: SETTINGS_GET_OPTIONS_DEVICES, // the lambda function we are going to invoke
-          Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings: settings}),
+          Payload: JSON.stringify({teamId: payload.team.id, channelId: payload.view.private_metadata, settings, user: payload.user.id}),
         };
         const {Payload: devicePayload} = await lambda.invoke(params).promise();
         body = devicePayload;

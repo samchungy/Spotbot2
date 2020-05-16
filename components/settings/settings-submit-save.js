@@ -1,12 +1,11 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
-const {changeSettings, loadDevices, loadPlaylists, loadSettings, storeSettings} = require('/opt/db/settings-interface');
+const {changeSettings, modelDevice, modelPlaylist, loadDevices, loadPlaylists, loadSettings, storeSettings} = require('/opt/db/settings-interface');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const {postEphemeral} = require('/opt/slack/slack-api');
 const {isEqual, isEmpty} = require('/opt/utils/util-objects');
 
-const {modelDevice, modelPlaylist} = require('/opt/settings/settings-model');
 const {createPlaylist} = require('/opt/spotify/spotify-api/spotify-api-playlists');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {removeState} = require('/opt/db/spotify-auth-interface');

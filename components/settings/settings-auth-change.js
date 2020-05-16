@@ -1,36 +1,31 @@
 const logger = require(process.env.LOGGER);
-const config = require(process.env.CONFIG);
 
 const sns = require('/opt/sns');
-
-const {changeSettings} = require('/opt/db/settings-interface');
-const {removeAuth} = require('/opt/db/spotify-auth-interface');
+const {invalidateAuth} = require('/opt/spotify/spotify-api/spotify-api-refresh');
 
 const SETTINGS_AUTH_UPDATE_VIEW = process.env.SNS_PREFIX + 'settings-auth-update-view';
 
-const DEFAULT_DEVICE = config.dynamodb.settings.default_device;
-const PLAYLIST = config.dynamodb.settings.playlist;
-
-/**
- * Resets the authentication for our Spotbot channel
- * @param {Object} event
- * @param {Object} context
- */
-module.exports.handler = async (event, context) => {
-  try {
-    const {teamId, channelId, viewId, url} = JSON.parse(event.Records[0].Sns.Message);
-    await Promise.all([
-      removeAuth(teamId, channelId),
-      changeSettings(teamId, channelId, {[DEFAULT_DEVICE]: null, [PLAYLIST]: null}),
-    ]);
-    const params = {
-      Message: JSON.stringify({teamId, channelId, viewId, url}),
-      TopicArn: SETTINGS_AUTH_UPDATE_VIEW,
-    };
-    // Update View of Modal
-    await sns.publish(params).promise();
-  } catch (error) {
-    logger.error('Change Authentication Failed');
-    logger.error(error);
-  }
+const CHANGE_AUTH = {
+  failed: 'Auth change failed',
 };
+
+const changeAuth = async (teamId, channelId, viewId, url) => {
+  await invalidateAuth(teamId, channelId);
+  const params = {
+    Message: JSON.stringify({teamId, channelId, viewId, url}),
+    TopicArn: SETTINGS_AUTH_UPDATE_VIEW,
+  };
+  // Update View of Modal
+  await sns.publish(params).promise();
+};
+
+module.exports.handler = async (event, context) => {
+  const {teamId, channelId, viewId, url} = JSON.parse(event.Records[0].Sns.Message);
+  await changeAuth(teamId, channelId, viewId, url)
+      .catch((err)=>{
+        logger.error(err);
+        logger.error(CHANGE_AUTH.failed);
+        reportErrorToSlack(teamId, channelId, userId, CHANGE_AUTH.failed);
+      });
+};
+

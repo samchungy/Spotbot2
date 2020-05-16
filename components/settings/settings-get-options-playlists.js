@@ -1,16 +1,35 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 const moment = require(process.env.MOMENT);
+
+// Spotify
 const {fetchPlaylists} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const {storePlaylists} = require('/opt/db/settings-interface');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {modelPlaylist} = require('/opt/settings/settings-model');
+
+// Settings
+const {modelPlaylist, storePlaylists} = require('/opt/db/settings-interface');
+
+// Slack
 const {option, optionGroup} = require('/opt/slack/format/slack-format-modal');
+const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 const LIMIT = config.spotify_api.playlists.limit;
 const SETTINGS_HELPER = config.dynamodb.settings_helper;
 const NEW_PLAYLIST = SETTINGS_HELPER.create_new_playlist;
 const PLAYLIST = config.dynamodb.settings.playlist;
+
+const GET_PLAYLISTS = {
+  failed: 'Fetching Spotify playlists in settings failed',
+};
+
+const fetchAllPlaylists = async (teamId, channelId, auth, count=0) => {
+  const playlists = await fetchPlaylists(teamId, channelId, auth, count, LIMIT);
+  if (playlists.items.total > ((count+1) * LIMIT)) {
+    return [...playlists.items, ...(await fetchAllPlaylists(teamId, channelId, auth, count+1))];
+  } else {
+    return playlists.items;
+  }
+};
 
 /**
  * Fetch all compatible Spotify playlists
@@ -18,76 +37,52 @@ const PLAYLIST = config.dynamodb.settings.playlist;
  * @param {string} channelId
  * @param {modelPlaylist} currentPlaylist
  */
-async function getCompatiblePlaylists(teamId, channelId, currentPlaylist) {
-  try {
-    const auth = await authSession(teamId, channelId);
-    const profile = auth.getProfile();
-    const compatiblePlaylists = [...currentPlaylist ? [currentPlaylist] : []];
-    let count = 0;
-    while (true) {
-      const playlists = await fetchPlaylists(teamId, channelId, auth, count, LIMIT);
-      // Only if it is a collaborative playlist or the owner is ourselves - a playlist compatible.
-      // and current playlist is not in the list
-      compatiblePlaylists.push(
-          ...playlists.items
-              .filter((playlist) => (!currentPlaylist || (playlist.id != currentPlaylist.id)) &&
-                (playlist.collaborative == true || playlist.owner.id == profile.id))
-              .map((playlist) => modelPlaylist(playlist.name, playlist.id, playlist.uri, playlist.external_urls.spotify)),
-      );
+const getCompatiblePlaylists = async (teamId, channelId, currentPlaylist) => {
+  const auth = await authSession(teamId, channelId);
+  const profile = auth.getProfile();
+  const allPlaylists = await fetchAllPlaylists(teamId, channelId, auth);
+  return [
+    ...currentPlaylist ? [currentPlaylist] : [],
+    ...allPlaylists // Filter out curerntPlaylist to avoid dupes, and keep only playlists user owns, or collaborative ones
+        .filter((playlist) => (!currentPlaylist || (playlist.id != currentPlaylist.id)) && (playlist.collaborative == true || playlist.owner.id == profile.id))
+        .map((playlist) => modelPlaylist(playlist)),
+  ];
+};
 
-      // See if we can get more playlists as the Spotify Limit is 50 playlists per call.
-      if (playlists.total > ((count+1) * LIMIT)) {
-        count++;
-      } else {
-        break;
-      }
-    }
-    return compatiblePlaylists;
-  } catch (error) {
-    logger.error('Fetching all Spotify Playlists failed');
-    throw error;
-  }
-}
+const startFetchingPlaylists = async (teamId, channelId, settings, query) => {
+  const currentPlaylist = settings ? settings[PLAYLIST] : null;
+  // Convert our saved setting to a Slack option, adds a create new playlist option
+  const other = [
+    ...currentPlaylist ? [option(`${currentPlaylist.name} (Current Selection)`, `${currentPlaylist.id}`)] : [],
+    option(`Create a new playlist called "${query}"`, `${NEW_PLAYLIST}${query}`),
+  ];
+  const playlists = await getCompatiblePlaylists(teamId, channelId, currentPlaylist);
+  await storePlaylists(teamId, channelId, {value: playlists}, moment().add(1, 'hour').unix());
+  // Converts into Slack Option if it matches the search query
+  const searchPlaylists = playlists
+      .filter((playlist) => playlist.name.toLowerCase().includes(query.toLowerCase()))
+      .map((playlist) => option(playlist.name, playlist.id));
 
-/**
- * /**
- * Get all playlists based on a query
- * @param {Object} event
- * @param {Object} context
- */
-module.exports.handler = async (event, context) => {
-  try {
-    // LAMBDA FUNCTION
-    const {teamId, channelId, settings, query} = event;
-    const currentPlaylist = settings ? settings[PLAYLIST] : null;
-    const playlists = await getCompatiblePlaylists(teamId, channelId, currentPlaylist);
-    const [, searchPlaylists, other] = await Promise.all([
-      storePlaylists(teamId, channelId, {value: playlists}, moment().add(1, 'hour').unix()),
-      // Converts into Slack Option if it matches the search query
-      (() => playlists
-          .filter((playlist) => playlist.name.toLowerCase().includes(query.toLowerCase()))
-          .map((playlist) => option(playlist.name, playlist.id)))(),
-      // Adds our current selection if any to the list
-      (() => [
-        ...currentPlaylist ? [option(`${currentPlaylist.name} (Current Selection)`, `${currentPlaylist.id}`)] : [],
-        option(`Create a new playlist called "${query}"`, `${NEW_PLAYLIST}${query}`),
-      ])(),
-    ]);
-
-    if (!searchPlaylists.length) {
-      return {
-        option_groups: [optionGroup(`No query results for "${query}"`, other)],
-      };
-    }
-
+  if (!searchPlaylists.length) {
     return {
-      option_groups: [
-        optionGroup('Search Results:', searchPlaylists.slice(0, 100)),
-        optionGroup('Other:', other),
-      ],
+      option_groups: [optionGroup(`No query results for "${query}"`, other)],
     };
-  } catch (error) {
-    logger.error('Getting all Spotify playlists failed');
-    throw error;
   }
+  return {
+    option_groups: [
+      optionGroup('Search Results:', searchPlaylists.slice(0, 100)),
+      optionGroup('Other:', other),
+    ],
+  };
+};
+
+module.exports.handler = async (event, context) => {
+  // LAMBDA FUNCTION
+  const {teamId, channelId, userId, settings, query} = event;
+  return await startFetchingPlaylists(teamId, channelId, settings, query)
+      .catch((err)=>{
+        logger.error(err);
+        logger.error(GET_PLAYLISTS.failed);
+        reportErrorToSlack(teamId, channelId, userId, GET_PLAYLISTS.failed);
+      });
 };

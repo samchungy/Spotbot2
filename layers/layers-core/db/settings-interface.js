@@ -38,12 +38,27 @@ const searchAllSettings = (teamId, channelId) => {
   return querySettings(expressionNames, expressionValues, keyExpression);
 };
 
+const modelPlaylist = (playlist) => ({
+  name: playlist.name,
+  id: playlist.id,
+  uri: playlist.uri,
+  url: playlist.external_urls.spotify,
+});
+
+const modelDevice = (name, id) => ({
+  name: name,
+  id: id,
+});
+
+
 module.exports = {
   changeSettings,
   searchAllSettings,
   loadDevices,
   loadPlaylists,
   loadSettings,
+  modelDevice,
+  modelPlaylist,
   removeAllSettings,
   storeDevices,
   storePlaylists,

@@ -48,6 +48,18 @@ const validateProfile = async (teamId, channelId, auth) => {
   return profile;
 };
 
+// Spotify auth url
+const getAuthorizationURL = async (teamId, channelId, auth, viewId, url) => {
+  const state = modelState(teamId, channelId, viewId);
+  const encodedState = encodeURIComponent(transform.encode64(JSON.stringify(state)));
+  return await Promise.all([
+    storeState(teamId, channelId, {state}, moment().add(1, 'hour').unix()),
+    fetchAuthorizeURL(teamId, channelId, auth, encodedState, `${url}/${SETTINGS_AUTH.auth_url}`),
+  ]).then(([, authUrl]) => authUrl);
+};
+
+/** -------------------------- BLOCKS -------------------------- **/
+
 // Authenticated Block
 const getProfileBlock = (profile) => [
   buttonSection(SETTINGS_AUTH.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_AUTH.reauth, confirmObject(LABELS.reauth_confirm, HINTS.reauth_confirm, 'Reset Authentication', 'Cancel')),
@@ -62,16 +74,6 @@ const getNoAuthBlock = async (teamId, channelId, viewId, url, premiumError) => {
     buttonSection(SETTINGS_AUTH.auth_url, LABELS.auth_url, HINTS.auth_url_button, null, authUrl, null),
     ...premiumError ? [contextSection(SETTINGS_AUTH.auth_error, AUTH_RESPONSE.premium_error)] : [],
   ];
-};
-
-// Spotify auth url
-const getAuthorizationURL = async (teamId, channelId, auth, viewId, url) => {
-  const state = modelState(teamId, channelId, viewId);
-  const encodedState = encodeURIComponent(transform.encode64(JSON.stringify(state)));
-  return await Promise.all([
-    storeState(teamId, channelId, {state}, moment().add(1, 'hour').unix()),
-    fetchAuthorizeURL(teamId, channelId, auth, encodedState, `${url}/${SETTINGS_AUTH.auth_url}`),
-  ]).then(([, authUrl]) => authUrl);
 };
 
 const getAuthBlock = async (teamId, channelId, viewId, url) => {
