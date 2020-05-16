@@ -7,118 +7,132 @@ const slackClient = require('./slack-initialise');
  * @param {string} triggerId Slack Trigger Id
  * @param {object} view Slack View
  */
-async function sendModal(triggerId, view) {
-  try {
-    return await slackClient.views.open({trigger_id: triggerId, view: view});
-  } catch (error) {
-    logger.error(`Slack API: Opening Modal failed`, error);
-    logger.error(error.data.response_metadata);
-    throw error;
-  }
-}
+const sendModal = async (triggerId, view) => {
+  return await slackClient.views.open({trigger_id: triggerId, view: view})
+      .catch((err) => {
+        logger.error('Slack API: Opening Modal failed');
+        logger.error(err);
+        throw err;
+      });
+};
 
 /**
  * Send an update modal request to Slack
  * @param {string} viewId Slack View Id
  * @param {object} view Slack View
  */
-async function updateModal(viewId, view) {
-  try {
-    await slackClient.views.update({
-      view_id: viewId,
-      view: view,
-    });
-  } catch (error) {
-    logger.error(`Slack API: Update Modal failed`, error);
-    logger.error(error.data.response_metadata);
-    throw error;
-  }
-}
+const updateModal = async (viewId, view) => {
+  return await slackClient.views.update({
+    view_id: viewId,
+    view: view,
+  }).catch((err) => {
+    logger.error('Slack API: Updating Modal failed');
+    logger.error(err);
+    throw err;
+  });
+};
+
+/**
+ * Pushed a modal on top to Slack
+ * @param {object} view Slack View
+ * @param {string} triggerId Slack trigger id
+ */
+const pushModal = async (view, triggerId) => {
+  return await slackClient.views.push({
+    view: view,
+    trigger_id: triggerId,
+  }).catch((err) => {
+    logger.error('Slack API: Pushing Modal failed');
+    logger.error(err);
+    throw err;
+  });
+};
 
 /**
  * Post to Slack
  * @param {Object} body
  */
-async function post(body) {
-  try {
-    return await slackClient.chat.postMessage(body);
-  } catch (error) {
-    logger.error(`Slack API: Post failed`, error);
-    throw error;
-  }
-}
+const post = async (body) => {
+  return await slackClient.chat.postMessage(body)
+      .catch((err) => {
+        logger.error('Slack API: Post failed');
+        logger.error(err);
+        throw err;
+      });
+};
 
 /**
  * Post Ephemeral
  * @param {Object} body
  */
-async function postEphemeral(body) {
-  try {
-    await slackClient.chat.postEphemeral(body);
-  } catch (error) {
-    logger.error(`Slack API: Post Ephemeral failed`, error);
-    throw error;
-  }
-}
+const postEphemeral = async (body) => {
+  return await slackClient.chat.postEphemeral(body)
+      .catch((err) => {
+        logger.error('Slack API: Post Ephemeral failed');
+        logger.error(err);
+        throw err;
+      });
+};
 
 /**
  * Reply to a Slack Slash Command via Response URL
  * @param {*} body
  * @param {*} responseUrl
  */
-async function reply(body, responseUrl) {
-  try {
-    return await axios.post(responseUrl, body);
-  } catch (error) {
-    logger.error(`Slack API: Reply failed`, error);
-    throw error;
-  }
-}
+const reply = async (body, responseUrl) => {
+  return await axios.post(responseUrl, body)
+      .catch((err) => {
+        logger.error('Slack API: Reply failed');
+        logger.error(err);
+        throw err;
+      });
+};
 
 /**
  * Update Chat
  * @param {Object} body
  */
-async function updateChat(body) {
-  try {
-    return await slackClient.chat.update(body);
-  } catch (error) {
-    logger.error(`Slack API: Update Chat failed`, error);
-    throw error;
-  }
-}
+const updateChat = async (body) => {
+  return await slackClient.chat.update(body)
+      .catch((err) => {
+        logger.error('Slack API: Update Chat failed');
+        logger.error(err);
+        throw err;
+      });
+};
 
 /**
  * Deletes Chat
  * @param {Object} body
  */
-async function deleteChat(body) {
-  try {
-    await slackClient.chat.delete(body);
-  } catch (error) {
-    logger.error(`Slack API: Delete Chat failed`, error);
-    throw error;
-  }
-}
+const deleteChat = async (body) => {
+  return await slackClient.chat.delete(body)
+      .catch((err) => {
+        logger.error('Slack API: Delete Chat failed');
+        logger.error(err);
+        throw err;
+      });
+};
 
 /**
  * Gets Channel/Group info
  * @param {string} channel
  */
-async function getConversationInfo(channel) {
-  try {
-    return await slackClient.conversations.info({channel: channel});
-  } catch (error) {
-    logger.error(`Slack API: Get Conversation Info failed`, error);
-    throw error;
-  }
-}
+const getConversationInfo = async (channel) => {
+  return await slackClient.conversations.info({channel: channel})
+      .catch((err) => {
+        logger.error('Slack API: Get Conversation Info failed');
+        logger.error(err);
+        throw err;
+      });
+};
 
 module.exports = {
   deleteChat,
   getConversationInfo,
   post,
   postEphemeral,
+  pushModal,
   reply,
   sendModal,
   updateChat,
