@@ -51,8 +51,9 @@ const invalidateAuth = async (teamId, channelId) => {
  * @param {string} teamId
  * @param {string} channelId
  * @param {object} auth
+ * @param {boolean} retry
  */
-const refreshAccessToken = async (teamId, channelId, auth) => {
+const refreshAccessToken = async (teamId, channelId, auth, retry=false) => {
   // Check if we already renewed the authentication
   const newAuth = await loadAuth(teamId, channelId);
   // Check if we've already renewed a token in another call
@@ -61,6 +62,9 @@ const refreshAccessToken = async (teamId, channelId, auth) => {
   }
   return refreshAccess(teamId, channelId, auth, newAuth[ACCESS], newAuth[REFRESH])
       .catch(async (err) => {
+        if (err.code === ConditionalCheckFailedException && !retry) {
+          return refreshAccessToken(teamId, channelId, auth, true);
+        }
         logger.error('Failed to refresh access token');
         logger.error(err);
         await invalidateAuth(teamId, channelId);
