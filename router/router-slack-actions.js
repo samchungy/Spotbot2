@@ -1,9 +1,6 @@
 const qs = require('qs');
 const sns = require('/opt/sns');
-
 const lambda = require('/opt/lambda');
-
-
 const logger = require(process.env.LOGGER);
 const config = require(process.env.CONFIG);
 
@@ -54,7 +51,6 @@ const CONTROL_SKIP_ADD_VOTE = process.env.SNS_PREFIX + 'control-skip-add-vote';
 const CONTROL_REPEAT = process.env.SNS_PREFIX + 'control-repeat';
 const CONTROL_RESET_START = process.env.SNS_PREFIX + 'control-reset-start';
 const CONTROL_RESET_REVIEW_SUBMIT = process.env.SNS_PREFIX + 'control-reset-review-submit';
-
 
 const authRouter = async (actionId, payload, event) => {
   switch (actionId) {
