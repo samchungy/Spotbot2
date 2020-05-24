@@ -1,7 +1,7 @@
 const logger = require(process.env.LOGGER);
 
 // Spotify
-const {notPlaying} = require('/opt/spotify/spotify-helper');
+const {isPlaying} = require('/opt/spotify/spotify-helper');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
@@ -13,7 +13,7 @@ const {ephemeralPost, updateReply} = require('/opt/slack/format/slack-format-rep
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Skip
-const {addVote} = require('./layers/control-skip');
+const {addVote} = require('/opt/control-skip/control-skip');
 const {loadSkip} = require('/opt/db/settings-extra-interface');
 
 const SKIP_RESPONSE = {
@@ -54,17 +54,16 @@ const startAddVote = async (teamId, channelId, settings, userId, responseUrl) =>
   const auth = await authSession(teamId, channelId);
   const {country} = auth.getProfile();
   const status = await fetchCurrentPlayback(teamId, channelId, auth, country);
-  if (notPlaying(status)) {
-    return await ephemeralPost(
-        ephemeralPost(channelId, userId, SKIP_RESPONSE.not_playing, null),
-    );
+  if (!isPlaying(status)) {
+    const message = ephemeralPost(channelId, userId, SKIP_RESPONSE.not_playing, null);
+    return await ephemeralPost(message);
   }
   const statusTrack = new Track(status.item);
   const currentSkip = await loadSkip(teamId, channelId);
   if (await isExpired(statusTrack, currentSkip, responseUrl)) {
     return;
   }
-  return addVote(teamId, channelId, auth, userId, currentSkip, statusTrack);
+  return addVote(teamId, channelId, auth, settings, userId, currentSkip, statusTrack);
 };
 
 module.exports.handler = async (event, context) => {
