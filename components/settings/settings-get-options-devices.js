@@ -62,9 +62,8 @@ module.exports.handler = async (event, context) => {
   // LAMBDA FUNCTION
   const {teamId, channelId, userId, settings} = event;
   return await startFetchingDevices(teamId, channelId, settings)
-      .catch((err)=>{
-        logger.error(err);
-        logger.error(GET_DEVICES.failed);
+      .catch((error)=>{
+        logger.error(error, GET_DEVICES.failed);
         reportErrorToSlack(teamId, channelId, userId, GET_DEVICES.failed);
       });
 };

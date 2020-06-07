@@ -34,9 +34,8 @@ const updateView = async (teamId, channelId, viewId, url) => {
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, viewId, url} = JSON.parse(event.Records[0].Sns.Message);
   await updateView(teamId, channelId, viewId, url)
-      .catch((err)=>{
-        logger.error(err);
-        logger.error(UPDATE_VIEW.failed);
+      .catch((error)=>{
+        logger.error(error, UPDATE_VIEW.failed);
         reportErrorToSlack(teamId, channelId, userId, UPDATE_VIEW.failed);
       });
 };

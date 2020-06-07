@@ -86,16 +86,15 @@ const getAuthBlock = async (teamId, channelId, viewId, url) => {
         authBlock: getProfileBlock(profile),
         authError: false,
       }))
-      .catch(async (err) => {
-        if (err instanceof AuthError) {
+      .catch(async (error) => {
+        if (error instanceof AuthError) {
           return {
-            authBlock: await getNoAuthBlock(teamId, channelId, viewId, url, (err instanceof PremiumError)),
+            authBlock: await getNoAuthBlock(teamId, channelId, viewId, url, (error instanceof PremiumError)),
             authError: true,
           };
         }
-        logger.error('Failed to generate AuthBlock');
-        logger.error(err);
-        throw err;
+        logger.error(error, 'Failed to generate AuthBlock');
+        throw error;
       });
 };
 

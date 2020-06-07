@@ -32,9 +32,8 @@ const openSettings = async (teamId, channelId, settings, viewId, url) => {
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, viewId, userId, url} = JSON.parse(event.Records[0].Sns.Message);
   await openSettings(teamId, channelId, settings, viewId, url)
-      .catch((err)=>{
-        logger.error(err);
-        logger.error(OPEN_RESPONSE.failed);
+      .catch((error)=>{
+        logger.error(error, OPEN_RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, userId, OPEN_RESPONSE.failed);
       });
 };

@@ -80,9 +80,8 @@ module.exports.handler = async (event, context) => {
   // LAMBDA FUNCTION
   const {teamId, channelId, userId, settings, query} = event;
   return await startFetchingPlaylists(teamId, channelId, settings, query)
-      .catch((err)=>{
-        logger.error(err);
-        logger.error(GET_PLAYLISTS.failed);
+      .catch((error)=>{
+        logger.error(error, GET_PLAYLISTS.failed);
         reportErrorToSlack(teamId, channelId, userId, GET_PLAYLISTS.failed);
       });
 };

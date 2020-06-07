@@ -72,9 +72,8 @@ module.exports.handler = async (event, context) => {
   const {code, state, url} = event;
   return await startValidation(code, state, url)
       .then(() => ({success: true, failReason: null}))
-      .catch((err) =>{
-        logger.error('Settings Auth Validation failed');
-        logger.error(err);
+      .catch((error) =>{
+        logger.error(error, 'Settings Auth Validation failed');
         return {success: false, failReason: 'An error occured. Please close Spotbot Settings and run /spotbot settings to try again.'};
       });
 };
