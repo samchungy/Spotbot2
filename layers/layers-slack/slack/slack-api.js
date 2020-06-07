@@ -9,10 +9,9 @@ const slackClient = require('./slack-initialise');
  */
 const sendModal = async (triggerId, view) => {
   return await slackClient.views.open({trigger_id: triggerId, view: view})
-      .catch((err) => {
-        logger.error('Slack API: Opening Modal failed');
-        logger.error(err);
-        throw err;
+      .catch((error) => {
+        logger.error(error, 'Slack API: Opening Modal failed');
+        throw error;
       });
 };
 
@@ -25,10 +24,9 @@ const updateModal = async (viewId, view) => {
   return await slackClient.views.update({
     view_id: viewId,
     view: view,
-  }).catch((err) => {
-    logger.error('Slack API: Updating Modal failed');
-    logger.error(err);
-    throw err;
+  }).catch((error) => {
+    logger.error(error, 'Slack API: Updating Modal failed');
+    throw error;
   });
 };
 
@@ -41,10 +39,9 @@ const pushModal = async (view, triggerId) => {
   return await slackClient.views.push({
     view: view,
     trigger_id: triggerId,
-  }).catch((err) => {
-    logger.error('Slack API: Pushing Modal failed');
-    logger.error(err);
-    throw err;
+  }).catch((error) => {
+    logger.error(error, 'Slack API: Pushing Modal failed');
+    throw error;
   });
 };
 
@@ -54,10 +51,9 @@ const pushModal = async (view, triggerId) => {
  */
 const post = async (body) => {
   return await slackClient.chat.postMessage(body)
-      .catch((err) => {
-        logger.error('Slack API: Post failed');
-        logger.error(err);
-        throw err;
+      .catch((error) => {
+        logger.error(error, 'Slack API: Post failed');
+        throw error;
       });
 };
 
@@ -67,10 +63,9 @@ const post = async (body) => {
  */
 const postEphemeral = async (body) => {
   return await slackClient.chat.postEphemeral(body)
-      .catch((err) => {
-        logger.error('Slack API: Post Ephemeral failed');
-        logger.error(err);
-        throw err;
+      .catch((error) => {
+        logger.error(error, 'Slack API: Post Ephemeral failed');
+        throw error;
       });
 };
 
@@ -81,10 +76,9 @@ const postEphemeral = async (body) => {
  */
 const reply = async (body, responseUrl) => {
   return await axios.post(responseUrl, body)
-      .catch((err) => {
-        logger.error('Slack API: Reply failed');
-        logger.error(err);
-        throw err;
+      .catch((error) => {
+        logger.error(error, 'Slack API: Reply failed');
+        throw error;
       });
 };
 
@@ -94,10 +88,9 @@ const reply = async (body, responseUrl) => {
  */
 const updateChat = async (body) => {
   return await slackClient.chat.update(body)
-      .catch((err) => {
-        logger.error('Slack API: Update Chat failed');
-        logger.error(err);
-        throw err;
+      .catch((error) => {
+        logger.error(error, 'Slack API: Update Chat failed');
+        throw error;
       });
 };
 
@@ -107,10 +100,9 @@ const updateChat = async (body) => {
  */
 const deleteChat = async (body) => {
   return await slackClient.chat.delete(body)
-      .catch((err) => {
-        logger.error('Slack API: Delete Chat failed');
-        logger.error(err);
-        throw err;
+      .catch((error) => {
+        logger.error(error, 'Slack API: Delete Chat failed');
+        throw error;
       });
 };
 
@@ -120,10 +112,9 @@ const deleteChat = async (body) => {
  */
 const getConversationInfo = async (channel) => {
   return await slackClient.conversations.info({channel: channel})
-      .catch((err) => {
-        logger.error('Slack API: Get Conversation Info failed');
-        logger.error(err);
-        throw err;
+      .catch((error) => {
+        logger.error(error, 'Slack API: Get Conversation Info failed');
+        throw error;
       });
 };
 

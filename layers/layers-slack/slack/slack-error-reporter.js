@@ -3,21 +3,18 @@ const {postEphemeral, post} = require('/opt/slack/slack-api');
 const {ephemeralPost, inChannelPost} = require('/opt/slack/format/slack-format-reply');
 
 
-const reportErrorToSlack = (teamId, channelId, userId, error) => {
-  const errorMessage = `:warning: ${error}. Please try again.`;
+const reportErrorToSlack = (teamId, channelId, userId, err) => {
+  const errorMessage = `:warning: ${err}. Please try again.`;
   (async () => {
-    if (userId) {
-      await post(
-          inChannelPost(channelId, errorMessage),
-      );
+    if (!userId) {
+      const message = inChannelPost(channelId, errorMessage);
+      await post(message);
     } else {
-      await postEphemeral(
-          ephemeralPost(channelId, userId, errorMessage),
-      );
+      const message = ephemeralPost(channelId, userId, errorMessage);
+      await postEphemeral(message);
     }
-  })().catch((err) => {
-    logger.error(err);
-    logger.error(`Failed to report the following error to Slack: ${error})`);
+  })().catch((error) => {
+    logger.error(error, `Failed to report the following error to Slack: ${errorMessage}` );
   });
 };
 
