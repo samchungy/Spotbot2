@@ -41,7 +41,7 @@ const searchUserTrackHistory = (teamId, channelId, userId, trackIds) => {
   };
   const conditionExpression = '#TeamChannel=:teamChannel and #UserId=:userId';
   const indexName = 'userId-index';
-  const filterExpression = `#Id in (${trackIds.map((id, index) => `:id${index}`).join(', ')})`; // Generates #Id in (:id0, :id1)
+  const filterExpression = `#Id in (${trackIds.map((id, index) => `:id${index}`).join(', ')})`; // Generates #Id in (:id0, :id1) etc
   return queryHistory(expressionNames, expressionValues, conditionExpression, indexName, filterExpression);
 };
 

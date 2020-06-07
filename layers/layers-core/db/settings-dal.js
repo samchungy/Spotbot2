@@ -24,9 +24,9 @@ const getSettings = (teamId, channelId, key) => {
   });
   return dynamoDb.get(item).promise()
       .then((data) => data && data.Item ? settingsValue(data.Item) : null)
-      .catch((err) => {
-        logger.error(`Dynamodb getSettings failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb getSettings failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -40,9 +40,9 @@ const putSettings = (teamId, channelId, key, values, expiry) => {
   });
   return dynamoDb.put(item).promise()
       .then((data) => data ? Promise.resolve(data) : Promise.reject(data))
-      .catch((err) => {
-        logger.error(`Dynamodb putSettings failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb putSettings failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -54,9 +54,9 @@ const querySettings = (expressionAttributeNames, expressionAttributeValues, keyC
   });
   return dynamoDb.query(item).promise()
       .then((data) => data ? data.Items : Promise.reject(data))
-      .catch((err) => {
-        logger.error(`Dynamodb querySettings failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb querySettings failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -70,9 +70,9 @@ const updateSettings = (teamId, channelId, key, expressionAttributeNames, expres
     ...conditionExpression ? {ConditionExpression: conditionExpression} : {},
   });
   return dynamoDb.update(item).promise()
-      .catch((err) => {
-        logger.error(`Dynamodb updateSettings failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb updateSettings failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -82,9 +82,9 @@ const deleteSettings = (teamId, channelId, key) => {
     Key: settingsKey(teamId, channelId, key),
   });
   return dynamoDb.delete(item).promise()
-      .catch((err) => {
-        logger.error(`Dynamodb deleteSettings failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb deleteSettings failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -111,9 +111,9 @@ const batchDeleteSettings = async (teamId, channelId, keys) => {
             return batchDelete(data.UnprocessedItems, attempt+1);
           }
           return null;
-        }).catch((err) => {
-          logger.error(`Dynamodb batchDeleteSettings failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-          throw err;
+        }).catch((error) => {
+          logger.error(error, `Dynamodb batchDeleteSettings failed with key ${JSON.stringify(item)}`);
+          throw error;
         });
   };
   return batchDelete(item);

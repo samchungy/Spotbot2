@@ -21,9 +21,9 @@ const getSearch = (teamId, channelId, key) => {
   });
   return dynamoDb.get(item).promise()
       .then((data) => data && data.Item ? searchValue(data.Item) : null)
-      .catch((err) => {
-        logger.error(`Dynamodb getSearch failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb getSearch failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -37,9 +37,9 @@ const putSearch = (teamId, channelId, key, values, expiry) => {
   });
   return dynamoDb.put(item).promise()
       .then((data) => data ? Promise.resolve(data) : Promise.reject(data))
-      .catch((err) => {
-        logger.error(`Dynamodb putSearch failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb putSearch failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -52,9 +52,9 @@ const updateSearch = (teamId, channelId, key, expressionAttributeNames, expressi
     ...conditionExpression ? {ConditionExpression: conditionExpression} : {},
   });
   return dynamoDb.update(item).promise()
-      .catch((err) => {
-        logger.error(`Dynamodb updateSearch failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb updateSearch failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 

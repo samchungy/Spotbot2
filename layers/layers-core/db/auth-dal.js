@@ -21,9 +21,9 @@ const getAuth = (teamId, channelId, key) => {
   });
   return dynamoDb.get(item).promise()
       .then((data) => data && data.Item ? authValue(data.Item) : null)
-      .catch((err) => {
-        logger.error(`Dynamodb getAuth failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb getAuth failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -37,9 +37,9 @@ const putAuth = (teamId, channelId, key, values, expiry) => {
   });
   return dynamoDb.put(item).promise()
       .then((data) => data ? Promise.resolve(data) : Promise.reject(data))
-      .catch((err) => {
-        logger.error(`Dynamodb putAuth failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb putAuth failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -48,9 +48,9 @@ const deleteAuth = (teamId, channelId, key) => {
     Key: authKey(teamId, channelId, key),
   });
   return dynamoDb.delete(item).promise()
-      .catch((err) => {
-        logger.error(`Dynamodb deleteAuth failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb deleteAuth failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -63,9 +63,9 @@ const updateAuth = (teamId, channelId, key, expressionAttributeNames, expression
     ...conditionExpression ? {ConditionExpression: conditionExpression} : {},
   });
   return dynamoDb.update(item).promise()
-      .catch((err) => {
-        logger.error(`Dynamodb updateAuth failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb updateAuth failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 

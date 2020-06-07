@@ -21,9 +21,9 @@ const getHistory = (teamId, channelId, key) => {
   });
   return dynamoDb.get(item).promise()
       .then((data) => data && data.Item ? historyValue(data.Item) : null)
-      .catch((err) => {
-        logger.error(`Dynamodb getHistory failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb getHistory failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -37,9 +37,9 @@ const putHistory = (teamId, channelId, key, values, expiry) => {
   });
   return dynamoDb.put(item).promise()
       .then((data) => data ? Promise.resolve(data) : Promise.reject(data))
-      .catch((err) => {
-        logger.error(`Dynamodb putHistory failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb putHistory failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -53,9 +53,9 @@ const queryHistory = (expressionAttributeNames, expressionAttributeValues, keyCo
   });
   return dynamoDb.query(item).promise()
       .then((data) => data ? data.Items : Promise.reject(data))
-      .catch((err) => {
-        logger.error(`Dynamodb queryHistory failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb queryHistory failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
@@ -69,9 +69,9 @@ const updateHistory = (teamId, channelId, key, expressionAttributeNames, express
     ...conditionExpression ? {ConditionExpression: conditionExpression} : {},
   });
   return dynamoDb.update(item).promise()
-      .catch((err) => {
-        logger.error(`Dynamodb updateHistory failed with key ${JSON.stringify(item)} - ${JSON.stringify(err)}`);
-        throw err;
+      .catch((error) => {
+        logger.error(error, `Dynamodb updateHistory failed with key ${JSON.stringify(item)}`);
+        throw error;
       });
 };
 
