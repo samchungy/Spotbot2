@@ -49,6 +49,8 @@ const router = async (event, context) => {
       const params = {
         FunctionName: SETTINGS_GET_OPTIONS_TIMEZONES, // the lambda function we are going to invoke
         Payload: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.view.private_metadata,
           query: payload.value,
         }),
       };
@@ -64,11 +66,10 @@ module.exports.handler = async (event, context) => {
   }
   return await router(event, context)
       .then((data) => ({statusCode: 200, body: data ? data: ''}))
-      .catch((err) => {
-        if (err instanceof SetupError) {
-          return {statusCode: 200, body: err.message};
+      .catch((error) => {
+        if (error instanceof SetupError) {
+          return {statusCode: 200, body: error.message};
         }
-        logger.error('Uncategorized Error in Slack Actions Router');
-        logger.error(err);
+        logger.error(error, 'Uncategorized Error in Slack Actions Router');
       });
 };

@@ -222,7 +222,6 @@ const controlActionsRouter = async (actionId, payload) => {
           channelId: payload.channel.id,
           settings: await checkIsSetup(payload.team.id, payload.channel.id),
           userId: payload.user.id,
-          jump: false,
           responseUrl: payload.response_url,
         }),
         TopicArn: CONTROL_RESET_SET,
@@ -328,9 +327,10 @@ const controlCloseRouter = async (callbackId, payload) => {
           channelId: payload.view.private_metadata,
           settings: await checkIsSetup(payload.team.id, payload.view.private_metadata),
           trackUris: null,
+          isClose: true,
           userId: payload.user.id,
         }),
-        TopicArn: CONTROL_RESET_SET,
+        TopicArn: CONTROL_RESET_REVIEW_SUBMIT,
       };
       await sns.publish(params).promise();
       return;
@@ -435,21 +435,6 @@ const tracksSubmitRouter = async (callbackId, payload) => {
   return false;
 };
 
-module.exports.handler = async (event, context) => {
-  if (!slackAuthorized(event)) {
-    return {statusCode: 401, body: 'Unauathorized'};
-  }
-  return await router(event, context)
-      .then((data) => ({statusCode: 200, body: data ? data : ''}))
-      .catch((err) => {
-        if (err instanceof SetupError) {
-          return {statusCode: 200, body: err.message};
-        }
-        logger.error('Uncategorized Error in Slack Actions Router');
-        logger.error(err);
-      });
-};
-
 const router = async (event, context) => {
   const eventPayload = qs.parse(event.body);
   if (eventPayload) {
@@ -477,7 +462,7 @@ const router = async (event, context) => {
         }
         break;
       }
-      case SLACK_ACTIONS.view_submission:
+      case SLACK_ACTIONS.view_submission: {
         const settingsSubmitRouterRun = await settingsSubmitRouter(payload.view.callback_id, payload);
         if (settingsSubmitRouterRun !== false) {
           return settingsSubmitRouterRun;
@@ -491,6 +476,7 @@ const router = async (event, context) => {
           return controlSubmitRouterRun;
         }
         break;
+      }
       case SLACK_ACTIONS.view_closed: {
         const controlCloseRouterRun = await controlCloseRouter(payload.view.callback_id, payload);
         if (controlCloseRouterRun !== false) {
@@ -499,4 +485,18 @@ const router = async (event, context) => {
       }
     }
   }
+};
+
+module.exports.handler = async (event, context) => {
+  if (!slackAuthorized(event)) {
+    return {statusCode: 401, body: 'Unauathorized'};
+  }
+  return await router(event, context)
+      .then((data) => ({statusCode: 200, body: data ? data : ''}))
+      .catch((error) => {
+        if (error instanceof SetupError) {
+          return {statusCode: 200, body: error.message};
+        }
+        logger.error(error, 'Uncategorized Error in Slack Actions Router');
+      });
 };

@@ -33,25 +33,25 @@ const router = async (event, context) => {
     switch (textSplit[0]) {
       case 'settings': {
         const settings = await checkIsPreviouslySetup(payload.team_id, payload.channel_id)
-            .catch(async (err) => {
-              if (err.constructor === SetupError) {
+            .catch(async (error) => {
+              if (error.constructor === SetupError) {
               // Check if Spotbot is installed in this channel:
                 if (await checkIsInChannel(payload.channel_id)) {
                   return;
                 }
               }
-              throw err;
+              throw error;
             });
 
         // See if Spotbot is setup if so we need to check user is admin.
         await checkIsSetup(payload.team_id, payload.channel_id, settings)
             .then(() => checkIsAdmin(settings, payload.user_id))
-            .catch((err) => {
+            .catch((error) => {
             // Spotbot is not setup, let em through
-              if (err instanceof SettingsError) {
+              if (error instanceof SettingsError) {
                 return;
               }
-              throw err;
+              throw error;
             });
 
         const modalPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotbot Settings', null, 'Cancel');
@@ -129,12 +129,11 @@ module.exports.handler = async (event, context) => {
   }
   return await router(event, context)
       .then((data) => ({statusCode: 200, body: data ? data: ''}))
-      .catch((err) => {
-        if (err instanceof SetupError) {
-          return {statusCode: 200, body: err.message};
+      .catch((error) => {
+        if (error instanceof SetupError) {
+          return {statusCode: 200, body: error.message};
         }
-        logger.error('Uncategorized Error in Settings Router');
-        logger.error(err);
+        logger.error(error, 'Uncategorized Error in Settings Router');
         return {statusCode: 200, body: ':warning: An error occured. Please try again.'};
       });
 };
