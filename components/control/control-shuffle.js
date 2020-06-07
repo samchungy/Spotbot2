@@ -50,9 +50,8 @@ const toggleShuffle = async (teamId, channelId, settings, userId) => {
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, userId} = JSON.parse(event.Records[0].Sns.Message);
   await toggleShuffle(teamId, channelId, settings, userId)
-      .catch((err)=>{
-        logger.error(err);
-        logger.error(SHUFFLE_RESPONSE.failed);
+      .catch((error)=>{
+        logger.error(error, SHUFFLE_RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, null, SHUFFLE_RESPONSE.failed);
       });
 };

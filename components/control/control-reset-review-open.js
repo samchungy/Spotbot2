@@ -3,26 +3,31 @@ const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 const moment = require(process.env.MOMENT);
 
+// Slack
 const {reply, updateModal} = require('/opt/slack/slack-api');
-const {getReviewTracks} = require('./layers/control-reset');
 const {deleteReply} = require('/opt/slack/format/slack-format-reply');
+const {textSection} = require('/opt/slack/format/slack-format-blocks');
+const {option, optionGroup, multiSelectStaticGroups, slackModal, selectStatic, yesOrNo} = require('/opt/slack/format/slack-format-modal');
+const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
+
+// Spotify
 const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {option, optionGroup, multiSelectStaticGroups, slackModal, selectStatic, yesOrNo} = require('/opt/slack/format/slack-format-modal');
-const {textSection} = require('/opt/slack/format/slack-format-blocks');
+
+// Reset
+const {getReviewTracks} = require('./layers/control-reset');
 
 const RESET_MODAL = config.slack.actions.reset_modal;
 const REVIEW_JUMP = config.slack.actions.reset_review_jump;
 const PLAYLIST = config.dynamodb.settings.playlist;
 
 const RESET_RESPONSE = {
+  failed: 'Opening a reset review failed',
   empty: ':information_source: Playlist is already empty.',
   error: ':warning: An error occured.',
   kept: (trackUris) => ` ${trackUris.length} ${trackUris.length > 1 ? `tracks` : `track`} from the past 30 minutes ${trackUris.length > 1 ? `were` : `was`} kept.`,
   review_title: (numTracks) => `*${numTracks}* ${numTracks > 1 ? `tracks were` : `track was`} added in the past 30 minutes. Are you sure you want to remove ${numTracks > 1 ? `them` : `it`}?  Closing this window will keep none.`,
   success: (userId) => `:put_litter_in_its_place: The Spotbot playlist was reset by <@${userId}>`,
-  success_jump: ` Spotbot is now playing from the start of the playlist.`,
-  failed_jump: ` Spotbot failed to return to the start of the playlist.`,
 };
 
 /**
@@ -30,7 +35,7 @@ const RESET_RESPONSE = {
  * @param {Array} playlistTracks
  * @return {Object} reviewBlocks
  */
-function getReviewBlocks(playlistTracks) {
+const getReviewBlocks = (playlistTracks) => {
   const buckets = {ten: [], twenty: [], thirty: []};
   const initialOptions = [];
   const tenMinutes = moment().subtract(10, 'minutes');
@@ -70,24 +75,28 @@ function getReviewBlocks(playlistTracks) {
     selectStatic(REVIEW_JUMP, `Jump to the start of the playlist?`, `This will only work if a track is selected above.`, option(`Yes`, 'true'), yesOrNo()),
   ];
   return blocks;
-}
+};
 
+const openResetReview = async (teamId, channelId, settings, viewId, responseUrl) => {
+  // Delete review confirmation block
+  const message = deleteReply('', null);
+  await reply(message, responseUrl);
+  const auth = await authSession(teamId, channelId);
+  const playlist = settings[PLAYLIST];
+  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
+  const reviewTracks = await getReviewTracks(teamId, channelId, auth, playlist, total);
+  const blocks = getReviewBlocks(reviewTracks);
+  const metadata = channelId;
+  const view = slackModal(RESET_MODAL, `Reset: Review Tracks`, `Confirm`, `Close`, blocks, true, metadata);
+  await updateModal(viewId, view);
+};
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, settings, timestamp, viewId, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
-  try {
-    // Delete the review confirmation block
-    await reply(deleteReply('', null), responseUrl);
-    const auth = await authSession(teamId, channelId);
-    const playlist = settings[PLAYLIST];
-    const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
-    const reviewTracks = await getReviewTracks(teamId, channelId, auth, playlist, total);
-    const blocks = getReviewBlocks(reviewTracks);
-    const metadata = JSON.stringify({channelId, timestamp});
-    const view = slackModal(RESET_MODAL, `Reset: Review Tracks`, `Confirm`, `Close`, blocks, true, metadata);
-    await updateModal(viewId, view);
-  } catch (error) {
-    logger.error(error);
-    logger.error('Updating Reset Review modal failed');
-  }
+  const {teamId, channelId, settings, viewId, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
+  await openResetReview(teamId, channelId, settings, viewId, responseUrl)
+      .catch((error)=>{
+        logger.error(error, RESET_RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, null, RESET_RESPONSE.failed);
+      });
 };
+

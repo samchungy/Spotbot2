@@ -85,9 +85,8 @@ const startSkip = async (teamId, channelId, settings, userId) => {
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, userId} = JSON.parse(event.Records[0].Sns.Message);
   await startSkip(teamId, channelId, settings, userId)
-      .catch((err)=>{
-        logger.error(err);
-        logger.error(SKIP_RESPONSE.failed);
+      .catch((error)=>{
+        logger.error(error, SKIP_RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, userId, SKIP_RESPONSE.failed);
       });
 };

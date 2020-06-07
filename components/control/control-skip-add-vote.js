@@ -69,9 +69,8 @@ const startAddVote = async (teamId, channelId, settings, userId, responseUrl) =>
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, userId, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
   await startAddVote(teamId, channelId, settings, userId, responseUrl)
-      .catch((err)=>{
-        logger.error(err);
-        logger.error(SKIP_RESPONSE.failed);
+      .catch((error)=>{
+        logger.error(error, SKIP_RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, userId, SKIP_RESPONSE.failed);
       });
 };

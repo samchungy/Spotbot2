@@ -32,13 +32,13 @@ const startJump = async (teamId, channelId, settings, userId) => {
   const status = await fetchCurrentPlayback(teamId, channelId, auth);
 
   if (!isPlaying(status)) {
-    const message = ephemeralPost(channelId, JUMP_RESPONSE.not_playing);
+    const message = ephemeralPost(channelId, userId, JUMP_RESPONSE.not_playing);
     return await postEphemeral(message);
   }
 
   const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
   if (!total) {
-    const message = ephemeralPost(channelId, JUMP_RESPONSE.empty);
+    const message = ephemeralPost(channelId, userId, JUMP_RESPONSE.empty);
     return await postEphemeral(message);
   }
 
@@ -56,9 +56,8 @@ const startJump = async (teamId, channelId, settings, userId) => {
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, userId} = JSON.parse(event.Records[0].Sns.Message);
   await startJump(teamId, channelId, settings, userId)
-      .catch((err)=>{
-        logger.error(err);
-        logger.error(JUMP_RESPONSE.failed);
+      .catch((error)=>{
+        logger.error(error, JUMP_RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, null, JUMP_RESPONSE.failed);
       });
 };

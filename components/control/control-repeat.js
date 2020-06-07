@@ -51,9 +51,8 @@ const toggleRepeat = async (teamId, channelId, settings, userId) => {
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, userId} = JSON.parse(event.Records[0].Sns.Message);
   await toggleRepeat(teamId, channelId, settings, userId)
-      .catch((err)=>{
-        logger.error(err);
-        logger.error(REPEAT_RESPONSE.failed);
+      .catch((error)=>{
+        logger.error(error, REPEAT_RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, null, REPEAT_RESPONSE.failed);
       });
 };
