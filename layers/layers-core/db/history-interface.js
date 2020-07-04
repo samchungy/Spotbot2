@@ -13,7 +13,7 @@ const changeTrackHistory = (teamId, channelId, trackId, userId, timeAdded, expir
     ':timeAdded': timeAdded,
     ':inc': 1,
   };
-  const updateExpression = 'SET #Ttl = :ttl, #UserId = :userId, #TimeAdded = :timeAdded, #NumAdds = #NumAdds + :inc';
+  const updateExpression = 'SET #Ttl = :ttl, #UserId = :userId, #TimeAdded = :timeAdded ADD #NumAdds :inc';
   return updateHistory(teamId, channelId, trackId, expressionNames, expressionValues, updateExpression);
 };
 
