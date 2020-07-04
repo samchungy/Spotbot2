@@ -1,7 +1,7 @@
 const logger = require(process.env.LOGGER);
 
-const {removeAllSettings, searchAllSettings} = require('/opt/settings/settings-interface');
-const {removeAuth} = require('/opt/spotify/spotify-auth/spotify-auth-interface');
+const {removeAllSettings, searchAllSettings} = require('/opt/db/settings-interface');
+const {removeAuth} = require('/opt/db/spotify-auth-interface');
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings} = JSON.parse(event.Records[0].Sns.Message);
