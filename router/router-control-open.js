@@ -15,12 +15,11 @@ const CONTROL_OPEN = process.env.SNS_PREFIX + 'control-open';
 
 const router = async (event, context) => {
   const payload = qs.parse(event.body);
+  await checkIsSetup(payload.team_id, payload.channel_id);
   const params = {
     Message: JSON.stringify({
       teamId: payload.team_id,
       channelId: payload.channel_id,
-      settings: await checkIsSetup(payload.team_id, payload.channel_id),
-      userId: payload.user_id,
     }),
     TopicArn: CONTROL_OPEN,
   };
