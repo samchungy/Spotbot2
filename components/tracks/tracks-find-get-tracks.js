@@ -1,82 +1,20 @@
 const logger = require(process.env.LOGGER);
-const config = require(process.env.CONFIG);
-const {loadSearch, removeThreeSearches} = require('/opt/db/search-interface');
-const {actionSection, buttonActionElement, contextSection, imageSection, textSection} = require('/opt/slack/format/slack-format-blocks');
-const {postEphemeral, reply} = require('/opt/slack/slack-api');
-const {ephemeralPost, updateReply} = require('/opt/slack/format/slack-format-reply');
-const TRACK_ACTIONS = config.slack.actions.tracks;
-const DISPLAY_LIMIT = config.slack.limits.max_options;
-const BUTTON = config.slack.buttons;
-const trackPanel = (title, url, artist, album, time) => `<${url}|*${title}*>\n:clock1: *Duration*: ${time}\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`;
+
+// Tracks
+const {showResults} = require('./layers/get-tracks');
+
+// Slack
+const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 const TRACK_RESPONSE = {
-  error: ':warning: An error occured.',
-  expired: ':information_source: Search has expired.',
-  found: ':mag: Are these the tracks you were looking for?',
+  failed: 'Fetching more search results failed',
 };
-
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, triggerId, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
-  try {
-    const trackSearch = await loadSearch(teamId, channelId, triggerId);
-    if (!trackSearch) {
-      return await reply(
-          updateReply(TRACK_RESPONSE.expired, null),
-          responseUrl,
-      );
-    }
-    trackSearch.currentSearch += 1;
-    const currentTracks = trackSearch.searchItems.splice(0, DISPLAY_LIMIT);
-    const trackBlocks = currentTracks.map((track) => {
-      return [
-        imageSection(
-            trackPanel(track.name, track.url, track.artists, track.album, track.duration),
-            track.art,
-            `Album Art`,
-        ),
-        actionSection(
-            null,
-            [buttonActionElement(TRACK_ACTIONS.add_to_playlist, `+ Add to playlist`, track.id, false, BUTTON.primary)],
-        ),
-      ];
-    }).flat();
-
-    const blocks = [
-      textSection(TRACK_RESPONSE.found),
-      ...trackBlocks,
-      contextSection(null, `Page ${trackSearch.currentSearch}/${trackSearch.numSearches}`),
-      actionSection(
-          null,
-          [
-            ...trackSearch.currentSearch != trackSearch.numSearches ? [buttonActionElement(TRACK_ACTIONS.see_more_results, `Next 3 Tracks`, triggerId, false)] : [],
-            buttonActionElement(TRACK_ACTIONS.cancel_search, `Cancel Search`, triggerId, false, BUTTON.danger),
-          ],
-      ),
-    ];
-    await removeThreeSearches(teamId, channelId, triggerId);
-
-    // This is an update request
-    if (responseUrl) {
-      await reply(
-          updateReply(TRACK_RESPONSE.found, blocks),
-          responseUrl,
-      );
-    } else {
-      await postEphemeral(
-          ephemeralPost(channelId, userId, TRACK_RESPONSE.found, blocks),
-      );
-    }
-  } catch (error) {
-    logger.error(error);
-    logger.error('Failed to get 3 tracks');
-    try {
-      await postEphemeral(
-          ephemeralPost(channelId, userId, TRACK_RESPONSE.error, null),
-      );
-    } catch (error2) {
-      logger.error(error2);
-      logger.error('Failed to report get 3 tracks error');
-    }
-  }
+  await showResults(teamId, channelId, userId, triggerId, responseUrl)
+      .catch((error)=>{
+        logger.error(error, TRACK_RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, TRACK_RESPONSE.failed);
+      });
 };
