@@ -24,7 +24,7 @@ const changeAuth = async (teamId, channelId, viewId, url) => {
 };
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, viewId, url} = JSON.parse(event.Records[0].Sns.Message);
+  const {teamId, channelId, userId, viewId, url} = JSON.parse(event.Records[0].Sns.Message);
   await changeAuth(teamId, channelId, viewId, url)
       .catch((error)=>{
         logger.error(error, CHANGE_AUTH.failed);

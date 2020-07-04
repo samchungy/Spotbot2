@@ -8,7 +8,7 @@ const logger = require(process.env.LOGGER);
 module.exports.handler = async (event, context) => {
   const statusCode = 200; let body = '';
   try {
-    const stage = event.requestContext.stage === 'local' ? `` : `/${event.requestContext.stage}`;
+    const stage = `/${event.requestContext.stage}`;
     const url = `${event.headers['X-Forwarded-Proto']}://${event.headers.Host}${stage}`;
     if (event.queryStringParameters && event.queryStringParameters.code && event.queryStringParameters.state) {
       const params = {
