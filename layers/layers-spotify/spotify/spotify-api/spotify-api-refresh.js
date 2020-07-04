@@ -17,7 +17,7 @@ const PLAYLIST = CONFIG.dynamodb.settings.playlist;
 const DEFAULT_DEVICE = CONFIG.dynamodb.settings.default_device;
 
 // Utility Functions
-const alreadyRenewed = (auth, newAuth) => newAuth && auth.getAccess() != newAuth[ACCESS] && newAuth[EXPIRES] > auth.getExpires();
+const alreadyRenewed = (auth, newAuth) => newAuth && auth.getAccess() != newAuth[ACCESS];
 
 // Refresh the token
 const refreshAccess = async (teamId, channelId, auth, accessToken, refreshToken) => {
@@ -61,12 +61,11 @@ const refreshAccessToken = async (teamId, channelId, auth, retry=false) => {
     return auth.update(newAuth[ACCESS], newAuth[EXPIRES]);
   }
   return refreshAccess(teamId, channelId, auth, newAuth[ACCESS], newAuth[REFRESH])
-      .catch(async (err) => {
-        if (err.code === ConditionalCheckFailedException && !retry) {
+      .catch(async (error) => {
+        if (error.code === 'ConditionalCheckFailedException' && !retry) {
           return refreshAccessToken(teamId, channelId, auth, true);
         }
-        logger.error('Failed to refresh access token');
-        logger.error(err);
+        logger.error(error, 'Failed to refresh access token');
         await invalidateAuth(teamId, channelId);
         throw new AuthError();
       });

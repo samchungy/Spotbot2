@@ -15,7 +15,7 @@ const requester = async (teamId, channelId, auth, name, api) => {
   const callApi = (attempt=0, reAuthed=false) => {
     return api() // Call API
         .catch(async (error) => {
-          logger.error(`Spotify API ${name} failed - ${JSON.stringify(error)}`);
+          logger.error(error, `Spotify API ${name} failed`);
           if (attempt > MAX_ATTEMPTS) {
             throw new Error(`Maximum retries ${MAX_ATTEMPTS} exceeeded.`);
           }
@@ -35,7 +35,7 @@ const requester = async (teamId, channelId, auth, name, api) => {
               return api(attempt+1, true);
             }
           }
-          throw error;
+          throw new Error('Spotify Api failed');
         });
   };
   return callApi();
