@@ -6,8 +6,8 @@ const slackAuthorized = require('/opt/authorizer');
 const {loadSettings} = require('/opt/db/settings-interface');
 const {SetupError} = require('/opt/errors/errors-settings');
 
-const config = require(process.env.CONFIG);
-const logger = require(process.env.LOGGER);
+const config = require('/opt/config/config');
+const logger = require('/opt/utils/util-logger');
 const SETTINGS = config.dynamodb.settings;
 
 const SETTINGS_GET_OPTIONS_PLAYLISTS = process.env.LAMBDA_PREFIX+ 'settings-get-options-playlists';

@@ -1,8 +1,8 @@
 'use strict';
-const config = require(process.env.CONFIG);
+const config = require('/opt/config/config');
 const qs = require('qs');
 const sns = require('/opt/sns');
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 
 // Slack
 const {openModal} = require('/opt/slack-modal');

@@ -5,7 +5,7 @@ const {checkIsSetup} = require('/opt/check-settings');
 const slackAuthorized = require('/opt/authorizer');
 const DELETE_CHANNEL = process.env.SNS_PREFIX + 'delete-channel';
 
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 
 module.exports.handler = async (event, context) => {
   let statusCode = 200; let body = '';

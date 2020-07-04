@@ -1,7 +1,7 @@
 const dynamoDb = require('./db');
 const {isEmpty} = require('/opt/utils/util-objects');
 const {sleep} = require('/opt/utils/util-timeout');
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 const SETTINGS_TABLE = process.env.SETTINGS_TABLE;
 const MAX_ATTEMPTS = 3;
 

@@ -1,4 +1,4 @@
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 const {postEphemeral, post} = require('/opt/slack/slack-api');
 const {ephemeralPost, inChannelPost} = require('/opt/slack/format/slack-format-reply');
 

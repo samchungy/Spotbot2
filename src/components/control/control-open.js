@@ -1,5 +1,5 @@
-const logger = require(process.env.LOGGER);
-const config = require(process.env.CONFIG);
+const logger = require('/opt/utils/util-logger');
+const config = require('/opt/config/config');
 
 // Slack
 const {actionSection, buttonActionElement, confirmObject, overflowActionElement, overflowOption, textSection} = require('/opt/slack/format/slack-format-blocks');

@@ -1,4 +1,4 @@
-const moment = require(process.env.MOMENT);
+const moment = require(/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030);
 const spotifyWebApi = require('./spotify-api-initialise');
 const {refreshAccessToken} = require('./spotify-api-refresh');
 

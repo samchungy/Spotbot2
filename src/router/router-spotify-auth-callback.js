@@ -4,7 +4,7 @@ const {RouteError, BadRequestError} = require('/opt/errors/errors-route');
 
 const SETTINGS_AUTH_VALIDATE = process.env.LAMBDA_PREFIX + 'settings-auth-validate';
 
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 
 const router = async (event, context) => {
   if (!event.headers.Referer || !event.headers.Referer.includes('https://accounts.spotify.com')) {

@@ -1,4 +1,4 @@
-const config = require(process.env.CONFIG);
+const config = require('/opt/config/config');
 const {updateSettings, getSettings, putSettings} = require('/opt/db/settings-dal');
 
 const BACK_TO_PLAYLIST_STATE = config.dynamodb.settings_extra.back_to_playlist_state;

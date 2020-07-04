@@ -3,7 +3,7 @@ const lambda = require('/opt/lambda');
 
 const SETTINGS_SONOS_AUTH_VALIDATE = process.env.LAMBDA_PREFIX + 'settings-sonos-auth-validate';
 
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 
 module.exports.handler = async (event, context) => {
   let statusCode = 200; let body = '';

@@ -1,6 +1,6 @@
 const dynamoDb = require('./db');
 const SEARCH_TABLE = process.env.SEARCH_TABLE;
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 
 const searchTable = (item) => ({
   TableName: SEARCH_TABLE,

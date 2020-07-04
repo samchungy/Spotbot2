@@ -1,5 +1,5 @@
-const config = require(process.env.CONFIG);
-const logger = require(process.env.LOGGER);
+const config = require('/opt/config/config');
+const logger = require('/opt/utils/util-logger');
 
 // Slack
 const {updateModal} = require('/opt/slack/slack-api');
@@ -31,6 +31,7 @@ const openSettings = async (teamId, channelId, settings, viewId, url) => {
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, viewId, userId, url} = JSON.parse(event.Records[0].Sns.Message);
+  logger.info({teamId, channelId, settings, viewId, url});
   await openSettings(teamId, channelId, settings, viewId, url)
       .catch((error)=>{
         logger.error(error, OPEN_RESPONSE.failed);

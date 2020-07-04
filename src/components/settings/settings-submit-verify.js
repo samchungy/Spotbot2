@@ -1,5 +1,5 @@
-const config = require(process.env.CONFIG);
-const logger = require(process.env.LOGGER);
+const config = require('/opt/config/config');
+const logger = require('/opt/utils/util-logger');
 const sns = require('/opt/sns');
 
 // Util

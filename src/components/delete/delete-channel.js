@@ -1,4 +1,4 @@
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 
 const {removeAllSettings, searchAllSettings} = require('/opt/db/settings-interface');
 const {removeAuth} = require('/opt/db/spotify-auth-interface');

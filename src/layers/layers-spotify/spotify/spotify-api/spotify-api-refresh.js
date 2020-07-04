@@ -1,6 +1,6 @@
-const CONFIG = require(process.env.CONFIG);
-const logger = require(process.env.LOGGER);
-const moment = require(process.env.MOMENT);
+const CONFIG = require('/opt/config/config');
+const logger = require('/opt/utils/util-logger');
+const moment = require(/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030);
 
 // Errors
 const {AuthError} = require('/opt/errors/errors-auth');

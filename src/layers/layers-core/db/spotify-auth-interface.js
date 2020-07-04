@@ -1,6 +1,6 @@
 const {getAuth, deleteAuth, putAuth, updateAuth} = require('./auth-dal');
 
-const CONFIG = require(process.env.CONFIG);
+const CONFIG = require('/opt/config/config');
 
 const MAIN_KEY = CONFIG.dynamodb.auth_spotify.key;
 const ACCESS_TOKEN = CONFIG.dynamodb.auth_spotify.access;

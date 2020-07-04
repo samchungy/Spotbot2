@@ -1,5 +1,5 @@
-const logger = require(process.env.LOGGER);
-const config = require(process.env.CONFIG);
+const logger = require('/opt/utils/util-logger');
+const config = require('/opt/config/config');
 
 // Spotify
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');

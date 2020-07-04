@@ -1,5 +1,5 @@
-const config = require(process.env.CONFIG);
-const logger = require(process.env.LOGGER);
+const config = require('/opt/config/config');
+const logger = require('/opt/utils/util-logger');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {loadBlacklist, loadSkip} = require('/opt/db/settings-extra-interface');
 const {fetchCurrentPlayback, fetchRecent} = require('/opt/spotify/spotify-api/spotify-api-playback-status');

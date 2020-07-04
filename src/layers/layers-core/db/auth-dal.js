@@ -1,6 +1,6 @@
 const dynamoDb = require('./db');
 const AUTH_TABLE = process.env.AUTH_TABLE;
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 
 const authTable = (item) => ({
   TableName: AUTH_TABLE,

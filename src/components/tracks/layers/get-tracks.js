@@ -1,4 +1,4 @@
-const config = require(process.env.CONFIG);
+const config = require('/opt/config/config');
 
 // Search
 const {loadSearch, removeThreeSearches} = require('/opt/db/search-interface');

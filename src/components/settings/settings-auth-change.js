@@ -1,4 +1,4 @@
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 const sns = require('/opt/sns');
 
 // Spotify

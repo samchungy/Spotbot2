@@ -1,4 +1,4 @@
-const CONFIG = require(process.env.CONFIG);
+const CONFIG = require('/opt/config/config');
 const {getSettings, putSettings, updateSettings, querySettings} = require('./settings-dal');
 
 const MAIN_SETTINGS = CONFIG.dynamodb.main_settings;

@@ -1,4 +1,4 @@
-const config = require(process.env.CONFIG);
+const config = require('/opt/config/config');
 const INCHANNEL = config.slack.reply.in_channel;
 const EPHEMERAL = config.slack.reply.ephemeral;
 

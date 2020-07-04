@@ -1,4 +1,4 @@
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 const {pushModal, sendModal} = require('/opt/slack/slack-api');
 const {textSection} = require('/opt/slack/format/slack-format-blocks');
 const {slackModal} = require('/opt/slack/format/slack-format-modal');

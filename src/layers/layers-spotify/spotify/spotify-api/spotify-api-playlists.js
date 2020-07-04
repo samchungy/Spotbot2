@@ -1,4 +1,4 @@
-const config = require(process.env.CONFIG);
+const config = require('/opt/config/config');
 
 const spotifyWebApi = require('./spotify-api-client');
 const requester = require('./spotify-api-requester');

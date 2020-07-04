@@ -1,4 +1,4 @@
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 const {getConversationInfo} = require('/opt/slack/slack-api');
 
 /**

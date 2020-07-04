@@ -1,4 +1,4 @@
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 
 // Tracks
 const {showResults} = require('./layers/get-artists');

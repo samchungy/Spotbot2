@@ -1,7 +1,7 @@
 'use strict';
 const qs = require('qs');
 const sns = require('/opt/sns');
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 
 // Slack
 const slackAuthorized = require('/opt/authorizer');

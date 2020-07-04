@@ -1,6 +1,6 @@
 const dynamoDb = require('./db');
 const HISTORY_TABLE = process.env.HISTORY_TABLE;
-const logger = require(process.env.LOGGER);
+const logger = require('/opt/utils/util-logger');
 
 const historyTable = (item) => ({
   TableName: HISTORY_TABLE,

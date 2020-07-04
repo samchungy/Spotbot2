@@ -1,5 +1,5 @@
-const config = require(process.env.CONFIG);
-const logger = require(process.env.LOGGER);
+const config = require('/opt/config/config');
+const logger = require('/opt/utils/util-logger');
 
 const {actionSection, buttonActionElement, confirmObject, contextSection, imageSection, overflowActionElement, overflowOption, textSection} = require('/opt/slack/format/slack-format-blocks');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
@@ -116,7 +116,7 @@ async function getCurrentTrackPanel(teamId, channelId, settings, status, respons
   }
 
   return {altText, currentPanel};
-};
+}
 
 
 /**

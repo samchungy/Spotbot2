@@ -1,4 +1,4 @@
-const config = require(process.env.CONFIG);
+const config = require('/opt/config/config');
 
 // Errors
 const {ChannelAdminError, SettingsError, SetupError} = require('/opt/errors/errors-settings');
@@ -56,7 +56,7 @@ const checkIsPreviouslySetup = async (teamId, channelId) => {
 const checkIsAdmin = async (settings, userId) => {
   if (settings[CHANNEL_ADMINS].includes(userId)) {
     return true;
-  };
+  }
   return Promise.reject(new ChannelAdminError(ERROR_MESSAGES.admin_error(settings[CHANNEL_ADMINS])));
 };
 

@@ -1,5 +1,5 @@
-const logger = require(process.env.LOGGER);
-const moment = require(process.env.MOMENT);
+const logger = require('/opt/utils/util-logger');
+const moment = require(/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030);
 const sns = require('/opt/sns');
 
 
