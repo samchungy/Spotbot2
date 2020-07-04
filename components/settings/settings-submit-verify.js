@@ -85,6 +85,7 @@ const startVerification = async (teamId, channelId, view, userId) => {
     TopicArn: SETTINGS_SUBMIT_SAVE,
   };
   await sns.publish(params).promise();
+  return null;
 };
 
 module.exports.handler = async (event, context) => {
