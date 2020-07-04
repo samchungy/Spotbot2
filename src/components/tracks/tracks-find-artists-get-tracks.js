@@ -12,6 +12,9 @@ const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 // Tracks
 const {showResults} = require('./layers/get-tracks');
 
+// Slack
+const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
+
 const ARTISTS_RESPONSES = {
   failed: 'Finding artist tracks failed',
 };

@@ -36,6 +36,6 @@ module.exports.handler = async (event, context) => {
   await updateView(teamId, channelId, viewId, url)
       .catch((error)=>{
         logger.error(error, UPDATE_VIEW.failed);
-        reportErrorToSlack(teamId, channelId, userId, UPDATE_VIEW.failed);
+        reportErrorToSlack(teamId, channelId, UPDATE_VIEW.failed);
       });
 };

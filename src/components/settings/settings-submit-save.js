@@ -85,9 +85,10 @@ const getDeviceValue = async (teamId, channelId, newValue, oldValue) => {
       return oldValue;
     case SETTINGS_HELPER.no_devices:
       return modelDevice(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices);
-    default:
+    default: {
       const {value: spotifyDevices} = await loadDevices(teamId, channelId);
       return spotifyDevices.find((device) => device.id === newValue);
+    }
   }
 };
 

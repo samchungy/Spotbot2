@@ -6,7 +6,7 @@ const SETTINGS_SONOS_AUTH_VALIDATE = process.env.LAMBDA_PREFIX + 'settings-sonos
 const logger = require(process.env.LOGGER);
 
 module.exports.handler = async (event, context) => {
-  const statusCode = 200; let body = '';
+  let statusCode = 200; let body = '';
   try {
     const stage = `/${event.requestContext.stage}`;
     const url = `${event.headers['X-Forwarded-Proto']}://${event.headers.Host}${stage}`;

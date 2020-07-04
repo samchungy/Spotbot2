@@ -26,7 +26,7 @@ module.exports.handler = async (event, context) => {
       case 'event_callback':
         if (payload.event && ['group_left', 'channel_left'].includes(payload.event.type)) {
           const {settings} = await checkIsSetup(payload.team_id, payload.event.channel);
-          params = {
+          const params = {
             Message: JSON.stringify({teamId: payload.team_id, channelId: payload.event.channel, settings}),
             TopicArn: DELETE_CHANNEL,
           };

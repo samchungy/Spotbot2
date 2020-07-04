@@ -94,7 +94,7 @@ const getWhom = async (teamId, channelId, settings) => {
   // Check Blacklist for song
   if (await onBlacklist(teamId, channelId, auth, settings, playlist, status, statusTrack)) {
     return;
-  };
+  }
 
   if (onPlaylist(status, playlist)) {
     const playlistTrack = await getTrack(teamId, channelId, auth, playlist.id, profile.country, statusTrack.id);
@@ -121,7 +121,7 @@ module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings} = JSON.parse(event.Records[0].Sns.Message);
   await getWhom(teamId, channelId, settings)
       .catch((error)=>{
-        logger.error(error, CURRENT_RESPONSES.failed);
-        reportErrorToSlack(teamId, channelId, null, CURRENT_RESPONSES.failed);
+        logger.error(error, WHOM_RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, null, WHOM_RESPONSE.failed);
       });
 };

@@ -9,6 +9,7 @@ const TrackMin = require('/opt/spotify/spotify-objects/util-spotify-track-min');
 // Slack
 const {postEphemeral} = require('/opt/slack/slack-api');
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
+const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Settings
 const {changeBlacklistRemove, loadBlacklist, changeBlacklist} = require('/opt/db/settings-extra-interface');

@@ -65,7 +65,7 @@ const handleBackToPlaylist = async (teamId, channelId, userId, auth, playlist, s
           }
           return Promise.reject(error);
         });
-  };
+  }
   await Promise.all([
     setHistory(teamId, channelId, track, userId),
     statusTrack.uri !== track.uri ?

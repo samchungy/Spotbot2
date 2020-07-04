@@ -65,6 +65,7 @@ const authRouter = async (actionId, payload, event) => {
           teamId: payload.team.id,
           channelId: payload.view.private_metadata,
           viewId: payload.view.id,
+          userId: payload.user.id,
           url,
         }),
         TopicArn: SETTINGS_AUTH_CHANGE,
@@ -80,7 +81,7 @@ const settingsActionRouter = async (callbackId, payload) => {
   switch (callbackId) {
     case 'SONOS_GROUPS': {
       const modalPayload = await pushView(payload.team.id, payload.channel.id, payload.trigger_id, SLACK_ACTIONS.empty_modal, 'Sonos Settings - Groups', null, 'Cancel');
-      params = {
+      const params = {
         Message: JSON.stringify({
           teamId: payload.team.id,
           channelId: payload.channel.id,
@@ -269,7 +270,7 @@ const controlActionsRouter = async (actionId, payload) => {
           return await sns.publish(params).promise();
         }
         case CONTROLS.reset: {
-          params = {
+          const params = {
             Message: JSON.stringify({
               teamId: payload.team.id,
               channelId: payload.channel.id,
@@ -281,7 +282,7 @@ const controlActionsRouter = async (actionId, payload) => {
           return await sns.publish(params).promise();
         }
         case CONTROLS.clear_one: {
-          params = {
+          const params = {
             Message: JSON.stringify({
               teamId: payload.team.id,
               channelId: payload.channel.id,

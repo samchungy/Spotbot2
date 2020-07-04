@@ -104,7 +104,7 @@ const startPlay = async (teamId, channelId, settings, userId) => {
       return await post(message);
     } else {
       // Use the first available device
-      return await attemptPlay(teamId, channelId, auth, spotifyDevices.devices[0].id, status, playlist, 0, userId, settings);
+      return await playWithDevice(teamId, channelId, auth, spotifyDevices.devices[0].id, status, playlist, 0, userId, settings);
     }
   }
 };

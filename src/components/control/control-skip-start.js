@@ -60,7 +60,7 @@ const startSkip = async (teamId, channelId, settings, userId) => {
   const statusTrack = new Track(status.item);
   if (await onBlacklist(teamId, channelId, auth, settings, playlist, status, statusTrack)) {
     return;
-  };
+  }
 
   // Check db for existing skip to add vote to
   const currentSkip = await loadSkip(teamId, channelId);

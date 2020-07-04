@@ -48,7 +48,7 @@ const getBlocks = async (teamId, channelId, auth, devices) => {
 };
 
 const getDeviceBlock = (devices) => {
-  options = devices.map((device) => option(`${device.name} - ${device.type}`, device.id));
+  const options = devices.map((device) => option(`${device.name} - ${device.type}`, device.id));
   return selectStatic(DEVICE_MODAL, DEVICE_RESPONSE.title, DEVICE_RESPONSE.hint, null, options, null);
 };
 

@@ -71,7 +71,7 @@ const router = async (event, context) => {
       }
       case 'blacklist': {
         const modalPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, `Spotbot Blacklist`, null, 'Cancel');
-        params = {
+        const params = {
           Message: JSON.stringify({
             teamId: payload.team_id,
             channelId: payload.channel_id,
@@ -86,7 +86,7 @@ const router = async (event, context) => {
       }
       case 'device': {
         const modalPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotify Devices', null, 'Cancel');
-        params = {
+        const params = {
           Message: JSON.stringify({
             teamId: payload.team_id,
             channelId: payload.channel_id,
@@ -101,7 +101,7 @@ const router = async (event, context) => {
       }
       case 'sonos': {
         const modalPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Sonos Settings', null, 'Cancel');
-        params = {
+        const params = {
           Message: JSON.stringify({
             teamId: payload.team_id,
             channelId: payload.channel_id,

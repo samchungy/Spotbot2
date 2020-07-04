@@ -52,6 +52,7 @@ const router = async (event, context) => {
           teamId: payload.team.id,
           channelId: payload.view.private_metadata,
           query: payload.value,
+          user: payload.user.id,
         }),
       };
       const {Payload: lambdaPayload} = await lambda.invoke(params).promise();

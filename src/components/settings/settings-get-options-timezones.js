@@ -1,4 +1,5 @@
 const moment = require(process.env.MOMENT);
+const logger = require(process.env.LOGGER);
 
 // Slack
 const {option, optionGroup} = require('/opt/slack/format/slack-format-modal');
@@ -26,7 +27,7 @@ const getTimezones = async (query) => {
 };
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, query} = event;
+  const {teamId, channelId, userId, query} = event;
   return await getTimezones(query)
       .catch((error)=>{
         logger.error(error, TIMEZONE_RESPONSE.failed);

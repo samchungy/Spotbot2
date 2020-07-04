@@ -31,9 +31,9 @@ const startPause = async (teamId, channelId, settings, userId) => {
 
   // No devices
   if (!spotifyDevices.devices.length) {
-    const message = inchannelPost(channelId, PAUSE_RESPONSE.no_devices);
+    const message = inChannelPost(channelId, PAUSE_RESPONSE.no_devices);
     return await post(message);
-  };
+  }
 
   // Check if Spotify is already paused
   if (!isPlaying(status)) {

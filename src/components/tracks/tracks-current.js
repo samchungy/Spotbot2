@@ -106,7 +106,7 @@ const getCurrent = async (teamId, channelId, settings, afterSkip=false) => {
   // Check Blacklist for song - prevent constantly skipping
   if (!afterSkip && await onBlacklist(teamId, channelId, auth, settings, playlist, status, statusTrack)) {
     return;
-  };
+  }
   const text = CURRENT_RESPONSES.currently_playing(statusTrack.title);
   const blocks = [
     textSection(text),
