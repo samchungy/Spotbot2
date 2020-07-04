@@ -4,7 +4,7 @@
   "description": "Spotify Bot for Slack",
   "main": "server/server.js",
   "scripts": {
-    "deploy-local": "docker-compose down && docker-compose up && docker-compose down",
+    "deploy-local": "docker-compose down && docker-compose up -d && docker attach spotbot2_dev_1 && docker-compose down",
     "dev": "sls offline --printOutput -s dev --env development",
     "local": "gulp local & sls offline start -s local --env local",
     "deploy-dev": "sls deploy -s dev --env development",
@@ -29,8 +29,9 @@
     "gulp-rename": "^2.0.0",
     "merge-stream": "^2.0.0",
     "path": "^0.12.7",
-    "serverless": "^1.68.0",
+    "serverless": "^1.72.0",
     "serverless-dotenv-plugin": "^2.4.2",
+    "serverless-offline": "^6.4.0",
     "serverless-offline-lambda": "^1.0.6",
     "serverless-plugin-split-stacks": "^1.9.3",
     "shelljs": "^0.8.4"
@@ -43,8 +44,8 @@
     "gulp-exec": "^4.0.0",
     "jest": "^25.4.0",
     "nodemon": "^2.0.3",
+    "pino-pretty": "^4.0.0",
     "serverless-dynamodb-local": "^0.2.39",
-    "serverless-offline": "^5.12.1",
     "serverless-offline-sns": "^0.68.0",
     "supertest": "^4.0.2"
   }
