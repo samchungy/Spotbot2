@@ -6,7 +6,7 @@ const REFRESH = CONFIG.dynamodb.auth_spotify.refresh;
 const EXPIRES = CONFIG.dynamodb.auth_spotify.expires;
 const PROFILE = CONFIG.dynamodb.auth_spotify.profile;
 
-const authSession = async (teamId, channelId, profile) => {
+const authSession = async (teamId, channelId) => {
   const auth = await loadAuth(teamId, channelId);
 
   const updateAuth = (access, expires) => {
