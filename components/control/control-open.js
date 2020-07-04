@@ -37,7 +37,7 @@ const getControlsPanel = () => {
   return actionSection(CONTROLLER, elements);
 };
 
-const openControls = (teamId, channelId, settings, userId) => {
+const openControls = async (channelId) => {
   const blocks = [
     textSection(CONTROL_RESPONSE.info),
     getControlsPanel(),
@@ -47,8 +47,8 @@ const openControls = (teamId, channelId, settings, userId) => {
 };
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, settings, userId} = JSON.parse(event.Records[0].Sns.Message);
-  await openControls(teamId, channelId, settings, userId)
+  const {teamId, channelId} = JSON.parse(event.Records[0].Sns.Message);
+  await openControls(channelId)
       .catch((error)=>{
         logger.error(error, CONTROL_RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, null, CONTROL_RESPONSE.failed);
