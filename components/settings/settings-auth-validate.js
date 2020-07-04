@@ -30,8 +30,7 @@ const verifyState = async (state) => {
       return currentState.state;
     }
   } catch (error) {
-    logger.error('Verify State failed');
-    logger.error(error);
+    logger.error(error, 'Verify State failed');
     throw error;
   }
 };
@@ -60,6 +59,8 @@ const startValidation = async (code, state, url) => {
     TopicArn: SETTINGS_AUTH_UPDATE_VIEW,
   };
   await sns.publish(params).promise();
+
+  return null;
 };
 
 /**
@@ -71,9 +72,8 @@ module.exports.handler = async (event, context) => {
   // LAMBDA FUNCTION
   const {code, state, url} = event;
   return await startValidation(code, state, url)
-      .then(() => ({success: true, failReason: null}))
       .catch((error) =>{
         logger.error(error, 'Settings Auth Validation failed');
-        return {success: false, failReason: 'An error occured. Please close Spotbot Settings and run /spotbot settings to try again.'};
+        return 'An error occured. Please close Spotbot Settings and run /spotbot settings to try again.';
       });
 };
