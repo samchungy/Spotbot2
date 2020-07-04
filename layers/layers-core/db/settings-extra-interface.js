@@ -94,7 +94,6 @@ const changeSkipAddHistory = (teamId, channelId, newTrack) => {
  * New history. Add history
  * @param {string} teamId
  * @param {string} channelId
- * @param {Object} newTrack
  * @return {Promise}
  */
 const changeSkipTrimHistory = (teamId, channelId) => {
@@ -106,21 +105,50 @@ const changeSkipTrimHistory = (teamId, channelId) => {
   return updateSettings(teamId, channelId, SKIP, expressionNames, null, updateExpression, null, null);
 };
 
-const loadBackToPlaylistState = (teamId, channelId) => getSettings(teamId, channelId, BACK_TO_PLAYLIST_STATE);
+const changeBackToPlaylistState = (teamId, channelId, time, timeBefore) => {
+  const expressionNames = {
+    '#Added': 'added',
+  };
+  const expressionValues = {
+    ':time': time,
+    ':timeBefore': timeBefore,
+  };
+  const updateExpression = 'set #Added = :time';
+  const conditionExpression = 'attribute_not_exists(#Added) or :timeBefore > #Added'; // Race Condition Checker
+  return updateSettings(teamId, channelId, BACK_TO_PLAYLIST_STATE, expressionNames, expressionValues, updateExpression, conditionExpression, null);
+};
+
+const changeBlacklistRemove = (teamId, channelId, trackIds) => {
+  const expressionNames = {
+    '#Blacklist': 'blacklist',
+  };
+  const updateExpression = 'remove ' + trackIds.map((id) => `#Blacklist[${id}]`).split(', ');
+  return updateSettings(teamId, channelId, BLACKLIST, expressionNames, null, updateExpression, null, null);
+};
+
+const changeBlacklist = (teamId, channelId, trackIds) => {
+  const expressionNames = {
+    '#Blacklist': 'blacklist',
+  };
+  const expressionValues = {
+    ':trackIds': trackIds,
+    ':emptyList': [],
+  };
+  const updateExpression = 'set #Blacklist = list_append(if_not_exists(#Blacklist, :emptyList), :trackIds)';
+  return updateSettings(teamId, channelId, BLACKLIST, expressionNames, expressionValues, updateExpression, null, null);
+};
+
 const loadBlacklist = (teamId, channelId) => getSettings(teamId, channelId, BLACKLIST);
 const loadSkip = (teamId, channelId) => getSettings(teamId, channelId, SKIP);
 
-const storeBackToPlaylistState = (teamId, channelId, value) => putSettings(teamId, channelId, BACK_TO_PLAYLIST_STATE, value);
-const storeBlacklist = (teamId, channelId, value) => putSettings(teamId, channelId, BLACKLIST, value);
-
 module.exports = {
   createNewSkip,
+  changeBlacklist,
+  changeBlacklistRemove,
+  changeBackToPlaylistState,
   changeSkipAddVote,
   changeSkipAddHistory,
   changeSkipTrimHistory,
-  loadBackToPlaylistState,
   loadBlacklist,
   loadSkip,
-  storeBackToPlaylistState,
-  storeBlacklist,
 };
