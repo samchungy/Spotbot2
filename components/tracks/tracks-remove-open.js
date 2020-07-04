@@ -1,127 +1,104 @@
 const config = require(process.env.CONFIG);
 const logger = require(process.env.LOGGER);
 
+// Spotify
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {fetchPlaylistTotal, fetchTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
+
+// Slack
+const {textSection} = require('/opt/slack/format/slack-format-blocks');
+const {updateModal} = require('/opt/slack/slack-api');
+const {option, multiSelectStatic, slackModal} = require('/opt/slack/format/slack-format-modal');
+const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
+
+// History
+const {searchUserTrackHistory} = require('/opt/db/history-interface');
+
+// Constants
 const PLAYLIST = config.dynamodb.settings.playlist;
 const LIMIT = config.spotify_api.playlists.tracks.limit;
 const REMOVE_MODAL = config.slack.actions.remove_modal;
-const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {searchUserTrackHistory} = require('/opt/db/history-interface');
-const {fetchPlaylistTotal, fetchTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
-const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
-const {textSection} = require('/opt/slack/format/slack-format-blocks');
-const {updateModal, postEphemeral} = require('/opt/slack/slack-api');
-const {option, multiSelectStatic, slackModal} = require('/opt/slack/format/slack-format-modal');
 
 const REMOVE_RESPONSES = {
+  failed: 'Opening track remove modal failed',
   error: `:warning: An error occured. Please try again.`,
   no_songs: `:information_source: You can only remove tracks which you have added. You have not added any songs to the playlist.`,
   no_tracks: `:information_source: There are no tracks on the playlist to remove.`,
 };
 
-module.exports.handler = async (event, context) => {
-  const {teamId, channelId, settings, viewId, userId} = JSON.parse(event.Records[0].Sns.Message);
-  try {
-    const auth = await authSession(teamId, channelId);
-    const {country, id: profileId} = auth.getProfile();
-    const playlist = settings[PLAYLIST];
-    const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
-    const allTracks = await getAllTracks(teamId, channelId, auth, playlist.id, country, profileId, total);
-    let blocks = [];
-    if (!allTracks.length) { // No tracks on the playlist
-      blocks = [
-        textSection(REMOVE_RESPONSES.no_tracks),
-      ];
-    }
-    // Get a list of unique URIs
-    const uniqueIds = [...new Set(allTracks.map((item) => item.id))];
-    const uniqueTracks = allTracks.reduce((unique, track, index) => { // Highly efficient way to filter the tracks after finding the unique Uris
-      return (uniqueIds[index-(index - unique.length)] == track.id) ? [...unique, track] : unique;
-    }, []);
-    let query = [];
-    console.log(uniqueIds);
-    if (uniqueIds.length) {
-      query = await searchUserTrackHistory(teamId, channelId, userId, uniqueIds);
-    }
-
-    if (!query.length) {
-      if (!blocks.length) {
-        blocks = [
-          textSection(REMOVE_RESPONSES.no_songs),
-        ];
-      }
-    } else {
-      const allOptions = query.map((search) => {
-        const track = uniqueTracks.find((track) => track.id == search.id); // map them back to our tracks
-        return option(track.title, track.id);
-      });
-      blocks = [
-        multiSelectStatic(REMOVE_MODAL, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, allOptions.slice(0, LIMIT)),
-      ];
-    }
-    const view = slackModal(REMOVE_MODAL, `Remove Tracks`, `Confirm`, `Close`, blocks, true, channelId);
-
-    await updateModal(viewId, view);
-  } catch (error) {
-    logger.error(error);
-    logger.error('Opening remove track modal failed');
-    try {
-      return await postEphemeral(
-          ephemeralPost(channelId, userId, REMOVE_RESPONSES.error, null),
-      );
-    } catch (error2) {
-      logger.error(error2);
-      logger.error('Failed to report open track modal failiure');
-    }
-  }
-};
-
-/**
- * Get all tracks from a playlist
- * @param {string} teamId
- * @param {string} channelId
- * @param {Object} auth
- * @param {string} playlistId
- * @param {string} country
- * @param {string} profileId
- * @param {string} total
- */
-async function getAllTracks(teamId, channelId, auth, playlistId, country, profileId, total) {
+const getAllTracks = async (teamId, channelId, auth, playlistId, country, profileId, total) => {
   const promises = [];
   const attempts = Math.ceil(total/LIMIT);
   for (let offset=0; offset<attempts; offset++) {
     promises.push((async () => {
       const spotifyTracks = await fetchTracks(teamId, channelId, auth, playlistId, country, offset*LIMIT);
       const allTracks = spotifyTracks.items
-          .map((track) => {
-            const playlistTrack = new PlaylistTrack(track);
-            return playlistTrack;
-          })
+          .map((track) => new PlaylistTrack(track))
           .filter((playlistTrack) => playlistTrack.addedBy.id === profileId);
       return allTracks;
     })(),
     );
   }
   return (await Promise.all(promises)).flat();
-}
+};
 
-/**
- * Get all tracks from a playlist
- * @param {string} teamId
- * @param {string} channelId
- * @param {Object} userId
- * @param {Array} trackIds
- */
-async function queryAllTracks(teamId, channelId, userId, trackIds) {
+const queryAllTracks = async (teamId, channelId, userId, trackIds, offset=0, total=0) => {
   const maxTracks = 99;
   const attempts = Math.ceil(trackIds.length/maxTracks);
-  const promises = [];
-
-  for (let offset=0; offset<attempts; offset++) {
-    const i = offset*99;
-    promises.push(
-        searchUserTrackHistory(teamId, channelId, userId, trackIds.slice(i, i+maxTracks)),
-    );
+  const i = offset*99;
+  const tracks = await searchUserTrackHistory(teamId, channelId, userId, trackIds.slice(i, i+maxTracks));
+  if (tracks.length + total >= 100 || offset+1 >= attempts) {
+    return tracks;
   }
-  return (await Promise.all(promises)).flat();
-}
+  return tracks.concat(await queryAllTracks(teamId, channelId, userId, trackIds, offset+1, tracks.length));
+};
+
+const openRemove = async (teamId, channelId, settings, userId, viewId ) => {
+  const auth = await authSession(teamId, channelId);
+  const {country, id: profileId} = auth.getProfile();
+  const playlist = settings[PLAYLIST];
+  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
+  const allTracks = await getAllTracks(teamId, channelId, auth, playlist.id, country, profileId, total);
+
+  // No Tracks
+  if (!allTracks.length) {
+    const blocks = [textSection(REMOVE_RESPONSES.no_tracks)];
+    const view = slackModal(REMOVE_MODAL, `Remove Tracks`, null, `Close`, blocks, false, channelId);
+    return await updateModal(viewId, view);
+  }
+
+  // Get a list of unique URIs
+  const uniqueIds = [...new Set(allTracks.map((item) => item.id))];
+  const uniqueTracks = allTracks.reduce((unique, track, index) => { // Highly efficient way to filter the tracks after finding the unique Uris
+    return (uniqueIds[index - unique.length] == track.id) ? [...unique, track] : unique;
+  }, []);
+
+  // Check our db for songs only the User added
+  const query = await queryAllTracks(teamId, channelId, userId, uniqueIds);
+  if (!query.length) {
+    const blocks = [textSection(REMOVE_RESPONSES.no_songs)];
+    const view = slackModal(REMOVE_MODAL, `Remove Tracks`, null, `Close`, blocks, false, channelId);
+    return await updateModal(viewId, view);
+  }
+
+  const allOptions = query.map((search) => {
+    const track = uniqueTracks.find((track) => track.id == search.id); // map them back to our tracks
+    return option(track.title, track.id);
+  });
+
+  const blocks = [
+    multiSelectStatic(REMOVE_MODAL, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, allOptions.slice(0, LIMIT)),
+  ];
+  const view = slackModal(REMOVE_MODAL, `Remove Tracks`, `Confirm`, `Close`, blocks, true, channelId);
+  await updateModal(viewId, view);
+};
+
+module.exports.handler = async (event, context) => {
+  const {teamId, channelId, settings, viewId, userId} = JSON.parse(event.Records[0].Sns.Message);
+  await openRemove(teamId, channelId, settings, userId, viewId)
+      .catch((error)=>{
+        logger.error(error, REMOVE_RESPONSES.failed);
+        reportErrorToSlack(teamId, channelId, null, REMOVE_RESPONSES.failed);
+      });
+};
