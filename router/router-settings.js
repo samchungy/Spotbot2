@@ -21,7 +21,7 @@ const SETTINGS_DEVICE_SELECT = process.env.SNS_PREFIX + 'settings-device-select'
 const SETTINGS_SONOS_OPEN = process.env.SNS_PREFIX + 'settings-sonos-open';
 
 const router = async (event, context) => {
-  const stage = event.requestContext.stage === 'local' ? `` : `/${event.requestContext.stage}`;
+  const stage = `/${event.requestContext.stage}`;
   const url = `${event.headers['X-Forwarded-Proto']}://${event.headers.Host}${stage}`;
   const payload = qs.parse(event.body);
 

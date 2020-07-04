@@ -58,7 +58,7 @@ const authRouter = async (actionId, payload, event) => {
     case 'SONOS_AUTH':
       return;
     case AUTH.reauth: {
-      const stage = event.requestContext.stage === 'local' ? `` : `/${event.requestContext.stage}`;
+      const stage = `/${event.requestContext.stage}`;
       const url = `${event.headers['X-Forwarded-Proto']}://${event.headers.Host}${stage}`;
       const params = {
         Message: JSON.stringify({
@@ -69,7 +69,8 @@ const authRouter = async (actionId, payload, event) => {
         }),
         TopicArn: SETTINGS_AUTH_CHANGE,
       };
-      return await sns.publish(params).promise();
+      await sns.publish(params).promise();
+      return;
     }
   }
   return false;
@@ -108,10 +109,10 @@ const settingsSubmitRouter = async (callbackId, payload) => {
           userId: payload.user.id,
         }),
       };
-      const {Payload: lambdaPayload} = await lambda.invoke(params).promise();
-      const errors = lambdaPayload.length ? JSON.parse(lambdaPayload) : null;
+      const {Payload} = await lambda.invoke(params).promise();
+      const errors = Payload.length ? JSON.parse(Payload) : null;
       if (errors && !isEmpty(errors)) {
-        return lambdaPayload;
+        return Payload;
       }
       return;
     }
@@ -125,10 +126,10 @@ const settingsSubmitRouter = async (callbackId, payload) => {
           userId: payload.user.id,
         }),
       };
-      const {Payload: lambdaPayload} = await lambda.invoke(params).promise();
-      const errors = JSON.parse(lambdaPayload);
+      const {Payload} = await lambda.invoke(params).promise();
+      const errors = Payload.length ? JSON.parse(Payload) : null;
       if (errors && !isEmpty(errors)) {
-        return lambdaPayload;
+        return Payload;
       }
       return;
     }
