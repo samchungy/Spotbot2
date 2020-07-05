@@ -12,7 +12,7 @@ const {getSettingsBlocks} = require('./layers/settings-blocks');
 
 const SETTINGS_MODAL = config.slack.actions.settings_modal;
 
-const OPEN_RESPONSE = {
+const RESPONSE = {
   failed: 'Opening settings failed',
 };
 
@@ -31,10 +31,9 @@ const openSettings = async (teamId, channelId, settings, viewId, url) => {
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, viewId, userId, url} = JSON.parse(event.Records[0].Sns.Message);
-  logger.info({teamId, channelId, settings, viewId, url});
   await openSettings(teamId, channelId, settings, viewId, url)
       .catch((error)=>{
-        logger.error(error, OPEN_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, OPEN_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
