@@ -5,10 +5,10 @@ const logger = require('/opt/utils/util-logger');
 const config = require('/opt/config/config');
 
 // Slack
-const slackAuthorized = require('/opt/authorizer');
-const {publicAck} = require('/opt/slack-reply');
+const slackAuthorized = require('/opt/router/authorizer');
+const {publicAck} = require('/opt/router/slack-reply');
 // Settings
-const {checkIsSetup} = require('/opt/check-settings');
+const {checkIsSetup} = require('/opt/router/check-settings');
 // Errors
 const {SetupError} = require('/opt/errors/errors-settings');
 

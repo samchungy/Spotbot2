@@ -5,11 +5,11 @@ const sns = require('/opt/sns');
 const logger = require('/opt/utils/util-logger');
 
 // Slack
-const {openModal} = require('/opt/slack-modal');
-const slackAuthorized = require('/opt/authorizer');
-const {publicAck} = require('/opt/slack-reply');
+const {openModal} = require('/opt/router/slack-modal');
+const slackAuthorized = require('/opt/router/authorizer');
+const {publicAck} = require('/opt/router/slack-reply');
 // Settings
-const {checkIsSetup} = require('/opt/check-settings');
+const {checkIsSetup} = require('/opt/router/check-settings');
 // Errors
 const {SetupError} = require('/opt/errors/errors-settings');
 

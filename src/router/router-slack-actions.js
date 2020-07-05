@@ -7,11 +7,11 @@ const config = require('/opt/config/config');
 // Slack
 const {updateReply} = require('/opt/slack/format/slack-format-reply');
 const {reply} = require('/opt/slack/slack-api');
-const {openModal, pushView} = require('/opt/slack-modal');
-const slackAuthorized = require('/opt/authorizer');
+const {openModal, pushView} = require('/opt/router/slack-modal');
+const slackAuthorized = require('/opt/router/authorizer');
 
 // Settings
-const {checkIsSetup} = require('/opt/check-settings');
+const {checkIsSetup} = require('/opt/router/check-settings');
 
 // Util
 const {isEmpty} = require('/opt/utils/util-objects');

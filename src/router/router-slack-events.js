@@ -1,8 +1,8 @@
 const sns = require('/opt/sns');
 
 
-const {checkIsSetup} = require('/opt/check-settings');
-const slackAuthorized = require('/opt/authorizer');
+const {checkIsSetup} = require('/opt/router/check-settings');
+const slackAuthorized = require('/opt/router/authorizer');
 const DELETE_CHANNEL = process.env.SNS_PREFIX + 'delete-channel';
 
 const logger = require('/opt/utils/util-logger');

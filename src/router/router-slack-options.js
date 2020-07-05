@@ -2,7 +2,7 @@ const qs = require('qs');
 const lambda = require('/opt/lambda');
 
 
-const slackAuthorized = require('/opt/authorizer');
+const slackAuthorized = require('/opt/router/authorizer');
 const {loadSettings} = require('/opt/db/settings-interface');
 const {SetupError} = require('/opt/errors/errors-settings');
 

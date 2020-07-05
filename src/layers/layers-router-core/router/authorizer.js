@@ -16,7 +16,7 @@ const signVerification = (event) => {
         Buffer.from(mySignature, 'utf8'),
         Buffer.from(slackSignature, 'utf8'))
     );
-  };
+  }
   return false;
 };
 

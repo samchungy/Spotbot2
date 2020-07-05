@@ -4,11 +4,11 @@ const sns = require('/opt/sns');
 const logger = require('/opt/utils/util-logger');
 const config = require('/opt/config/config');
 
-const slackAuthorized = require('/opt/authorizer');
-const {openModal} = require('/opt/slack-modal');
+const slackAuthorized = require('/opt/router/authorizer');
+const {openModal} = require('/opt/router/slack-modal');
 
 // Middleware
-const {checkIsAdmin, checkIsInChannel, checkIsSetup, checkIsPreviouslySetup} = require('/opt/check-settings');
+const {checkIsAdmin, checkIsInChannel, checkIsSetup, checkIsPreviouslySetup} = require('/opt/router/check-settings');
 const {SettingsError, SetupError} = require('/opt/errors/errors-settings');
 
 const EMPTY_MODAL = config.slack.actions.empty_modal;
