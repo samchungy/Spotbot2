@@ -68,7 +68,6 @@ module.exports = {
     },
     'settings_auth': {
       'reauth': 'reauth',
-      'auth_url': 'auth_url',
       'auth_verify': 'auth_verify',
       'auth_confirmation': 'auth_confirmation',
       'auth_error': 'auth_error',
