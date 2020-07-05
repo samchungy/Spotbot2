@@ -9,8 +9,7 @@
     "local": "gulp local & sls offline start -s local --env local",
     "deploy-dev": "sls deploy -s dev --env development",
     "deploy-prod": "sls deploy -s prod --env production",
-    "test": "docker-compose -f docker-compose.jest.yml up && docker-compose -f docker-compose.jest.yml down",
-    "test:run": "jest --config ./jest.config.js"
+    "test": "jest --config ./jest.config.js"
   },
   "repository": {
     "type": "git",
@@ -25,6 +24,7 @@
   "dependencies": {
     "babel": "^6.23.0",
     "babel-jest": "^26.1.0",
+    "babel-plugin-rewire": "^1.2.0",
     "eslint-plugin-jest": "^23.17.1",
     "fs": "0.0.1-security",
     "glob": "^7.1.6",
