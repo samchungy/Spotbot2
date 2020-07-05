@@ -17,7 +17,7 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 const SETTINGS_HELPER = config.dynamodb.settings_helper;
 const DEFAULT_DEVICE = config.dynamodb.settings.default_device;
 
-const GET_DEVICES = {
+const RESPONSE = {
   failed: 'Fetching Spotify devices in settings failed',
 };
 
@@ -63,7 +63,7 @@ module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, settings} = event;
   return await startFetchingDevices(teamId, channelId, settings)
       .catch((error)=>{
-        logger.error(error, GET_DEVICES.failed);
-        reportErrorToSlack(teamId, channelId, userId, GET_DEVICES.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
