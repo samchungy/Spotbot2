@@ -10,3 +10,6 @@ report*
 # dotenv
 *.env
 .env.*
+
+# testing
+coverage

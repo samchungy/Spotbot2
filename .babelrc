@@ -1,0 +1,11 @@
+{
+  "plugins": [
+    ["babel-plugin-module-resolver", {
+      "alias": {
+        "/opt/config/config": "./src/layers/layers-core/config/config",
+        "/opt/utils/util-logger": "./src/layers/layers-core/utils/util-logger",
+        "/opt/slack": "./src/layers/layers-slack/slack"
+      }
+    }]
+  ]
+}

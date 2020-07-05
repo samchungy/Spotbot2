@@ -1,0 +1,16 @@
+
+version: '3'
+services:
+  test:
+    build: .
+    command:  bash -c "npm run test:run"
+    volumes:
+      - .:/usr/src/service
+    working_dir: /usr/src/service
+    ports:
+      - '3001:3000'
+    tty: true
+    stdin_open: true
+    environment: 
+    - TERM=xterm-256color
+    - TZ=Australia/Melbourne
