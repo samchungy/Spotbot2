@@ -1,6 +1,6 @@
 const config = require('/opt/config/config');
 const logger = require('/opt/utils/util-logger');
-const moment = require(/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030);
+const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
 
 // Spotify
 const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');

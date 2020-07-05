@@ -1,6 +1,6 @@
 const config = require('/opt/config/config');
 const logger = require('/opt/utils/util-logger');
-const moment = require(/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030);
+const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
 const {multiSelectUsers, option, selectExternal, selectStatic, textInput, yesOrNo} = require('/opt/slack/format/slack-format-modal');
 const LIMITS = config.settings.limits;
 const QUERY = config.settings.query_lengths;
