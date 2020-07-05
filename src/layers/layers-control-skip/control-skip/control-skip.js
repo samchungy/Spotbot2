@@ -13,7 +13,7 @@ const {deleteChat, post, postEphemeral, updateChat} = require('/opt/slack/slack-
 const {deleteMessage, ephemeralPost, inChannelPost, messageUpdate} = require('/opt/slack/format/slack-format-reply');
 
 // Settings
-const {changeSkipAddVote, changeSkipAddHistory, changeSkipTrimHistory, loadBlacklist} = require('/opt/db/settings-extra-interface');
+const {changeSkipAddVote, changeSkipAddHistory, changeSkipTrimHistory, loadBlacklist, loadSkip} = require('/opt/db/settings-extra-interface');
 
 const SKIP_MAX_HISTORY = config.dynamodb.skip.max_history;
 const SKIP_VOTE = config.slack.actions.skip_vote;
