@@ -107,12 +107,13 @@ describe('Get Device Options', () => {
       moment.add.mockReturnThis();
       moment.unix.mockReturnValue(1111111111);
 
-      expect.assertions(7);
+      expect.assertions(8);
       await expect(startFetchingDevices(...parameters)).resolves.toStrictEqual(
           {'options': [{'text': 'no_devices_label', 'value': 'no_devices'}, {'text': 'AU13282 - Computer', 'value': '87997bb4312981a00f1d8029eb874c55a211a0cc'}, {'text': 'name', 'value': 'id'}]},
       );
       expect(authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(fetchDevices).toHaveBeenCalledWith(teamId, channelId, {'auth': true});
+      expect(storeDevices).toHaveBeenCalledWith(teamId, channelId, {'value': [{'id': '87997bb4312981a00f1d8029eb874c55a211a0cc', 'name': 'AU13282 - Computer'}, {'id': 'id', 'name': 'name'}]}, 1111111111);
       expect(modelDevice).toHaveBeenCalledWith(`${deviceData[0].devices[0].name} - ${deviceData[0].devices[0].type}`, deviceData[0].devices[0].id);
       expect(option).toHaveBeenCalledTimes(3);
       expect(moment.add).toHaveBeenCalledWith(1, 'hour');
@@ -126,12 +127,13 @@ describe('Get Device Options', () => {
       moment.add.mockReturnThis();
       moment.unix.mockReturnValue(1111111111);
 
-      expect.assertions(6);
+      expect.assertions(7);
       await expect(startFetchingDevices(...parameters)).resolves.toStrictEqual(
           {'options': [{'text': 'no_devices_label', 'value': 'no_devices'}, {'text': 'AU13282 - Computer', 'value': '87997bb4312981a00f1d8029eb874c55a211a0cc'}]},
       );
       expect(authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(fetchDevices).toHaveBeenCalledWith(teamId, channelId, {'auth': true});
+      expect(storeDevices).toHaveBeenCalledWith(teamId, channelId, {'value': [{'id': '87997bb4312981a00f1d8029eb874c55a211a0cc', 'name': 'AU13282 - Computer'}]}, 1111111111);
       expect(option).toHaveBeenCalledTimes(2);
       expect(moment.add).toHaveBeenCalledWith(1, 'hour');
       expect(moment.unix).toHaveBeenCalled();
@@ -144,12 +146,13 @@ describe('Get Device Options', () => {
       moment.add.mockReturnThis();
       moment.unix.mockReturnValue(1111111111);
 
-      expect.assertions(6);
+      expect.assertions(7);
       await expect(startFetchingDevices(teamId, channelId, undefined)).resolves.toStrictEqual(
           {'options': [{'text': 'no_devices_label', 'value': 'no_devices'}]},
       );
       expect(authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(fetchDevices).toHaveBeenCalledWith(teamId, channelId, {'auth': true});
+      expect(storeDevices).toHaveBeenCalledWith(teamId, channelId, {'value': []}, 1111111111);
       expect(option).toHaveBeenCalledTimes(1);
       expect(moment.add).toHaveBeenCalledWith(1, 'hour');
       expect(moment.unix).toHaveBeenCalled();
