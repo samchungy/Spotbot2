@@ -38,7 +38,7 @@ const getAllDevices = async (teamId, channelId, settings) => {
         .filter((device) => (!defaultDevice || device.id !== defaultDevice.id))
         .map((device) => {
           const deviceObj = new Device(device);
-          return modelDevice(deviceObj.name, device.id);
+          return modelDevice(deviceObj.name, deviceObj.id);
         }),
   ];
   return devices;
