@@ -1,15 +1,5 @@
 {
   "plugins": [
     ["rewire"],
-    ["babel-plugin-module-resolver", {
-      "alias": {
-        "/opt/config/config": "./src/layers/layers-core/config/config",
-        "/opt/utils/util-logger": "./src/layers/layers-core/utils/util-logger",
-        "/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030": "./src/layers/layers-core/nodejs/moment-timezone/moment-timezone-with-data-1970-2030",
-        "/opt/slack": "./src/layers/layers-slack/slack",
-        "/opt/spotify": "./src/layers/layers-spotify/spotify",
-        "/opt/db": "./src/layers/layers-core/db"
-      }
-    }]
   ]
 }

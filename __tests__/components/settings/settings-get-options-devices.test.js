@@ -20,11 +20,12 @@ const moment = {
   unix: jest.fn(),
 };
 const reportErrorToSlack = jest.fn();
-const option = jest.fn();
+const option = jest.fn().mockImplementation((name, value) => ({text: name, value: value}));
 const modelDevice = jest.fn();
 const storeDevices = jest.fn();
 const fetchDevices = jest.fn();
 const authSession = jest.fn();
+const Device = jest.fn().mockReturnValue({name: 'name', id: 'id'});
 
 // Mock Modules
 const mockMoment = () => () => ({
@@ -52,16 +53,18 @@ const mockDevices = () => ({
 const mockAuthSession = () => ({
   authSession: authSession,
 });
+const mockUtilDevice = () => jest.fn().mockImplementation(Device);
 
 // Mock Declarations
-jest.doMock('/opt/config/config', mockConfig);
-jest.doMock('/opt/utils/util-logger', mockLogger);
-jest.doMock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', mockMoment);
-jest.doMock('/opt/slack/format/slack-format-modal', mockSlackFormat);
-jest.doMock('/opt/slack/slack-error-reporter', mockSlackErrorReporter);
-jest.doMock('/opt/db/settings-interface', mockSettings);
-jest.doMock('/opt/spotify/spotify-api/spotify-api-devices', mockDevices);
-jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', mockAuthSession);
+jest.doMock('/opt/config/config', mockConfig, {virtual: true});
+jest.doMock('/opt/utils/util-logger', mockLogger, {virtual: true});
+jest.doMock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', mockMoment, {virtual: true});
+jest.doMock('/opt/slack/format/slack-format-modal', mockSlackFormat, {virtual: true});
+jest.doMock('/opt/slack/slack-error-reporter', mockSlackErrorReporter, {virtual: true});
+jest.doMock('/opt/db/settings-interface', mockSettings, {virtual: true});
+jest.doMock('/opt/spotify/spotify-api/spotify-api-devices', mockDevices, {virtual: true});
+jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', mockAuthSession, {virtual: true});
+jest.doMock('/opt/spotify/spotify-objects/util-spotify-device', mockUtilDevice, {virtual: true});
 
 const mod = require('../../../src/components/settings/settings-get-options-devices');
 const startFetchingDevices = mod.__get__('startFetchingDevices');
@@ -103,19 +106,17 @@ describe('Get Device Options', () => {
       authSession.mockResolvedValue({'auth': true});
       fetchDevices.mockResolvedValue(deviceData[0]);
       modelDevice.mockReturnValue({name: 'name', id: 'id'});
-      option.mockImplementation((name, value) => ({text: name, value: value}));
       moment.add.mockReturnThis();
       moment.unix.mockReturnValue(1111111111);
 
-      expect.assertions(8);
+      expect.assertions(7);
       await expect(startFetchingDevices(...parameters)).resolves.toStrictEqual(
           {'options': [{'text': 'no_devices_label', 'value': 'no_devices'}, {'text': 'AU13282 - Computer', 'value': '87997bb4312981a00f1d8029eb874c55a211a0cc'}, {'text': 'name', 'value': 'id'}]},
       );
       expect(authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(fetchDevices).toHaveBeenCalledWith(teamId, channelId, {'auth': true});
       expect(storeDevices).toHaveBeenCalledWith(teamId, channelId, {'value': [{'id': '87997bb4312981a00f1d8029eb874c55a211a0cc', 'name': 'AU13282 - Computer'}, {'id': 'id', 'name': 'name'}]}, 1111111111);
-      expect(modelDevice).toHaveBeenCalledWith(`${deviceData[0].devices[0].name} - ${deviceData[0].devices[0].type}`, deviceData[0].devices[0].id);
-      expect(option).toHaveBeenCalledTimes(3);
+      expect(modelDevice).toHaveBeenCalledWith('name', 'id');
       expect(moment.add).toHaveBeenCalledWith(1, 'hour');
       expect(moment.unix).toHaveBeenCalled();
     });

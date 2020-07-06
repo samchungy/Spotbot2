@@ -47,11 +47,11 @@ const mockSettingsBlocks = () => ({
 // Mock Declarations
 jest.doMock('../../../src/components/settings/layers/settings-auth-blocks', mockAuth);
 jest.doMock('../../../src/components/settings/layers/settings-blocks', mockSettingsBlocks);
-jest.doMock('/opt/slack/format/slack-format-modal', mockSlackFormat);
-jest.doMock('/opt/config/config', mockConfig);
-jest.doMock('/opt/utils/util-logger', mockLogger);
-jest.doMock('/opt/slack/slack-api', mockSlackApi);
-jest.doMock('/opt/slack/slack-error-reporter', mockSlackErrorReporter);
+jest.doMock('/opt/slack/format/slack-format-modal', mockSlackFormat, {virtual: true});
+jest.doMock('/opt/config/config', mockConfig, {virtual: true});
+jest.doMock('/opt/utils/util-logger', mockLogger, {virtual: true});
+jest.doMock('/opt/slack/slack-api', mockSlackApi, {virtual: true});
+jest.doMock('/opt/slack/slack-error-reporter', mockSlackErrorReporter, {virtual: true});
 
 const mod = require('../../../src/components/settings/settings-open');
 const openSettings = mod.__get__('openSettings');
