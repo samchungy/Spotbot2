@@ -1,5 +1,5 @@
-module.exports = [
-  {
+module.exports = {
+  0: {
     'devices': [
       {
         'id': '97667bb4312691a00f1d9026eb974c55a211a0cA',
@@ -12,7 +12,7 @@ module.exports = [
       },
     ],
   },
-  {
+  1: {
     'devices': [],
   },
-];
+};

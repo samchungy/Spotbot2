@@ -18,13 +18,13 @@ const SETTINGS_HELPER = config.dynamodb.settings_helper;
 const NEW_PLAYLIST = SETTINGS_HELPER.create_new_playlist;
 const PLAYLIST = config.dynamodb.settings.playlist;
 
-const GET_PLAYLISTS = {
+const RESPONSE = {
   failed: 'Fetching Spotify playlists in settings failed',
 };
 
 const fetchAllPlaylists = async (teamId, channelId, auth, count=0) => {
   const playlists = await fetchPlaylists(teamId, channelId, auth, count, LIMIT);
-  if (playlists.items.total > ((count+1) * LIMIT)) {
+  if (playlists.total > ((count+1) * LIMIT)) {
     return [...playlists.items, ...(await fetchAllPlaylists(teamId, channelId, auth, count+1))];
   } else {
     return playlists.items;
@@ -70,7 +70,7 @@ const startFetchingPlaylists = async (teamId, channelId, settings, query) => {
   }
   return {
     option_groups: [
-      optionGroup('Search Results:', searchPlaylists.slice(0, 100)),
+      optionGroup('Search Results:', searchPlaylists.slice(0, 99)),
       optionGroup('Other:', other),
     ],
   };
@@ -81,7 +81,7 @@ module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, settings, query} = event;
   return await startFetchingPlaylists(teamId, channelId, settings, query)
       .catch((error)=>{
-        logger.error(error, GET_PLAYLISTS.failed);
-        reportErrorToSlack(teamId, channelId, userId, GET_PLAYLISTS.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
