@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/samchungy/Spotbot2#readme",
   "dependencies": {
+    "@types/jest": "^26.0.5",
     "babel-jest": "^26.1.0",
     "babel-plugin-rewire": "^1.2.0",
     "eslint-plugin-jest": "^23.17.1",
