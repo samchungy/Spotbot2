@@ -44,7 +44,7 @@ const getAllDevices = async (teamId, channelId, settings) => {
   return devices;
 };
 
-const startFetchingDevices = async (teamId, channelId, settings) => {
+const main = async (teamId, channelId, settings) => {
   const spotifyDevices = await getAllDevices(teamId, channelId, settings);
   await storeDevices(teamId, channelId, {value: spotifyDevices}, moment().add(1, 'hour').unix());
   const devices = [
@@ -61,7 +61,7 @@ const startFetchingDevices = async (teamId, channelId, settings) => {
 module.exports.handler = async (event, context) => {
   // LAMBDA FUNCTION
   const {teamId, channelId, userId, settings} = event;
-  return await startFetchingDevices(teamId, channelId, settings)
+  return await main(teamId, channelId, settings)
       .catch((error)=>{
         logger.error(error, RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);

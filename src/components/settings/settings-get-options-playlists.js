@@ -49,7 +49,7 @@ const getCompatiblePlaylists = async (teamId, channelId, currentPlaylist) => {
   ];
 };
 
-const startFetchingPlaylists = async (teamId, channelId, settings, query) => {
+const main = async (teamId, channelId, settings, query) => {
   const currentPlaylist = settings ? settings[PLAYLIST] : null;
   // Convert our saved setting to a Slack option, adds a create new playlist option
   const other = [
@@ -79,7 +79,7 @@ const startFetchingPlaylists = async (teamId, channelId, settings, query) => {
 module.exports.handler = async (event, context) => {
   // LAMBDA FUNCTION
   const {teamId, channelId, userId, settings, query} = event;
-  return await startFetchingPlaylists(teamId, channelId, settings, query)
+  return await main(teamId, channelId, settings, query)
       .catch((error)=>{
         logger.error(error, RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
