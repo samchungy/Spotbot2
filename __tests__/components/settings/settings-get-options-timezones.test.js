@@ -195,40 +195,6 @@ describe('Get Timezone Options', () => {
           },
       );
     });
-
-    // expect.objectContaining({
-    //   option_groups: expect.arrayContaining(
-    //       expect.objectContaining(
-    //           {value: expect.toHaveLength(100)},
-    //       ),
-    //   ),
-    // }),
-
-    // it('should call fetch playlists twice', async () => {
-    //   fetchPlaylists.mockResolvedValue(playlistData[1]);
-    //   moment.add.mockReturnThis();
-    //   moment.unix.mockReturnValue(1111111111);
-
-    //   expect.assertions(5);
-    //   await expect(main(...parameters[1])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Test (Current Selection)', 'value': '2nuwjAGCHQiPabqGH6SLty'}, {'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
-    //   expect(fetchPlaylists).toHaveBeenCalledTimes(2);
-    //   expect(storePlaylists).toHaveBeenCalled();
-    //   expect(moment.add).toHaveBeenCalledWith(1, 'hour');
-    //   expect(moment.unix).toHaveBeenCalled();
-    // });
-
-    // it('should call display results without a current playlist', async () => {
-    //   fetchPlaylists.mockResolvedValue(playlistData[0]);
-    //   moment.add.mockReturnThis();
-    //   moment.unix.mockReturnValue(1111111111);
-
-    //   expect.assertions(5);
-    //   await expect(main(...parameters[2])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
-    //   expect(fetchPlaylists).toHaveBeenCalledTimes(1);
-    //   expect(storePlaylists).toHaveBeenCalled();
-    //   expect(moment.add).toHaveBeenCalledWith(1, 'hour');
-    //   expect(moment.unix).toHaveBeenCalled();
-    // });
   });
 });
 
