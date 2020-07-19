@@ -73,7 +73,7 @@ jest.doMock('/opt/spotify/spotify-api/spotify-api-playlists', mockPlaylists, {vi
 jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', mockAuthSession, {virtual: true});
 
 const mod = require('../../../src/components/settings/settings-get-options-playlists');
-const startFetchingPlaylists = mod.__get__('startFetchingPlaylists');
+const main = mod.__get__('main');
 const playlistData = require('../../data/spotify/playlist');
 const response = mod.__get__('RESPONSE');
 const {teamId, channelId, userId, settings} = require('../../data/request');
@@ -91,12 +91,12 @@ const parameters = {
 describe('Get Playlist Options', () => {
   describe('handler', () => {
     afterAll(() => {
-      mod.__ResetDependency__('startFetchingPlaylists');
+      mod.__ResetDependency__('main');
     });
     const event = params;
     describe('success', () => {
       it('should call the main function', async () => {
-        mod.__set__('startFetchingPlaylists', () => Promise.resolve());
+        mod.__set__('main', () => Promise.resolve());
 
         expect.assertions(1);
         await expect(mod.handler(event)).resolves.toBe();
@@ -105,7 +105,7 @@ describe('Get Playlist Options', () => {
     describe('error', () => {
       it('should report the error to Slack', async () => {
         const error = new Error();
-        mod.__set__('startFetchingPlaylists', () => Promise.reject(error));
+        mod.__set__('main', () => Promise.reject(error));
 
         expect.assertions(3);
         await expect(mod.handler(event)).resolves.toBe();
@@ -122,7 +122,7 @@ describe('Get Playlist Options', () => {
       moment.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
-      await expect(startFetchingPlaylists(...parameters[0])).resolves.toStrictEqual({'option_groups': [{'text': 'Search Results:', 'value': [{'text': 'Winter \'19', 'value': '2M3YrO6fGfqz4bZHDnmnH5'}]}, {'text': 'Other:', 'value': [{'text': 'Test (Current Selection)', 'value': '2nuwjAGCHQiPabqGH6SLty'}, {'text': 'Create a new playlist called "winter"', 'value': 'create_new_playlist.winter'}]}]});
+      await expect(main(...parameters[0])).resolves.toStrictEqual({'option_groups': [{'text': 'Search Results:', 'value': [{'text': 'Winter \'19', 'value': '2M3YrO6fGfqz4bZHDnmnH5'}]}, {'text': 'Other:', 'value': [{'text': 'Test (Current Selection)', 'value': '2nuwjAGCHQiPabqGH6SLty'}, {'text': 'Create a new playlist called "winter"', 'value': 'create_new_playlist.winter'}]}]});
       expect(fetchPlaylists).toHaveBeenCalled();
       expect(storePlaylists).toHaveBeenCalledWith(teamId, channelId, {'value': [{'id': '2nuwjAGCHQiPabqGH6SLty', 'name': 'Test', 'uri': 'spotify:playlist:2nuwjAGCHQiPabqGH6SLty', 'url': 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty'}, {'id': '4lB2bRq79GWAd3jDyulDJ8', 'name': 'Fall \'19', 'uri': 'spotify:playlist:4lB2bRq79GWAd3jDyulDJ8', 'url': 'https://open.spotify.com/playlist/4lB2bRq79GWAd3jDyulDJ8'}, {'id': '2M3YrO6fGfqz4bZHDnmnH5', 'name': 'Winter \'19', 'uri': 'spotify:playlist:2M3YrO6fGfqz4bZHDnmnH5', 'url': 'https://open.spotify.com/playlist/2M3YrO6fGfqz4bZHDnmnH5'}]}, 1111111111);
       expect(moment.add).toHaveBeenCalledWith(1, 'hour');
@@ -135,7 +135,7 @@ describe('Get Playlist Options', () => {
       moment.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
-      await expect(startFetchingPlaylists(...parameters[1])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Test (Current Selection)', 'value': '2nuwjAGCHQiPabqGH6SLty'}, {'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
+      await expect(main(...parameters[1])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Test (Current Selection)', 'value': '2nuwjAGCHQiPabqGH6SLty'}, {'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
       expect(fetchPlaylists).toHaveBeenCalled();
       expect(storePlaylists).toHaveBeenCalledWith(teamId, channelId, {'value': [{'id': '2nuwjAGCHQiPabqGH6SLty', 'name': 'Test', 'uri': 'spotify:playlist:2nuwjAGCHQiPabqGH6SLty', 'url': 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty'}, {'id': '4lB2bRq79GWAd3jDyulDJ8', 'name': 'Fall \'19', 'uri': 'spotify:playlist:4lB2bRq79GWAd3jDyulDJ8', 'url': 'https://open.spotify.com/playlist/4lB2bRq79GWAd3jDyulDJ8'}, {'id': '2M3YrO6fGfqz4bZHDnmnH5', 'name': 'Winter \'19', 'uri': 'spotify:playlist:2M3YrO6fGfqz4bZHDnmnH5', 'url': 'https://open.spotify.com/playlist/2M3YrO6fGfqz4bZHDnmnH5'}]}, 1111111111);
       expect(moment.add).toHaveBeenCalledWith(1, 'hour');
@@ -148,7 +148,7 @@ describe('Get Playlist Options', () => {
       moment.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
-      await expect(startFetchingPlaylists(...parameters[1])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Test (Current Selection)', 'value': '2nuwjAGCHQiPabqGH6SLty'}, {'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
+      await expect(main(...parameters[1])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Test (Current Selection)', 'value': '2nuwjAGCHQiPabqGH6SLty'}, {'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
       expect(fetchPlaylists).toHaveBeenCalledTimes(2);
       expect(storePlaylists).toHaveBeenCalled();
       expect(moment.add).toHaveBeenCalledWith(1, 'hour');
@@ -161,7 +161,7 @@ describe('Get Playlist Options', () => {
       moment.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
-      await expect(startFetchingPlaylists(...parameters[2])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
+      await expect(main(...parameters[2])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
       expect(fetchPlaylists).toHaveBeenCalledTimes(1);
       expect(storePlaylists).toHaveBeenCalled();
       expect(moment.add).toHaveBeenCalledWith(1, 'hour');

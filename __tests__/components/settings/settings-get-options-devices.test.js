@@ -63,7 +63,7 @@ jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', mockAuthSession, {
 jest.doMock('/opt/spotify/spotify-objects/util-spotify-device', mockUtilDevice, {virtual: true});
 
 const mod = require('../../../src/components/settings/settings-get-options-devices');
-const startFetchingDevices = mod.__get__('startFetchingDevices');
+const main = mod.__get__('main');
 const response = mod.__get__('RESPONSE');
 const deviceData = require('../../data/spotify/device');
 const {teamId, channelId, userId, settings} = require('../../data/request');
@@ -73,12 +73,12 @@ const parameters = [teamId, channelId, settings];
 describe('Get Device Options', () => {
   describe('handler', () => {
     afterAll(() => {
-      mod.__ResetDependency__('startFetchingDevices');
+      mod.__ResetDependency__('main');
     });
     const event = params;
     describe('success', () => {
       it('should call the main function', async () => {
-        mod.__set__('startFetchingDevices', () => Promise.resolve());
+        mod.__set__('main', () => Promise.resolve());
 
         expect.assertions(1);
         await expect(mod.handler(event)).resolves.toBe();
@@ -87,7 +87,7 @@ describe('Get Device Options', () => {
     describe('error', () => {
       it('should report the error to Slack', async () => {
         const error = new Error();
-        mod.__set__('startFetchingDevices', () => Promise.reject(error));
+        mod.__set__('main', () => Promise.reject(error));
 
         expect.assertions(3);
         await expect(mod.handler(event)).resolves.toBe();
@@ -104,7 +104,7 @@ describe('Get Device Options', () => {
       moment.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
-      await expect(startFetchingDevices(...parameters)).resolves.toStrictEqual(
+      await expect(main(...parameters)).resolves.toStrictEqual(
           {'options': [{'text': 'no_devices_label', 'value': 'no_devices'}, {'text': 'AU13282 - Computer', 'value': '87997bb4312981a00f1d8029eb874c55a211a0cc'}, {'text': 'name', 'value': 'id'}]},
       );
       expect(fetchDevices).toHaveBeenCalledWith(teamId, channelId, {'auth': true});
@@ -119,7 +119,7 @@ describe('Get Device Options', () => {
       moment.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
-      await expect(startFetchingDevices(...parameters)).resolves.toStrictEqual(
+      await expect(main(...parameters)).resolves.toStrictEqual(
           {'options': [{'text': 'no_devices_label', 'value': 'no_devices'}, {'text': 'AU13282 - Computer', 'value': '87997bb4312981a00f1d8029eb874c55a211a0cc'}]},
       );
       expect(fetchDevices).toHaveBeenCalledWith(teamId, channelId, {'auth': true});
@@ -134,7 +134,7 @@ describe('Get Device Options', () => {
       moment.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
-      await expect(startFetchingDevices(teamId, channelId, undefined)).resolves.toStrictEqual(
+      await expect(main(teamId, channelId, undefined)).resolves.toStrictEqual(
           {'options': [{'text': 'no_devices_label', 'value': 'no_devices'}]},
       );
       expect(fetchDevices).toHaveBeenCalledWith(teamId, channelId, {'auth': true});
