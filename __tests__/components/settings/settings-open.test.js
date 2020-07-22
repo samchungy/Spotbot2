@@ -1,50 +1,42 @@
 // Mock Modules
-const mockAuth = () => ({
+const mockAuth = {
   getAuthBlock: jest.fn(),
-});
+};
 
-const mockConfig = () => ({
+const mockConfig = {
   slack: {
     actions: {
       settings_modal: 'MODAL',
     },
   },
-});
+};
 
-const mockLogger = () => ({
+const mockLogger = {
   info: jest.fn(),
   error: jest.fn(),
-});
+};
 
-const mockSlackApi = () => ({
+const mockSlackApi = {
   updateModal: jest.fn(),
-});
-const mockSlackFormat = () => ({
+};
+const mockSlackFormat = {
   slackModal: jest.fn(),
-});
-const mockSlackErrorReporter = () => ({
+};
+const mockSlackErrorReporter = {
   reportErrorToSlack: jest.fn(),
-});
-const mockSettingsBlocks = () => ({
+};
+const mockSettingsBlocks = {
   getSettingsBlocks: jest.fn(),
-});
+};
 
 // Mock Declarations
-jest.doMock('../../../src/components/settings/layers/settings-auth-blocks', mockAuth);
-jest.doMock('../../../src/components/settings/layers/settings-blocks', mockSettingsBlocks);
-jest.doMock('/opt/slack/format/slack-format-modal', mockSlackFormat, {virtual: true});
-jest.doMock('/opt/config/config', mockConfig, {virtual: true});
-jest.doMock('/opt/utils/util-logger', mockLogger, {virtual: true});
-jest.doMock('/opt/slack/slack-api', mockSlackApi, {virtual: true});
-jest.doMock('/opt/slack/slack-error-reporter', mockSlackErrorReporter, {virtual: true});
-
-const config = require('/opt/config/config');
-const logger = require('/opt/utils/util-logger');
-const {updateModal} = require('/opt/slack/slack-api');
-const {slackModal} = require('/opt/slack/format/slack-format-modal');
-const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
-const {getAuthBlock} = require('../../../src/components/settings/layers/settings-auth-blocks');
-const {getSettingsBlocks} = require('../../../src/components/settings/layers/settings-blocks');
+jest.doMock('../../../src/components/settings/layers/settings-auth-blocks', () => mockAuth);
+jest.doMock('../../../src/components/settings/layers/settings-blocks', () => mockSettingsBlocks);
+jest.doMock('/opt/slack/format/slack-format-modal', () => mockSlackFormat, {virtual: true});
+jest.doMock('/opt/config/config', () => mockConfig, {virtual: true});
+jest.doMock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
+jest.doMock('/opt/slack/slack-api', () => mockSlackApi, {virtual: true});
+jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 
 const mod = require('../../../src/components/settings/settings-open');
 const main = mod.__get__('main');
@@ -77,35 +69,35 @@ describe('Get Settings Blocks', () => {
 
         expect.assertions(3);
         await expect(mod.handler(event)).resolves.toBe();
-        expect(logger.error).toHaveBeenCalledWith(error, response.failed);
-        expect(reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, userId, response.failed);
+        expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
+        expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, userId, response.failed);
       });
     });
   });
 
   describe('main', () => {
     it('should get an authenticated settings block', async () => {
-      getAuthBlock.mockResolvedValue({authBlock: [{auth: 'block'}], authError: false});
-      getSettingsBlocks.mockResolvedValue([{settings: 'block'}]);
-      slackModal.mockReturnValue({modal: 'slack'});
+      mockAuth.getAuthBlock.mockResolvedValue({authBlock: [{auth: 'block'}], authError: false});
+      mockSettingsBlocks.getSettingsBlocks.mockResolvedValue([{settings: 'block'}]);
+      mockSlackFormat.slackModal.mockReturnValue({modal: 'slack'});
 
       expect.assertions(4);
       await expect(main(...parameters)).resolves.toBe();
-      expect(getAuthBlock).toHaveBeenCalledWith(teamId, channelId, viewId, url);
-      expect(slackModal).toHaveBeenCalledWith(config.slack.actions.settings_modal, `Spotbot Settings`, `Save`, `Cancel`, [{auth: 'block'}, {settings: 'block'}], false, channelId);
-      expect(updateModal).toHaveBeenCalledWith(viewId, {modal: 'slack'});
+      expect(mockAuth.getAuthBlock).toHaveBeenCalledWith(teamId, channelId, viewId, url);
+      expect(mockSlackFormat.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.settings_modal, `Spotbot Settings`, `Save`, `Cancel`, [{auth: 'block'}, {settings: 'block'}], false, channelId);
+      expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, {modal: 'slack'});
     });
 
     it('should get an unauthenticated settings block', async () => {
-      getAuthBlock.mockResolvedValue({authBlock: [{auth: 'block'}], authError: true});
-      getSettingsBlocks.mockResolvedValue([{settings: 'block'}]);
-      slackModal.mockReturnValue({modal: 'slack'});
+      mockAuth.getAuthBlock.mockResolvedValue({authBlock: [{auth: 'block'}], authError: true});
+      mockSettingsBlocks.getSettingsBlocks.mockResolvedValue([{settings: 'block'}]);
+      mockSlackFormat.slackModal.mockReturnValue({modal: 'slack'});
 
       expect.assertions(4);
       await expect(main(...parameters)).resolves.toBe();
-      expect(getAuthBlock).toHaveBeenCalledWith(teamId, channelId, viewId, url);
-      expect(slackModal).toHaveBeenCalledWith(config.slack.actions.settings_modal, `Spotbot Settings`, null, `Close`, [{auth: 'block'}], false, channelId);
-      expect(updateModal).toHaveBeenCalledWith(viewId, {modal: 'slack'});
+      expect(mockAuth.getAuthBlock).toHaveBeenCalledWith(teamId, channelId, viewId, url);
+      expect(mockSlackFormat.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.settings_modal, `Spotbot Settings`, null, `Close`, [{auth: 'block'}], false, channelId);
+      expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, {modal: 'slack'});
     });
   });
 });
