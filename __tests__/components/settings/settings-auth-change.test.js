@@ -1,27 +1,31 @@
-const mockSns = () => ({
-  sns: jest.fn(),
-});
-const mockSpotifyApiRefresh = () => ({
+const mockSns = {
+  publish: jest.fn().mockReturnThis(),
+  promise: jest.fn(),
+};
+const mockSpotifyApiRefresh = {
   invalidateAuth: jest.fn(),
-});
+};
 
-const mockLogger = () => ({
+const mockLogger = {
   info: jest.fn(),
   error: jest.fn(),
-});
-const mockSlackErrorReporter = () => ({
+};
+const mockSlackErrorReporter = {
   reportErrorToSlack: jest.fn(),
-});
+};
 
-jest.doMock('/opt/sns', mockSns, {virtual: true});
-jest.doMock('/opt/utils/util-logger', mockLogger, {virtual: true});
-jest.doMock('/opt/spotify/spotify-api/spotify-api-refresh', mockSpotifyApiRefresh, {virtual: true});
-jest.doMock('/opt/slack/slack-error-reporter', mockSlackErrorReporter, {virtual: true});
+jest.doMock('/opt/sns', () => mockSns, {virtual: true});
+jest.doMock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
+jest.doMock('/opt/spotify/spotify-api/spotify-api-refresh', () => mockSpotifyApiRefresh, {virtual: true});
+jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 
-const logger = require('/opt/utils/util-logger');
-const sns = require('/opt/sns');
-const {invalidateAuth} = require('/opt/spotify/spotify-api/spotify-api-refresh');
-const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
+const mod = require('../../../src/components/settings/settings-auth-change');
+const main = mod.__get__('main');
+const response = mod.__get__('RESPONSE');
+
+const {teamId, channelId, viewId, userId, url} = require('../../data/request');
+const params = {teamId, channelId, viewId, userId, url};
+const parameters = [teamId, channelId, viewId, url];
 
 describe('Get Settings Blocks', () => {
   describe('handler', () => {
@@ -46,35 +50,19 @@ describe('Get Settings Blocks', () => {
 
         expect.assertions(3);
         await expect(mod.handler(event)).resolves.toBe();
-        expect(logger.error).toHaveBeenCalledWith(error, response.failed);
-        expect(reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, userId, response.failed);
+        expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
+        expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, userId, response.failed);
       });
     });
   });
 
-  // describe('main', () => {
-  //   it('should get an authenticated settings block', async () => {
-  //     getAuthBlock.mockResolvedValue({authBlock: [{auth: 'block'}], authError: false});
-  //     getSettingsBlocks.mockResolvedValue([{settings: 'block'}]);
-  //     slackModal.mockReturnValue({modal: 'slack'});
+  describe('main', () => {
+    it('should call invalidate auth', async () => {
+      mockSpotifyApiRefresh.invalidateAuth.mockResolvedValue();
 
-  //     expect.assertions(4);
-  //     await expect(main(...parameters)).resolves.toBe();
-  //     expect(getAuthBlock).toHaveBeenCalledWith(teamId, channelId, viewId, url);
-  //     expect(slackModal).toHaveBeenCalledWith(config.slack.actions.settings_modal, `Spotbot Settings`, `Save`, `Cancel`, [{auth: 'block'}, {settings: 'block'}], false, channelId);
-  //     expect(updateModal).toHaveBeenCalledWith(viewId, {modal: 'slack'});
-  //   });
-
-  //   it('should get an unauthenticated settings block', async () => {
-  //     getAuthBlock.mockResolvedValue({authBlock: [{auth: 'block'}], authError: true});
-  //     getSettingsBlocks.mockResolvedValue([{settings: 'block'}]);
-  //     slackModal.mockReturnValue({modal: 'slack'});
-
-  //     expect.assertions(4);
-  //     await expect(main(...parameters)).resolves.toBe();
-  //     expect(getAuthBlock).toHaveBeenCalledWith(teamId, channelId, viewId, url);
-  //     expect(slackModal).toHaveBeenCalledWith(config.slack.actions.settings_modal, `Spotbot Settings`, null, `Close`, [{auth: 'block'}], false, channelId);
-  //     expect(updateModal).toHaveBeenCalledWith(viewId, {modal: 'slack'});
-  //   });
-  // });
+      expect.assertions(2);
+      await expect(main(...parameters)).resolves.toBe();
+      expect(mockSns.publish).toBeCalledWith({'Message': `{"teamId":"${teamId}","channelId":"${channelId}","viewId":"${viewId}","url":"${url}"}`, 'TopicArn': `${process.env.SNS_PREFIX}settings-auth-update-view`});
+    });
+  });
 });

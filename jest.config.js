@@ -189,3 +189,7 @@ module.exports = {
   // Whether to use watchman for file crawling
   // watchman: true,
 };
+
+process.env = Object.assign(process.env, {
+  SNS_PREFIX: 'arn:aws:sns:region:accnum:',
+});
