@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 // Mock Functions
-const config = {
+const mockConfig = () => ({
   dynamodb: {
     settings_helper: {
       no_devices: 'no_devices',
@@ -16,45 +17,42 @@ const config = {
       limit: 100,
     },
   },
-};
+});
 
-const logger = {
-  info: jest.fn(),
-  error: jest.fn(),
-};
-const moment = {
+// Mock Modules
+const momentMock = {
+  tz: jest.fn().mockReturnThis(),
+  format: jest.fn(),
   add: jest.fn(),
   unix: jest.fn(),
 };
-const reportErrorToSlack = jest.fn();
-const storePlaylists = jest.fn();
-const fetchPlaylists = jest.fn();
 
-// Mock Modules
-// Mock Modules
-const mockMoment = () => () => ({
-  add: moment.add,
-  unix: moment.unix,
-});
-const mockConfig = () => config;
+const mockMoment = () => {
+  const mock = () => momentMock;
+  mock.tz = {
+    names: jest.fn(),
+  };
+  return mock;
+};
+
 const mockLogger = () => ({
-  info: logger.info,
-  error: logger.error,
+  info: jest.fn(),
+  error: jest.fn(),
 });
 const mockSlackFormat = () => ({
   option: jest.fn().mockImplementation((name, value) => ({text: name, value: value})),
   optionGroup: jest.fn().mockImplementation((name, value) => ({text: name, value: value})),
 });
 const mockSlackErrorReporter = () => ({
-  reportErrorToSlack: reportErrorToSlack,
+  reportErrorToSlack: jest.fn(),
 });
 const mockSettings = () => ({
   option: jest.fn().mockImplementation((name, value) => ({text: name, value: value})),
   modelPlaylist: jest.fn().mockImplementation((playlist) => ({name: playlist.name, id: playlist.id, url: playlist.external_urls.spotify, uri: playlist.uri})),
-  storePlaylists: storePlaylists,
+  storePlaylists: jest.fn(),
 });
 const mockPlaylists = () => ({
-  fetchPlaylists: fetchPlaylists,
+  fetchPlaylists: jest.fn(),
 });
 const mockAuthSession = () => ({
   authSession: jest.fn(() => ({
@@ -71,6 +69,15 @@ jest.doMock('/opt/slack/slack-error-reporter', mockSlackErrorReporter, {virtual:
 jest.doMock('/opt/db/settings-interface', mockSettings, {virtual: true});
 jest.doMock('/opt/spotify/spotify-api/spotify-api-playlists', mockPlaylists, {virtual: true});
 jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', mockAuthSession, {virtual: true});
+
+const config = require('/opt/config/config');
+const logger = require('/opt/utils/util-logger');
+const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
+const {fetchPlaylists} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {modelPlaylist, storePlaylists} = require('/opt/db/settings-interface');
+const {option, optionGroup} = require('/opt/slack/format/slack-format-modal');
+const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 const mod = require('../../../src/components/settings/settings-get-options-playlists');
 const main = mod.__get__('main');
@@ -118,54 +125,54 @@ describe('Get Playlist Options', () => {
   describe('main', () => {
     it('should return Slack options containing Spotify playlist results', async () => {
       fetchPlaylists.mockResolvedValue(playlistData[0]);
-      moment.add.mockReturnThis();
-      moment.unix.mockReturnValue(1111111111);
+      momentMock.add.mockReturnThis();
+      momentMock.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
       await expect(main(...parameters[0])).resolves.toStrictEqual({'option_groups': [{'text': 'Search Results:', 'value': [{'text': 'Winter \'19', 'value': '2M3YrO6fGfqz4bZHDnmnH5'}]}, {'text': 'Other:', 'value': [{'text': 'Test (Current Selection)', 'value': '2nuwjAGCHQiPabqGH6SLty'}, {'text': 'Create a new playlist called "winter"', 'value': 'create_new_playlist.winter'}]}]});
       expect(fetchPlaylists).toHaveBeenCalled();
       expect(storePlaylists).toHaveBeenCalledWith(teamId, channelId, {'value': [{'id': '2nuwjAGCHQiPabqGH6SLty', 'name': 'Test', 'uri': 'spotify:playlist:2nuwjAGCHQiPabqGH6SLty', 'url': 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty'}, {'id': '4lB2bRq79GWAd3jDyulDJ8', 'name': 'Fall \'19', 'uri': 'spotify:playlist:4lB2bRq79GWAd3jDyulDJ8', 'url': 'https://open.spotify.com/playlist/4lB2bRq79GWAd3jDyulDJ8'}, {'id': '2M3YrO6fGfqz4bZHDnmnH5', 'name': 'Winter \'19', 'uri': 'spotify:playlist:2M3YrO6fGfqz4bZHDnmnH5', 'url': 'https://open.spotify.com/playlist/2M3YrO6fGfqz4bZHDnmnH5'}]}, 1111111111);
-      expect(moment.add).toHaveBeenCalledWith(1, 'hour');
-      expect(moment.unix).toHaveBeenCalled();
+      expect(momentMock.add).toHaveBeenCalledWith(1, 'hour');
+      expect(momentMock.unix).toHaveBeenCalled();
     });
 
     it('should return Slack options containing no result', async () => {
       fetchPlaylists.mockResolvedValue(playlistData[0]);
-      moment.add.mockReturnThis();
-      moment.unix.mockReturnValue(1111111111);
+      momentMock.add.mockReturnThis();
+      momentMock.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
       await expect(main(...parameters[1])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Test (Current Selection)', 'value': '2nuwjAGCHQiPabqGH6SLty'}, {'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
       expect(fetchPlaylists).toHaveBeenCalled();
       expect(storePlaylists).toHaveBeenCalledWith(teamId, channelId, {'value': [{'id': '2nuwjAGCHQiPabqGH6SLty', 'name': 'Test', 'uri': 'spotify:playlist:2nuwjAGCHQiPabqGH6SLty', 'url': 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty'}, {'id': '4lB2bRq79GWAd3jDyulDJ8', 'name': 'Fall \'19', 'uri': 'spotify:playlist:4lB2bRq79GWAd3jDyulDJ8', 'url': 'https://open.spotify.com/playlist/4lB2bRq79GWAd3jDyulDJ8'}, {'id': '2M3YrO6fGfqz4bZHDnmnH5', 'name': 'Winter \'19', 'uri': 'spotify:playlist:2M3YrO6fGfqz4bZHDnmnH5', 'url': 'https://open.spotify.com/playlist/2M3YrO6fGfqz4bZHDnmnH5'}]}, 1111111111);
-      expect(moment.add).toHaveBeenCalledWith(1, 'hour');
-      expect(moment.unix).toHaveBeenCalled();
+      expect(momentMock.add).toHaveBeenCalledWith(1, 'hour');
+      expect(momentMock.unix).toHaveBeenCalled();
     });
 
     it('should call fetch playlists twice', async () => {
       fetchPlaylists.mockResolvedValue(playlistData[1]);
-      moment.add.mockReturnThis();
-      moment.unix.mockReturnValue(1111111111);
+      momentMock.add.mockReturnThis();
+      momentMock.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
       await expect(main(...parameters[1])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Test (Current Selection)', 'value': '2nuwjAGCHQiPabqGH6SLty'}, {'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
       expect(fetchPlaylists).toHaveBeenCalledTimes(2);
       expect(storePlaylists).toHaveBeenCalled();
-      expect(moment.add).toHaveBeenCalledWith(1, 'hour');
-      expect(moment.unix).toHaveBeenCalled();
+      expect(momentMock.add).toHaveBeenCalledWith(1, 'hour');
+      expect(momentMock.unix).toHaveBeenCalled();
     });
 
     it('should call display results without a current playlist', async () => {
       fetchPlaylists.mockResolvedValue(playlistData[0]);
-      moment.add.mockReturnThis();
-      moment.unix.mockReturnValue(1111111111);
+      momentMock.add.mockReturnThis();
+      momentMock.unix.mockReturnValue(1111111111);
 
       expect.assertions(5);
       await expect(main(...parameters[2])).resolves.toStrictEqual({'option_groups': [{'text': 'No query results for "no playlist"', 'value': [{'text': 'Create a new playlist called "no playlist"', 'value': 'create_new_playlist.no playlist'}]}]});
       expect(fetchPlaylists).toHaveBeenCalledTimes(1);
       expect(storePlaylists).toHaveBeenCalled();
-      expect(moment.add).toHaveBeenCalledWith(1, 'hour');
-      expect(moment.unix).toHaveBeenCalled();
+      expect(momentMock.add).toHaveBeenCalledWith(1, 'hour');
+      expect(momentMock.unix).toHaveBeenCalled();
     });
   });
 });

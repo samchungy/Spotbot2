@@ -1,66 +1,43 @@
-// Mock Functions
-const config = {
-  dynamodb: {
-    settings_helper: {
-      no_devices: 'no_devices',
-      no_devices_label: 'no_devices_label',
-      create_new_playlist: 'create_new_playlist.',
-    },
-    settings: {
-      default_device: 'default_device',
-      playlist: 'playlist',
-    },
-  },
-  spotify_api: {
-    playlists: {
-      limit: 100,
-    },
-  },
+const mockSlackErrorReporter = () => ({
+  reportErrorToSlack: jest.fn(),
+});
+
+const momentMock = {
+  tz: jest.fn().mockReturnThis(),
+  format: jest.fn(),
 };
 
-const logger = {
+const mockMoment = () => {
+  const mock = () => momentMock;
+  mock.tz = {
+    names: jest.fn(),
+  };
+  return mock;
+};
+
+const mockLogger = () => ({
   info: jest.fn(),
   error: jest.fn(),
-};
-const moment = {
-  add: jest.fn(),
-  format: jest.fn(),
-  unix: jest.fn(),
-  names: jest.fn(),
-  tz: jest.fn(),
-};
-const reportErrorToSlack = jest.fn();
-
-// Mock Modules
-const mockMoment = () => {
-  const momentMock = jest.fn(() => ({
-    tz: moment.tz,
-    format: moment.format,
-  }));
-  momentMock.tz = {
-    names: moment.names,
-  };
-  return momentMock;
-};
-const mockLogger = () => ({
-  info: logger.info,
-  error: logger.error,
 });
+
 const mockSlackFormat = () => ({
   option: jest.fn().mockImplementation((name, value) => ({text: name, value: value})),
   optionGroup: jest.fn().mockImplementation((name, value) => ({text: name, value: value})),
 });
-const mockSlackErrorReporter = () => ({
-  reportErrorToSlack: reportErrorToSlack,
-});
 
 // Mock Declarations
-jest.doMock('/opt/config/config', config, {virtual: true});
 jest.doMock('/opt/utils/util-logger', mockLogger, {virtual: true});
 jest.doMock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', mockMoment, {virtual: true});
 jest.doMock('/opt/slack/format/slack-format-modal', mockSlackFormat, {virtual: true});
 jest.doMock('/opt/slack/slack-error-reporter', mockSlackErrorReporter, {virtual: true});
 
+// Modules
+const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
+const logger = require('/opt/utils/util-logger');
+require('/opt/slack/format/slack-format-modal');
+const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
+
+// Main
 const mod = require('../../../src/components/settings/settings-get-options-timezones');
 const main = mod.__get__('main');
 const response = mod.__get__('RESPONSE');
@@ -152,18 +129,17 @@ describe('Get Timezone Options', () => {
 
   describe('main', () => {
     it('should return Slack options containing 1 timezone result', async () => {
-      moment.names.mockReturnValue(momentData[0]);
-      moment.tz.mockReturnThis();
-      moment.format.mockReturnValue('+10:00');
+      moment.tz.names.mockReturnValue(momentData[0]);
+      momentMock.format.mockReturnValue('+10:00');
 
       expect.assertions(1);
       await expect(main(...parameters[0])).resolves.toStrictEqual({'option_groups': [{'text': '1 query for "melbourne".', 'value': [{'text': 'Australia/Melbourne (+10:00)', 'value': 'Australia/Melbourne'}]}]});
     });
 
     it('should return Slack options containing multiple timezone results', async () => {
-      moment.names.mockReturnValue(momentData[0]);
-      moment.tz.mockReturnThis();
-      moment.format.mockReturnValue('+10:00');
+      moment.tz.names.mockReturnValue(momentData[0]);
+      momentMock.format.mockReturnValue('+10:00');
+
       expect.assertions(1);
       await expect(main(...parameters[1])).resolves.toEqual(
           {
@@ -180,9 +156,8 @@ describe('Get Timezone Options', () => {
 
     it('should return Slack options containing over 100 timezone results', async () => {
       const bigMomentData = new Array(101).fill().map(() => momentData[0][Math.floor(Math.random() * momentData[0].length)]);
-      moment.names.mockReturnValue(bigMomentData);
-      moment.tz.mockReturnThis();
-      moment.format.mockReturnValue('+10:00');
+      moment.tz.names.mockReturnValue(bigMomentData);
+      momentMock.format.mockReturnValue('+10:00');
       expect.assertions(1);
       await expect(main(...parameters[1])).resolves.toEqual(
           {

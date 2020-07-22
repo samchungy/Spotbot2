@@ -16,7 +16,7 @@ const RESPONSE = {
   failed: 'Opening settings failed',
 };
 
-const openSettings = async (teamId, channelId, settings, viewId, url) => {
+const main = async (teamId, channelId, settings, viewId, url) => {
   const {authBlock, authError} = await getAuthBlock(teamId, channelId, viewId, url);
   // Do not load settings blocks if Spotify is not authenticated
   const blocks = [
@@ -31,7 +31,7 @@ const openSettings = async (teamId, channelId, settings, viewId, url) => {
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, viewId, userId, url} = JSON.parse(event.Records[0].Sns.Message);
-  await openSettings(teamId, channelId, settings, viewId, url)
+  await main(teamId, channelId, settings, viewId, url)
       .catch((error)=>{
         logger.error(error, RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
