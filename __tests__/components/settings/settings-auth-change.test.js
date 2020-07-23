@@ -27,7 +27,7 @@ const {teamId, channelId, viewId, userId, url} = require('../../data/request');
 const params = {teamId, channelId, viewId, userId, url};
 const parameters = [teamId, channelId, viewId, url];
 
-describe('Get Settings Blocks', () => {
+describe('Settings Change Auth', () => {
   describe('handler', () => {
     afterAll(() => {
       mod.__ResetDependency__('main');
@@ -57,7 +57,7 @@ describe('Get Settings Blocks', () => {
   });
 
   describe('main', () => {
-    it('should call invalidate auth', async () => {
+    it('should call invalidate auth and call update view sns', async () => {
       mockSpotifyApiRefresh.invalidateAuth.mockResolvedValue();
 
       expect.assertions(2);
