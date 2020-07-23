@@ -13,11 +13,11 @@ const {getSettingsBlocks} = require('./layers/settings-blocks');
 
 const SETTINGS_MODAL = config.slack.actions.settings_modal;
 
-const UPDATE_VIEW = {
+const RESPONSE = {
   failed: 'Updating the settings panel failed',
 };
 
-const updateView = async (teamId, channelId, viewId, url) => {
+const main = async (teamId, channelId, viewId, url) => {
   const settings = await loadSettings(teamId, channelId);
   const {authBlock, authError} = await getAuthBlock(teamId, channelId, viewId, url);
   // Do not load settings blocks if Spotify is not authenticated
@@ -33,9 +33,9 @@ const updateView = async (teamId, channelId, viewId, url) => {
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, viewId, url} = JSON.parse(event.Records[0].Sns.Message);
-  await updateView(teamId, channelId, viewId, url)
+  await main(teamId, channelId, viewId, url)
       .catch((error)=>{
-        logger.error(error, UPDATE_VIEW.failed);
-        reportErrorToSlack(teamId, channelId, UPDATE_VIEW.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, null, RESPONSE.failed);
       });
 };
