@@ -6,7 +6,7 @@ const {storeSearch} = require('/opt/db/search-interface');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchArtistTracks} = require('/opt/spotify/spotify-api/spotify-api-tracks');
+const {fetchArtistTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-tracks');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
 // Tracks
@@ -22,7 +22,7 @@ const ARTISTS_RESPONSES = {
 const getArtistTracks = async (teamId, channelId, userId, artistId, triggerId, responseUrl) => {
   const auth = await authSession(teamId, channelId);
   const profile = auth.getProfile();
-  const spotifyTracks = await fetchArtistTracks(teamId, channelId, auth, profile.country, artistId);
+  const spotifyTracks = await fetchArtistTracks(auth, profile.country, artistId);
   const tracks = spotifyTracks.tracks.map((track) => new Track(track));
   const expiry = moment().add('1', 'day').unix();
   await storeSearch(teamId, channelId, triggerId, tracks, artistId, expiry);

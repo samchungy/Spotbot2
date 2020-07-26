@@ -6,8 +6,8 @@ const logger = require('/opt/utils/util-logger');
 // Spotify
 const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {deleteTracks, fetchTracks, fetchPlaylistTotal, replaceTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const {apiTrack} = require('/opt/spotify/spotify-api/spotify-api-model');
+const {deleteTracks, fetchTracks, fetchPlaylistTotal, replaceTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
+const {apiTrack} = require('/opt/spotify/spotify-api-v2/spotify-api-model');
 
 // Slack
 const {deleteReply, inChannelPost} = require('/opt/slack/format/slack-format-reply');
@@ -28,19 +28,17 @@ const RESET_RESPONSE = {
 
 /**
  * Reduce the tracks to 100, the maximum we can keep in the reset review
- * @param {string} teamId
- * @param {string} channelId
  * @param {Object} auth
  * @param {string} playlist
  */
-const reduceTracks = async (teamId, channelId, auth, playlist) => {
+const reduceTracks = async (auth, playlist) => {
   // If total is > 100, we can delete up until the last 100 songs as we can only show 100 to keep in slack.
-  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
+  const {total} = await fetchPlaylistTotal(auth, playlist.id);
   const recursiveDelete = async (total) => {
     if (total && total > LIMIT) {
       const offset=0;
       const range = total-LIMIT <= LIMIT ? total-LIMIT : LIMIT;
-      const spotifyTracks = await fetchTracks(teamId, channelId, auth, playlist.id, null, offset, range);
+      const spotifyTracks = await fetchTracks(auth, playlist.id, null, offset, range);
       const tracksToDelete = spotifyTracks.items
           .map((track, index) => {
             const playlistTrack = new PlaylistTrack(track);
@@ -49,16 +47,16 @@ const reduceTracks = async (teamId, channelId, auth, playlist) => {
               positions: [offset+index],
             };
           });
-      await deleteTracks(teamId, channelId, auth, playlist.id, tracksToDelete);
-      const {tracks: {total: newTotal}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
+      await deleteTracks(auth, playlist.id, tracksToDelete);
+      const {total: newTotal} = await fetchPlaylistTotal(auth, playlist.id);
       await recursiveDelete(newTotal);
     }
   };
   await recursiveDelete(total);
 };
 
-const keepSelectTracks = async (teamId, channelId, auth, playlist, trackUris) => {
-  const spotifyTracks = await fetchTracks(teamId, channelId, auth, playlist.id, null, 0);
+const keepSelectTracks = async (auth, playlist, trackUris) => {
+  const spotifyTracks = await fetchTracks(auth, playlist.id, null, 0);
   if (spotifyTracks.items.length) {
     const allTracks = [];
     spotifyTracks.items
@@ -71,7 +69,7 @@ const keepSelectTracks = async (teamId, channelId, auth, playlist, trackUris) =>
             });
           }
         });
-    await deleteTracks(teamId, channelId, auth, playlist.id, allTracks);
+    await deleteTracks(auth, playlist.id, allTracks);
   }
 };
 
@@ -95,15 +93,15 @@ const reset = async (teamId, channelId, settings, trackUris, userId, jump, respo
 
   // Reset all
   if (!trackUris) {
-    await replaceTracks(teamId, channelId, auth, playlist.id, [AFRICA]);
-    await deleteTracks(teamId, channelId, auth, playlist.id, [apiTrack(AFRICA)]);
+    await replaceTracks(auth, playlist.id, [AFRICA]);
+    await deleteTracks(auth, playlist.id, [apiTrack(AFRICA)]);
     const message = inChannelPost(channelId, RESET_RESPONSE.success(userId));
     return await post(message);
   }
 
   // Cut down tracks to 100
-  await reduceTracks(teamId, channelId, auth, playlist);
-  await keepSelectTracks(teamId, channelId, auth, playlist, trackUris);
+  await reduceTracks(auth, playlist);
+  await keepSelectTracks(auth, playlist, trackUris);
   const message = inChannelPost(channelId, RESET_RESPONSE.kept(trackUris, userId));
   await post(message);
   if (jump) {

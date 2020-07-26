@@ -10,7 +10,7 @@ const {postEphemeral} = require('/opt/slack/slack-api');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Spotify
-const {createPlaylist} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {createPlaylist} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {removeState} = require('/opt/db/spotify-auth-interface');
 
@@ -20,6 +20,8 @@ const {isEqual, isEmpty} = require('/opt/utils/util-objects');
 const SETTINGS = config.dynamodb.settings;
 const SETTINGS_HELPER = config.dynamodb.settings_helper;
 const NEW_PLAYLIST = SETTINGS_HELPER.create_new_playlist;
+const COLLABORATIVE = config.spotify_api.playlists.collaborative;
+const PUBLIC = config.spotify_api.playlists.public;
 const NEW_PLAYLIST_REGEX = new RegExp(`^${NEW_PLAYLIST}`);
 
 const SETTINGS_RESPONSE = {
@@ -63,8 +65,8 @@ const getPlaylistValue = async (teamId, channelId, newValue, oldValue) => {
   if (newValue.includes(NEW_PLAYLIST)) {
     newValue = newValue.replace(NEW_PLAYLIST_REGEX, '');
     // Create a new playlist using Spotify API
-    const newPlaylist = await createPlaylist(teamId, channelId, auth, profile.id, newValue);
-    return modelPlaylist(newValue, newPlaylist.id, newPlaylist.uri, newPlaylist.external_urls.spotify);
+    const newPlaylist = await createPlaylist(auth, profile.id, newValue, COLLABORATIVE, PUBLIC);
+    return modelPlaylist(newPlaylist);
   } else {
     // Grab the playlist object from our earlier Database playlist fetch
     const {value: playlists} = await loadPlaylists(teamId, channelId);

@@ -6,8 +6,8 @@ const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-19
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchPlaylistTotal, addTracksToPlaylist, deleteTracks, fetchTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {fetchPlaylistTotal, addTracksToPlaylist, deleteTracks, fetchTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 const {play} = require('/opt/spotify/spotify-api/spotify-api-playback');
 const {fetchTrackInfo} = require('/opt/spotify/spotify-api/spotify-api-tracks');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
@@ -69,30 +69,30 @@ const handleBackToPlaylist = async (teamId, channelId, userId, auth, playlist, s
   await Promise.all([
     setHistory(teamId, channelId, track, userId),
     statusTrack.uri !== track.uri ?
-      addTracksToPlaylist(teamId, channelId, auth, playlist.id, [statusTrack.uri, track.uri]) : // if track being added is the same as the one being added
-      addTracksToPlaylist(teamId, channelId, auth, playlist.id, [track.uri]),
+      addTracksToPlaylist(auth, playlist.id, [statusTrack.uri, track.uri]) : // if track being added is the same as the one being added
+      addTracksToPlaylist(auth, playlist.id, [track.uri]),
   ]);
 
   // Find what track number we just added
-  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
+  const {total} = await fetchPlaylistTotal(auth, playlist.id);
   const offset = Math.max(0, total-LIMIT);
-  const playlistTracks = await fetchTracks(teamId, channelId, auth, playlist.id, country, offset, LIMIT);
+  const playlistTracks = await fetchTracks(auth, playlist.id, country, offset, LIMIT);
   const index = Math.max(0, playlistTracks.items.length-1) - playlistTracks.items.reverse().findIndex((ptrack) => {
     const playlistTrack = new PlaylistTrack(ptrack);
     return statusTrack.uri !== track.uri ? playlistTrack.uri === statusTrack.uri : playlistTrack.uri === track.uri;
   });
 
   // Reduce the lag
-  const newStatus = await fetchCurrentPlayback(teamId, channelId, auth);
+  const newStatus = await fetchCurrentPlayback(auth);
 
   if (isPlaying(newStatus) && newStatus.item.id === statusTrack.id) {
-    await play(teamId, channelId, auth, newStatus.device.id, playlist.uri, {position: index}, newStatus.progress_ms);
+    await play(auth, newStatus.device.id, playlist.uri, {position: index}, newStatus.progress_ms);
   } else {
     // If a song just changed over, just play the newly added song
-    await play(teamId, channelId, auth, newStatus.device.id, playlist.uri, {position: index});
+    await play(auth, newStatus.device.id, playlist.uri, {position: index});
   }
   if (statusTrack.uri !== track.uri) {
-    await deleteTracks(teamId, channelId, auth, playlist.id, [{
+    await deleteTracks(auth, playlist.id, [{
       uri: statusTrack.uri,
     }]);
   }
@@ -109,7 +109,7 @@ const addTrack = async (teamId, channelId, settings, userId, trackId, responseUr
   const [blacklist, auth] = await Promise.all([loadBlacklist(teamId, channelId), authSession(teamId, channelId)]);
   const {country} = auth.getProfile();
 
-  const spotifyTrack = await fetchTrackInfo(teamId, channelId, auth, country, trackId);
+  const spotifyTrack = await fetchTrackInfo(auth, country, trackId);
   const track = new Track(spotifyTrack);
 
   // Handle Blacklist
@@ -117,7 +117,7 @@ const addTrack = async (teamId, channelId, settings, userId, trackId, responseUr
     return TRACK_ADD_RESPONSE.blacklist(track.title);
   }
 
-  const history = await loadTrackHistory(teamId, channelId, track.id);
+  const history = await loadTrackHistory(track.id);
   // Handle Repeats
   if (history && moment.unix(history.timeAdded).add(repeatDuration, 'hours').isAfter(moment())) {
     return TRACK_ADD_RESPONSE.repeat(track.title, moment.unix(history.timeAdded).fromNow(), repeatDuration);
@@ -125,7 +125,7 @@ const addTrack = async (teamId, channelId, settings, userId, trackId, responseUr
 
   // Add to our playlist
   if (backToPlaylist === `true`) {
-    const status = await fetchCurrentPlayback(teamId, channelId, auth);
+    const status = await fetchCurrentPlayback(auth);
     if (isPlaying(status)) {
       const back = await handleBackToPlaylist(teamId, channelId, userId, auth, playlist, status, track)
           .then(() => true)
@@ -145,7 +145,7 @@ const addTrack = async (teamId, channelId, settings, userId, trackId, responseUr
   // Save history + add to playlist
   await Promise.all([
     setHistory(teamId, channelId, track, userId),
-    addTracksToPlaylist(teamId, channelId, auth, playlist.id, [track.uri]),
+    addTracksToPlaylist(auth, playlist.id, [track.uri]),
   ]);
   const message = inChannelPost(channelId, TRACK_ADD_RESPONSE.success(track.title));
   return await post(message);

@@ -3,7 +3,7 @@ const logger = require('/opt/utils/util-logger');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchPlaylistTotal, fetchTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {fetchPlaylistTotal, fetchTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
 
 // Slack
@@ -27,12 +27,12 @@ const REMOVE_RESPONSES = {
   no_tracks: `:information_source: There are no tracks on the playlist to remove.`,
 };
 
-const getAllTracks = async (teamId, channelId, auth, playlistId, country, profileId, total) => {
+const getAllTracks = async (auth, playlistId, country, profileId, total) => {
   const promises = [];
   const attempts = Math.ceil(total/LIMIT);
   for (let offset=0; offset<attempts; offset++) {
     promises.push((async () => {
-      const spotifyTracks = await fetchTracks(teamId, channelId, auth, playlistId, country, offset*LIMIT);
+      const spotifyTracks = await fetchTracks(auth, playlistId, country, offset*LIMIT);
       const allTracks = spotifyTracks.items
           .map((track) => new PlaylistTrack(track))
           .filter((playlistTrack) => playlistTrack.addedBy.id === profileId);
@@ -58,8 +58,8 @@ const openRemove = async (teamId, channelId, settings, userId, viewId ) => {
   const auth = await authSession(teamId, channelId);
   const {country, id: profileId} = auth.getProfile();
   const playlist = settings[PLAYLIST];
-  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
-  const allTracks = await getAllTracks(teamId, channelId, auth, playlist.id, country, profileId, total);
+  const {total} = await fetchPlaylistTotal(auth, playlist.id);
+  const allTracks = await getAllTracks(auth, playlist.id, country, profileId, total);
 
   // No Tracks
   if (!allTracks.length) {

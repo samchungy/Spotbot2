@@ -3,8 +3,8 @@ const logger = require('/opt/utils/util-logger');
 const sns = require('/opt/sns');
 
 // Spotify
-const {deleteTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const {skip} = require('/opt/spotify/spotify-api/spotify-api-playback');
+const {deleteTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
+const {skip} = require('/opt/spotify/spotify-api-v2/spotify-api-playback');
 const {onPlaylist} = require('/opt/spotify/spotify-helper');
 
 // Slack
@@ -116,7 +116,7 @@ const skipTrack = async (teamId, channelId, auth, settings, track) => {
           }
         })
         .catch((error) => error.code === 'ConditionalCheckFailedException' ? Promise.resolve() : Promise.reject(error)),
-    skip(teamId, channelId, auth),
+    skip(auth),
   ]);
   const params = {
     Message: JSON.stringify({
@@ -148,7 +148,7 @@ const onBlacklist = async (teamId, channelId, auth, settings, playlist, status, 
   if (blacklist && blacklist.blacklist && blacklist.blacklist.find((track) => statusTrack.uri === track.uri)) {
     promises.push(skipTrack(teamId, channelId, auth, settings, statusTrack));
     if (onPlaylist(status, playlist)) {
-      promises.push(deleteTracks(teamId, channelId, auth, playlist.id, [{uri: statusTrack.uri}]));
+      promises.push(deleteTracks(auth, playlist.id, [{uri: statusTrack.uri}]));
     }
     promises.push(post(inChannelPost(channelId, SKIP_RESPONSE.blacklist(statusTrack.title))));
     await Promise.all(promises);

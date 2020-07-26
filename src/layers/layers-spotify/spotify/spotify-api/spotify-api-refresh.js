@@ -3,7 +3,7 @@ const logger = require('/opt/utils/util-logger');
 const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
 
 // Errors
-const {AuthError} = require('/opt/errors/errors-auth');
+const {AuthError} = require('/opt/errors/errors-spotify');
 // Spotify
 const spotifyWebApi = require('./spotify-api-initialise');
 const {loadAuth, changeTokens, removeAuth} = require('/opt/db/spotify-auth-interface');
@@ -40,8 +40,7 @@ const invalidateAuth = async (teamId, channelId) => {
     changeSettings(teamId, channelId, {[DEFAULT_DEVICE]: null, [PLAYLIST]: null}),
     removeAuth(teamId, channelId),
   ]).catch((error) => {
-    logger.error(`Failed to invalidate the auth and settings`);
-    logger.error(error);
+    logger.error(error, `Failed to invalidate the auth and settings`);
     throw error;
   });
 };

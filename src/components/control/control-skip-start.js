@@ -5,7 +5,7 @@ const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-19
 // Spotify
 const {isPlaying} = require('/opt/spotify/spotify-helper');
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
 // Slack
@@ -48,7 +48,7 @@ const startSkip = async (teamId, channelId, settings, userId) => {
   const playlist = settings[PLAYLIST];
   const auth = await authSession(teamId, channelId);
   const {country} = auth.getProfile();
-  const status = await fetchCurrentPlayback(teamId, channelId, auth, country);
+  const status = await fetchCurrentPlayback(auth, country);
 
   // Check if Spotify is playing first
   if (!isPlaying(status)) {

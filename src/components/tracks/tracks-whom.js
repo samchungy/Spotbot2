@@ -6,9 +6,9 @@ const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-19
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
-const {fetchUserProfile} = require('/opt/spotify/spotify-api/spotify-api-profile');
-const {fetchPlaylistTotal, fetchTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
+const {fetchUserProfile} = require('/opt/spotify/spotify-api-v2/spotify-api-profile');
+const {fetchPlaylistTotal, fetchTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 const {onPlaylist, isPlaying} = require('/opt/spotify/spotify-helper');
 const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
@@ -40,19 +40,17 @@ const WHOM_RESPONSE = {
 
 /**
  * Get Track and Position
- * @param {string} teamId
- * @param {string} channelId
  * @param {object} auth
  * @param {string} playlistId
  * @param {string} country
  * @param {string} trackId
  */
-const getTrack = async (teamId, channelId, auth, playlistId, country, trackId) => {
-  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlistId);
+const getTrack = async (auth, playlistId, country, trackId) => {
+  const {total} = await fetchPlaylistTotal(auth, playlistId);
   const attempts = Math.ceil(total/LIMIT);
   // Find track from back to front
   for (let offset = attempts-1; offset >=0; offset--) {
-    const spotifyTracks = await fetchTracks(teamId, channelId, auth, playlistId, country, offset*LIMIT);
+    const spotifyTracks = await fetchTracks(auth, playlistId, country, offset*LIMIT);
     const track = spotifyTracks.items
         .map((track) => new PlaylistTrack(track))
         .reverse()
@@ -83,7 +81,7 @@ const getWhom = async (teamId, channelId, settings) => {
   const playlist = settings[PLAYLIST];
   const auth = await authSession(teamId, channelId);
   const profile = auth.getProfile();
-  const status = await fetchCurrentPlayback(teamId, channelId, auth, profile.country);
+  const status = await fetchCurrentPlayback(auth, profile.country);
 
   if (!isPlaying(status)) {
     const message = inChannelPost(channelId, WHOM_RESPONSE.not_playing, null);
@@ -97,7 +95,7 @@ const getWhom = async (teamId, channelId, settings) => {
   }
 
   if (onPlaylist(status, playlist)) {
-    const playlistTrack = await getTrack(teamId, channelId, auth, playlist.id, profile.country, statusTrack.id);
+    const playlistTrack = await getTrack(auth, playlist.id, profile.country, statusTrack.id);
     if (playlistTrack) {
       // On Playlist
       if (playlistTrack.addedBy.id === profile.id) {
@@ -109,7 +107,7 @@ const getWhom = async (teamId, channelId, settings) => {
         }
       }
       // Was added direct
-      const userProfile = await fetchUserProfile(teamId, channelId, auth, playlistTrack.addedBy.id);
+      const userProfile = await fetchUserProfile(auth, playlistTrack.addedBy.id);
       const message = inChannelPost(channelId, WHOM_RESPONSE.now_playing_direct(statusTrack.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow()), null);
       return await post(message);
     }

@@ -3,7 +3,7 @@ const logger = require('/opt/utils/util-logger');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchTracksInfo} = require('/opt/spotify/spotify-api/spotify-api-tracks');
+const {fetchTracksInfo} = require('/opt/spotify/spotify-api-v2/spotify-api-tracks');
 const TrackMin = require('/opt/spotify/spotify-objects/util-spotify-track-min');
 
 // Slack
@@ -23,7 +23,7 @@ const transformToBlacklistTrack = async (teamId, channelId, auth, country, track
   const allTrackInfoPromises = [];
   const attempts = Math.ceil(trackIdsToAdd.length/INFO_LIMIT);
   for (let attempt = 0; attempt < attempts; attempt++) {
-    allTrackInfoPromises.push(fetchTracksInfo(teamId, channelId, auth, country, trackIdsToAdd.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT)));
+    allTrackInfoPromises.push(fetchTracksInfo(auth, country, trackIdsToAdd.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT)));
   }
   // Extract Promise Info
   const allSpotifyTrackInfos = (await Promise.all(allTrackInfoPromises)).map((infoPromise) => infoPromise.tracks).flat();

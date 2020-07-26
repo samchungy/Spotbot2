@@ -3,13 +3,10 @@ const logger = require('/opt/utils/util-logger');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
-const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const {play} = require('/opt/spotify/spotify-api/spotify-api-playback');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
+const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
+const {play} = require('/opt/spotify/spotify-api-v2/spotify-api-playback');
 const {isPlaying, onPlaylist} = require('/opt/spotify/spotify-helper');
-
-// Util
-const {sleep} = require('/opt/utils/util-timeout');
 
 // Slack
 const {post, postEphemeral} = require('/opt/slack/slack-api');
@@ -29,21 +26,20 @@ const JUMP_RESPONSE = {
 const startJump = async (teamId, channelId, settings, userId) => {
   const auth = await authSession(teamId, channelId);
   const playlist = settings[PLAYLIST];
-  const status = await fetchCurrentPlayback(teamId, channelId, auth);
+  const status = await fetchCurrentPlayback(auth);
 
   if (!isPlaying(status)) {
     const message = ephemeralPost(channelId, userId, JUMP_RESPONSE.not_playing);
     return await postEphemeral(message);
   }
 
-  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
+  const {total} = await fetchPlaylistTotal(auth, playlist.id);
   if (!total) {
     const message = ephemeralPost(channelId, userId, JUMP_RESPONSE.empty);
     return await postEphemeral(message);
   }
 
-  await play(teamId, channelId, auth, status.device.id, playlist.uri);
-  await sleep(2000);
+  await play(auth, status.device.id, playlist.uri);
 
   if (isPlaying(status) && onPlaylist(status, playlist)) {
     const message = inChannelPost(channelId, JUMP_RESPONSE.success(userId));

@@ -3,8 +3,8 @@ const config = require('/opt/config/config');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
-const {fetchTracks, fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
+const {fetchTracks, fetchPlaylistTotal} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
 const {onPlaylist, isPlaying} = require('/opt/spotify/spotify-helper');
@@ -15,8 +15,6 @@ const {post} = require('/opt/slack/slack-api');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 // Skip
 const {onBlacklist} = require('/opt/control-skip/control-skip');
-// Util
-const {sleep} = require('/opt/utils/util-timeout');
 
 const LIMIT = config.spotify_api.playlists.tracks.limit;
 const BACK_TO_PLAYLIST = config.dynamodb.settings.back_to_playlist;
@@ -41,11 +39,11 @@ const CURRENT_RESPONSES = {
  * @param {string} trackUri
  */
 const getAllTrackPositions = async (teamId, channelId, auth, playlistId, trackUri) => {
-  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlistId);
+  const {total} = await fetchPlaylistTotal(auth, playlistId);
   const promises = [];
   const attempts = Math.ceil(total/LIMIT);
   for (let offset=0; offset<attempts; offset++) {
-    promises.push(getTracks(teamId, channelId, auth, playlistId, offset));
+    promises.push(getTracks(auth, playlistId, offset));
   }
   const allTracksPromises = await Promise.all(promises);
   const positions = [];
@@ -61,8 +59,8 @@ const getAllTrackPositions = async (teamId, channelId, auth, playlistId, trackUr
   return {positions: positions, total};
 };
 
-const getTracks = async (teamId, channelId, auth, playlistId, offset) => {
-  const spotifyTracks = await fetchTracks(teamId, channelId, auth, playlistId, null, offset*LIMIT);
+const getTracks = async (auth, playlistId, offset) => {
+  const spotifyTracks = await fetchTracks(auth, playlistId, null, offset*LIMIT);
   return spotifyTracks.items.map((track) => new PlaylistTrack(track));
 };
 
@@ -94,10 +92,7 @@ const getCurrent = async (teamId, channelId, settings, afterSkip=false) => {
   const backToPlaylist = settings[BACK_TO_PLAYLIST];
   const playlist = settings[PLAYLIST];
 
-  if (afterSkip) {
-    await sleep(3000);
-  }
-  const status = await fetchCurrentPlayback(teamId, channelId, auth);
+  const status = await fetchCurrentPlayback(auth);
   if (!isPlaying(status)) {
     const message = inChannelPost(channelId, CURRENT_RESPONSES.not_playing, null);
     return await post(message);

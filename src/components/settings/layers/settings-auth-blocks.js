@@ -3,13 +3,13 @@ const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-19
 const logger = require('/opt/utils/util-logger');
 
 // Spotify
-const {fetchProfile} = require('/opt/spotify/spotify-api/spotify-api-profile');
-const {fetchAuthorizeURL} = require('/opt/spotify/spotify-api/spotify-api-auth');
+const {fetchProfile} = require('/opt/spotify/spotify-api-v2/spotify-api-profile');
+const {fetchAuthUrl} = require('/opt/spotify/spotify-api-v2/spotify-api-auth');
 const {modelState, storeState} = require('/opt/db/spotify-auth-interface');
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 
 // Errors
-const {AuthError, PremiumError} = require('/opt/errors/errors-auth');
+const {AuthError, PremiumError} = require('/opt/errors/errors-spotify');
 
 // Slack
 const {buttonSection} = require('/opt/slack/format/slack-format-modal');
@@ -17,6 +17,7 @@ const {contextSection, confirmObject} = require('/opt/slack/format/slack-format-
 
 // Utlity
 const transform = require('/opt/utils/util-transform');
+const SCOPES = config.spotify_api.scopes;
 
 const SETTINGS_AUTH = config.dynamodb.settings_auth;
 const HINTS = {
@@ -39,9 +40,9 @@ const AUTH_RESPONSE = {
 };
 
 // Utility Functions
-const validateAuth = async (auth) => auth.getAccess() ? Promise.resolve() : Promise.reject(new AuthError());
-const validateProfile = async (teamId, channelId, auth) => {
-  const profile = await fetchProfile(teamId, channelId, auth);
+const validateAuth = async (auth) => await auth.getAccess() ? Promise.resolve() : Promise.reject(new AuthError());
+const validateProfile = async (auth) => {
+  const profile = await fetchProfile(auth);
   if (profile.product !== 'premium') {
     throw new PremiumError();
   }
@@ -49,12 +50,12 @@ const validateProfile = async (teamId, channelId, auth) => {
 };
 
 // Spotify auth url
-const getAuthorizationURL = async (teamId, channelId, auth, viewId, url) => {
+const getAuthorizationURL = async (teamId, channelId, viewId, url) => {
   const state = modelState(teamId, channelId, viewId);
   const encodedState = encodeURIComponent(transform.encode64(JSON.stringify(state)));
   return await Promise.all([
     storeState(teamId, channelId, {state}, moment().add(1, 'hour').unix()),
-    fetchAuthorizeURL(teamId, channelId, auth, encodedState, `${url}/${SETTINGS_AUTH.auth_url}`),
+    fetchAuthUrl(SCOPES, `${url}/${SETTINGS_AUTH.auth_url}`, encodedState),
   ]).then(([, authUrl]) => authUrl);
 };
 
@@ -68,8 +69,7 @@ const getProfileBlock = (profile) => [
 
 // Non-Authenticated Block
 const getNoAuthBlock = async (teamId, channelId, viewId, url, premiumError) => {
-  const noAuth = await authSession(teamId, channelId, url);
-  const authUrl = await getAuthorizationURL(teamId, channelId, noAuth, viewId, url);
+  const authUrl = await getAuthorizationURL(teamId, channelId, viewId, url);
   return [
     buttonSection(SETTINGS_AUTH.auth_url, LABELS.auth_url, HINTS.auth_url_button, null, authUrl, null),
     ...premiumError ? [contextSection(SETTINGS_AUTH.auth_error, AUTH_RESPONSE.premium_error)] : [],
@@ -78,11 +78,8 @@ const getNoAuthBlock = async (teamId, channelId, viewId, url, premiumError) => {
 
 const getAuthBlock = async (teamId, channelId, viewId, url) => {
   const auth = await authSession(teamId, channelId);
-  return await Promise.all([
-    validateAuth(auth),
-    validateProfile(teamId, channelId, auth),
-  ])
-      .then(([, profile]) => ({
+  return (async () => (await validateAuth(auth), await validateProfile(auth)))()
+      .then((profile) => ({
         authBlock: getProfileBlock(profile),
         authError: false,
       }))

@@ -2,8 +2,8 @@ const logger = require('/opt/utils/util-logger');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {repeat} = require('/opt/spotify/spotify-api/spotify-api-playback');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {repeat} = require('/opt/spotify/spotify-api-v2/spotify-api-playback');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 const {isPlaying} = require('/opt/spotify/spotify-helper');
 
 // Slack
@@ -20,9 +20,9 @@ const REPEAT_RESPONSE = {
 };
 
 
-const toggleRepeat = async (teamId, channelId, settings, userId) => {
+const toggleRepeat = async (teamId, channelId, userId) => {
   const auth = await authSession(teamId, channelId);
-  const status = await fetchCurrentPlayback(teamId, channelId, auth);
+  const status = await fetchCurrentPlayback(auth);
 
   if (!isPlaying(status)) {
     const message = ephemeralPost(channelId, userId, REPEAT_RESPONSE.not_playing);
@@ -36,12 +36,12 @@ const toggleRepeat = async (teamId, channelId, settings, userId) => {
   }
   if (status.repeat_state === 'track' || status.repeat_state === 'context') {
     // Turn off repeat
-    await repeat(teamId, channelId, auth, 'off');
+    await repeat(auth, 'off');
     const message = inChannelPost(channelId, REPEAT_RESPONSE.off(userId));
     return await post(message);
   } else {
     // Turn on repeat
-    await repeat(teamId, channelId, auth, 'context');
+    await repeat(auth, 'context');
     const message = inChannelPost(channelId, REPEAT_RESPONSE.on(userId));
     return await post(message);
   }
@@ -49,8 +49,8 @@ const toggleRepeat = async (teamId, channelId, settings, userId) => {
 
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, settings, userId} = JSON.parse(event.Records[0].Sns.Message);
-  await toggleRepeat(teamId, channelId, settings, userId)
+  const {teamId, channelId, userId} = JSON.parse(event.Records[0].Sns.Message);
+  await toggleRepeat(teamId, channelId, userId)
       .catch((error)=>{
         logger.error(error, REPEAT_RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, null, REPEAT_RESPONSE.failed);

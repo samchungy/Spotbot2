@@ -26,8 +26,7 @@ const changeTokens = (team, channel, accessToken, expires) => {
     ':expires': expires,
   };
   const updateExpression = 'set #Access = :access, #Expires = :expires';
-  const conditionExpression = '#Expires < :expires'; // Race Condition Checker
-  return updateAuth(team, channel, MAIN_KEY, expressionNames, expressionValues, updateExpression, conditionExpression);
+  return updateAuth(team, channel, MAIN_KEY, expressionNames, expressionValues, updateExpression);
 };
 
 const loadAuth = (teamId, channelId) => getAuth(teamId, channelId, MAIN_KEY);
@@ -47,8 +46,8 @@ const modelAuth = (accessToken, refreshToken, expires) => ({
 });
 
 const modelProfile = (id, country) => ({
-  country: country,
-  id: id,
+  country,
+  id,
 });
 
 const modelState = (teamId, channelId, viewId) => ({

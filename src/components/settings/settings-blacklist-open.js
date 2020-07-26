@@ -2,7 +2,7 @@ const config = require('/opt/config/config');
 const logger = require('/opt/utils/util-logger');
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {loadBlacklist, loadSkip} = require('/opt/db/settings-extra-interface');
-const {fetchCurrentPlayback, fetchRecent} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {fetchCurrentPlayback, fetchRecent} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 const {updateModal} = require('/opt/slack/slack-api');
 const {multiSelectStaticGroups, option, optionGroup, slackModal} = require('/opt/slack/format/slack-format-modal');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
@@ -28,8 +28,8 @@ module.exports.handler = async (event, context) => {
 
     const auth = await authSession(teamId, channelId);
     const [spotifyRecent, status, skip, blacklist] = await Promise.all([
-      fetchRecent(teamId, channelId, auth, LIMIT),
-      fetchCurrentPlayback(teamId, channelId, auth),
+      fetchRecent(auth, LIMIT),
+      fetchCurrentPlayback(auth),
       loadSkip(teamId, channelId),
       loadBlacklist(teamId, channelId),
     ]);

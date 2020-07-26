@@ -4,7 +4,7 @@ const config = require('/opt/config/config');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchSearchTracks} = require('/opt/spotify/spotify-api/spotify-api-search');
+const {fetchSearchTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-search');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
 // Slack
@@ -50,7 +50,7 @@ const search = async (teamId, channelId, userId, query, triggerId) => {
   }
 
   const profile = auth.getProfile();
-  const searchResults = await fetchSearchTracks(teamId, channelId, auth, query, profile.country, LIMIT);
+  const searchResults = await fetchSearchTracks(auth, query, profile.country, LIMIT);
   const numTracks = searchResults.tracks.items.length;
   if (!numTracks) {
     const message = ephemeralPost(channelId, userId, TRACK_RESPONSE.no_tracks + `"${query}".`, null);

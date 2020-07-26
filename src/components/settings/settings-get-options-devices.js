@@ -3,7 +3,7 @@ const logger = require('/opt/utils/util-logger');
 const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
 
 // Spotify
-const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
+const {fetchDevices} = require('/opt/spotify/spotify-api-v2/spotify-api-devices');
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const Device = require('/opt/spotify/spotify-objects/util-spotify-device');
 
@@ -30,7 +30,7 @@ const RESPONSE = {
 const getAllDevices = async (teamId, channelId, settings) => {
   const auth = await authSession(teamId, channelId);
   const {[DEFAULT_DEVICE]: defaultDevice} = settings ? settings : {};
-  const spotifyDevices = await fetchDevices(teamId, channelId, auth);
+  const spotifyDevices = await fetchDevices(auth);
 
   const devices = [
     ...defaultDevice ? [defaultDevice] : [], // If default device, add to list

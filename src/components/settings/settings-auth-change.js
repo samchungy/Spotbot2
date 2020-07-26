@@ -2,7 +2,7 @@ const logger = require('/opt/utils/util-logger');
 const sns = require('/opt/sns');
 
 // Spotify
-const {invalidateAuth} = require('/opt/spotify/spotify-api/spotify-api-refresh');
+const {invalidateAuth} = require('/opt/spotify/spotify-auth/spotify-auth-refresh');
 
 // Slack
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');

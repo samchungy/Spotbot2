@@ -3,7 +3,7 @@ const logger = require('/opt/utils/util-logger');
 const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
 
 // Spotify
-const {fetchPlaylists} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {fetchPlaylists} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 
 // Settings
@@ -23,7 +23,7 @@ const RESPONSE = {
 };
 
 const fetchAllPlaylists = async (teamId, channelId, auth, count=0) => {
-  const playlists = await fetchPlaylists(teamId, channelId, auth, count, LIMIT);
+  const playlists = await fetchPlaylists(auth, count, LIMIT);
   if (playlists.total > ((count+1) * LIMIT)) {
     return [...playlists.items, ...(await fetchAllPlaylists(teamId, channelId, auth, count+1))];
   } else {

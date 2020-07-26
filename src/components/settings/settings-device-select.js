@@ -6,8 +6,8 @@ const {loadSettings} = require('/opt/db/settings-interface');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {fetchDevices} = require('/opt/spotify/spotify-api-v2/spotify-api-devices');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 const Device = require('/opt/spotify/spotify-objects/util-spotify-device');
 
 // Slack
@@ -38,7 +38,7 @@ const DEVICE_RESPONSE = {
 const getBlocks = async (teamId, channelId, auth, devices) => {
   const settings = await loadSettings(teamId, channelId);
   const defaultDevice = settings[DEFAULT_DEVICE];
-  const status = await fetchCurrentPlayback(teamId, channelId, auth);
+  const status = await fetchCurrentPlayback(auth);
 
   const blocks = [
     textSection(DEVICE_RESPONSE.default(defaultDevice.name)),
@@ -67,7 +67,7 @@ const getStatusBlock = (status, devices) => {
 
 const openDeviceModal = async (teamId, channelId, userId, viewId) => {
   const auth = await authSession(teamId, channelId);
-  const spotifyDevices = await fetchDevices(teamId, channelId, auth);
+  const spotifyDevices = await fetchDevices(auth);
   if (spotifyDevices.devices.length) {
     const blocks = await getBlocks(teamId, channelId, auth, spotifyDevices.devices);
     const modal = slackModal(DEVICE_MODAL, `Spotify Devices`, `Switch to Device`, `Cancel`, blocks, false, channelId);

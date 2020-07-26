@@ -1,9 +1,9 @@
 const logger = require('/opt/utils/util-logger');
 
 // Spotify
-const {shuffle} = require('/opt/spotify/spotify-api/spotify-api-playback');
+const {shuffle} = require('/opt/spotify/spotify-api-v2/spotify-api-playback');
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 const {isPlaying} = require('/opt/spotify/spotify-helper');
 
 // Slack
@@ -19,9 +19,9 @@ const SHUFFLE_RESPONSE = {
   off: (userId) => `:information_source: Shuffle was disabled by <@${userId}>.`,
 };
 
-const toggleShuffle = async (teamId, channelId, settings, userId) => {
+const toggleShuffle = async (teamId, channelId, userId) => {
   const auth = await authSession(teamId, channelId);
-  const status = await fetchCurrentPlayback(teamId, channelId, auth);
+  const status = await fetchCurrentPlayback(auth);
 
   if (!isPlaying(status)) {
     const message = ephemeralPost(channelId, userId, SHUFFLE_RESPONSE.not_playing);
@@ -36,20 +36,20 @@ const toggleShuffle = async (teamId, channelId, settings, userId) => {
 
   if (status.shuffle_state) {
     // Turn off shuffle
-    await shuffle(teamId, channelId, auth, false);
+    await shuffle(auth, false);
     const message = inChannelPost(channelId, SHUFFLE_RESPONSE.off(userId));
     return await post(message);
   } else {
     // Turn on Shuffle
-    await shuffle(teamId, channelId, auth, true);
+    await shuffle(auth, true);
     const message = inChannelPost(channelId, SHUFFLE_RESPONSE.on(userId));
     return await post(message);
   }
 };
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, settings, userId} = JSON.parse(event.Records[0].Sns.Message);
-  await toggleShuffle(teamId, channelId, settings, userId)
+  const {teamId, channelId, userId} = JSON.parse(event.Records[0].Sns.Message);
+  await toggleShuffle(teamId, channelId, userId)
       .catch((error)=>{
         logger.error(error, SHUFFLE_RESPONSE.failed);
         reportErrorToSlack(teamId, channelId, null, SHUFFLE_RESPONSE.failed);

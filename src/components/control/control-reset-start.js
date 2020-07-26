@@ -4,7 +4,7 @@ const sns = require('/opt/sns');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 
 // Slack
 const {ephemeralPost, inChannelPost} = require('/opt/slack/format/slack-format-reply');
@@ -31,7 +31,7 @@ const RESET_RESPONSE = {
 const startReset = async (teamId, channelId, settings, userId) => {
   const auth = await authSession(teamId, channelId);
   const playlist = settings[PLAYLIST];
-  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
+  const {total} = await fetchPlaylistTotal(auth, playlist.id);
 
   if (!total) {
     const message = inChannelPost(channelId, RESET_RESPONSE.empty, null);

@@ -246,11 +246,11 @@ const controlActionsRouter = async (actionId, payload) => {
           return await sns.publish(params).promise();
         }
         case CONTROLS.shuffle: {
+          await checkIsSetup(payload.team.id, payload.channel.id);
           const params = {
             Message: JSON.stringify({
               teamId: payload.team.id,
               channelId: payload.channel.id,
-              settings: await checkIsSetup(payload.team.id, payload.channel.id),
               userId: payload.user.id,
             }),
             TopicArn: CONTROL_SHUFFLE,
@@ -258,11 +258,11 @@ const controlActionsRouter = async (actionId, payload) => {
           return await sns.publish(params).promise();
         }
         case CONTROLS.repeat: {
+          await checkIsSetup(payload.team.id, payload.channel.id);
           const params = {
             Message: JSON.stringify({
               teamId: payload.team.id,
               channelId: payload.channel.id,
-              settings: await checkIsSetup(payload.team.id, payload.channel.id),
               userId: payload.user.id,
             }),
             TopicArn: CONTROL_REPEAT,

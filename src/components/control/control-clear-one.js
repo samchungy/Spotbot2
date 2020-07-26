@@ -4,7 +4,7 @@ const logger = require('/opt/utils/util-logger');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {deleteTracks, fetchTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {deleteTracks, fetchTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
 
 // Slack
@@ -27,7 +27,7 @@ const clearOne = async (teamId, channelId, settings, userId) => {
   const aDayAgo = moment().subtract('1', 'day');
   // If total is > 100, we can delete up until the last 100 songs as we can only show 100 to keep in slack.
   const recursiveDelete = async () => {
-    const spotifyTracks = await fetchTracks(teamId, channelId, auth, playlist.id, null);
+    const spotifyTracks = await fetchTracks(auth, playlist.id, null);
     const tracksToDelete = spotifyTracks.items
         .reduce((toDelete, track, index) => {
           const playlistTrack = new PlaylistTrack(track);
@@ -39,7 +39,7 @@ const clearOne = async (teamId, channelId, settings, userId) => {
           }
           return toDelete;
         }, []);
-    await deleteTracks(teamId, channelId, auth, playlist.id, tracksToDelete);
+    await deleteTracks(auth, playlist.id, tracksToDelete);
     if (tracksToDelete.length === LIMIT) {
       await recursiveDelete();
     }

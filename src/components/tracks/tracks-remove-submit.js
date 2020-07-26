@@ -3,8 +3,8 @@ const logger = require('/opt/utils/util-logger');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {deleteTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const {fetchTracksInfo} = require('/opt/spotify/spotify-api/spotify-api-tracks');
+const {deleteTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
+const {fetchTracksInfo} = require('/opt/spotify/spotify-api-v2/spotify-api-tracks');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
 // Slack
@@ -58,7 +58,7 @@ const removeSubmit = async (teamId, channelId, settings, userId, view) => {
   const allTrackInfoPromises = [];
   const attempts = Math.ceil(submissions.length/INFO_LIMIT);
   for (let attempt = 0; attempt < attempts; attempt++) {
-    allTrackInfoPromises.push(fetchTracksInfo(teamId, channelId, auth, country, submissions.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT)));
+    allTrackInfoPromises.push(fetchTracksInfo(auth, country, submissions.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT)));
   }
 
   // Extract Promise Info
@@ -69,7 +69,7 @@ const removeSubmit = async (teamId, channelId, settings, userId, view) => {
     return trackObj;
   });
 
-  await deleteTracks(teamId, channelId, auth, playlist.id, trackInfos.map((track) => {
+  await deleteTracks(auth, playlist.id, trackInfos.map((track) => {
     return {
       uri: track.uri,
     };

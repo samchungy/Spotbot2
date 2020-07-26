@@ -5,7 +5,7 @@ const logger = require('/opt/utils/util-logger');
 const {refreshAccessToken} = require('./spotify-api-refresh');
 
 // Errors
-const {AuthError} = require('/opt/errors/errors-auth');
+const {AuthError} = require('/opt/errors/errors-spotify');
 
 // Utility Function
 const {sleep} = require('/opt/utils/util-timeout');

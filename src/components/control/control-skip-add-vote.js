@@ -3,7 +3,7 @@ const logger = require('/opt/utils/util-logger');
 // Spotify
 const {isPlaying} = require('/opt/spotify/spotify-helper');
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
 // Slack
@@ -53,7 +53,7 @@ const isExpired = async (statusTrack, currentSkip, responseUrl) => {
 const startAddVote = async (teamId, channelId, settings, userId, responseUrl) => {
   const auth = await authSession(teamId, channelId);
   const {country} = auth.getProfile();
-  const status = await fetchCurrentPlayback(teamId, channelId, auth, country);
+  const status = await fetchCurrentPlayback(auth, country);
   if (!isPlaying(status)) {
     const message = ephemeralPost(channelId, userId, SKIP_RESPONSE.not_playing, null);
     return await ephemeralPost(message);

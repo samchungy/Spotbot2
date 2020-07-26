@@ -3,9 +3,9 @@ const logger = require('/opt/utils/util-logger');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {transferDevice} = require('/opt/spotify/spotify-api/spotify-api-playback');
-const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
+const {transferDevice} = require('/opt/spotify/spotify-api-v2/spotify-api-playback');
+const {fetchDevices} = require('/opt/spotify/spotify-api-v2/spotify-api-devices');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 const Device = require('/opt/spotify/spotify-objects/util-spotify-device');
 
 // Slack
@@ -25,15 +25,15 @@ const switchDevice = async (teamId, channelId, userId, view) => {
   const submission = extractSubmission(view);
 
   if (submission) {
-    const status = await fetchCurrentPlayback(teamId, channelId, auth);
+    const status = await fetchCurrentPlayback(auth);
     if (submission.value == 'null' || (status && status.device && status.device.id == submission.value)) {
       return;
     }
-    const spotifyDevices = await fetchDevices(teamId, channelId, auth);
+    const spotifyDevices = await fetchDevices(auth);
     const device = spotifyDevices.devices.find((device) => device.id === submission.value);
     if (device) {
       const deviceObj = new Device(device);
-      await transferDevice(teamId, channelId, auth, submission.value);
+      await transferDevice(auth, submission.value);
       const message = inChannelPost(channelId, DEVICE_RESPONSE.select(deviceObj.name, userId), null);
       return await post(message);
     }

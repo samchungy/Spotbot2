@@ -4,14 +4,11 @@ const logger = require('/opt/utils/util-logger');
 
 // Spotify
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {play} = require('/opt/spotify/spotify-api/spotify-api-playback');
-const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
-const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
-const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {play} = require('/opt/spotify/spotify-api-v2/spotify-api-playback');
+const {fetchDevices} = require('/opt/spotify/spotify-api-v2/spotify-api-devices');
+const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
+const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const {isPlaying} = require('/opt/spotify/spotify-helper');
-
-// Util
-const {sleep} = require('/opt/utils/util-timeout');
 
 // Slack
 const {post} = require('/opt/slack/slack-api');
@@ -55,13 +52,11 @@ const playWithDevice = async (teamId, channelId, auth, deviceId, status, playlis
   }
   // Unique Spotify edge case where it gets stuck
   if (status && !status.item && status.currently_playing_type === 'unknown') {
-    await play(teamId, channelId, auth, deviceId, playlist.uri);
+    await play(auth, deviceId, playlist.uri);
   } else {
-    await play(teamId, channelId, auth, deviceId);
+    await play(auth, deviceId);
   }
-  // Wait before verifying that Spotify is playing
-  await sleep(2000);
-  const newStatus = await fetchCurrentPlayback(teamId, channelId, auth);
+  const newStatus = await fetchCurrentPlayback(auth);
   return await playWithDevice(teamId, channelId, auth, deviceId, newStatus, playlist, attempt+1, userId, settings);
 };
 
@@ -69,7 +64,7 @@ const startPlay = async (teamId, channelId, settings, userId) => {
   const playlist = settings[PLAYLIST];
   const device = settings[DEFAULT_DEVICE];
   const auth = await authSession(teamId, channelId);
-  const status = await fetchCurrentPlayback(teamId, channelId, auth);
+  const status = await fetchCurrentPlayback(auth);
 
   // Spotify is already running
   if (isPlaying(status)) {
@@ -77,7 +72,7 @@ const startPlay = async (teamId, channelId, settings, userId) => {
     return await post(message);
   }
   // We have an empty playlist and status is IsPlaying -edge case where Spotify is stuck
-  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
+  const {total} = await fetchPlaylistTotal(auth, playlist.id);
   if (!total) {
     const message = inChannelPost(channelId, PLAY_RESPONSE.empty);
     return await post(message);
@@ -87,7 +82,7 @@ const startPlay = async (teamId, channelId, settings, userId) => {
     return await playWithDevice(teamId, channelId, auth, status.device.id, status, playlist, 0, userId, settings);
   }
   // See if our default device from settings is currently online
-  const spotifyDevices = await fetchDevices(teamId, channelId, auth);
+  const spotifyDevices = await fetchDevices(auth);
   if (device.id != NO_DEVICES) {
     // Our selected devices is not turned on
     if (spotifyDevices.devices.length == 0 || !spotifyDevices.devices.find(({id}) => id === device.id)) {

@@ -11,7 +11,7 @@ const {option, optionGroup, multiSelectStaticGroups, slackModal, selectStatic, y
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Spotify
-const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 
 // Reset
@@ -83,7 +83,7 @@ const openResetReview = async (teamId, channelId, settings, viewId, responseUrl)
   await reply(message, responseUrl);
   const auth = await authSession(teamId, channelId);
   const playlist = settings[PLAYLIST];
-  const {tracks: {total}} = await fetchPlaylistTotal(teamId, channelId, auth, playlist.id);
+  const {total} = await fetchPlaylistTotal(auth, playlist.id);
   const reviewTracks = await getReviewTracks(teamId, channelId, auth, playlist, total);
   const blocks = getReviewBlocks(reviewTracks);
   const metadata = channelId;

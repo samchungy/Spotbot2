@@ -4,7 +4,7 @@ const logger = require('/opt/utils/util-logger');
 
 // Spotify
 const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
-const {fetchTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');
+const {fetchTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 
 const LIMIT = config.spotify_api.playlists.tracks.limit;
 
@@ -20,7 +20,7 @@ const getReviewTracks = async (teamId, channelId, auth, playlist, total) => {
   try {
     const timeBefore = moment().subtract(30, 'minutes');
     const offset = Math.max(0, total-LIMIT);
-    const spotifyTracks = await fetchTracks(teamId, channelId, auth, playlist.id, null, offset);
+    const spotifyTracks = await fetchTracks(auth, playlist.id, null, offset);
     const playlistTracks = spotifyTracks.items.map((track) => new PlaylistTrack(track)).reverse();
     const reviewTracks = playlistTracks.reduce((review, track) => {
       if (moment(track.addedAt).isAfter(timeBefore)) {
@@ -28,7 +28,6 @@ const getReviewTracks = async (teamId, channelId, auth, playlist, total) => {
       }
       return review;
     }, []);
-    logger.info({reviewTracks});
     return reviewTracks;
   } catch (error) {
     logger.error('Getting Review Tracks failed.');
