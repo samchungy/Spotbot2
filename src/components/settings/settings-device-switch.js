@@ -2,7 +2,7 @@ const config = require('/opt/config/config');
 const logger = require('/opt/utils/util-logger');
 
 // Spotify
-const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {transferDevice} = require('/opt/spotify/spotify-api/spotify-api-playback');
 const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');

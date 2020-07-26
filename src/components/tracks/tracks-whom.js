@@ -5,7 +5,7 @@ const config = require('/opt/config/config');
 const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
 
 // Spotify
-const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
 const {fetchUserProfile} = require('/opt/spotify/spotify-api/spotify-api-profile');
 const {fetchPlaylistTotal, fetchTracks} = require('/opt/spotify/spotify-api/spotify-api-playlists');

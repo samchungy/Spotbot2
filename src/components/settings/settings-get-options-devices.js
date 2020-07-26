@@ -4,7 +4,7 @@ const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-19
 
 // Spotify
 const {fetchDevices} = require('/opt/spotify/spotify-api/spotify-api-devices');
-const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const Device = require('/opt/spotify/spotify-objects/util-spotify-device');
 
 // Settings

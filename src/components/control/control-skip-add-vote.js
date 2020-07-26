@@ -2,7 +2,7 @@ const logger = require('/opt/utils/util-logger');
 
 // Spotify
 const {isPlaying} = require('/opt/spotify/spotify-helper');
-const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api/spotify-api-playback-status');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 

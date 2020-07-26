@@ -4,7 +4,7 @@ const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-19
 
 // Spotify
 const {fetchPlaylists} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 
 // Settings
 const {modelPlaylist, storePlaylists} = require('/opt/db/settings-interface');

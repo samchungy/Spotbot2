@@ -12,7 +12,7 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Spotify
 const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api/spotify-api-playlists');
-const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 
 // Reset
 const {getReviewTracks} = require('./layers/control-reset');

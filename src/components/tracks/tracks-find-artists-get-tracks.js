@@ -5,7 +5,7 @@ const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-19
 const {storeSearch} = require('/opt/db/search-interface');
 
 // Spotify
-const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchArtistTracks} = require('/opt/spotify/spotify-api/spotify-api-tracks');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
