@@ -1,5 +1,4 @@
 const config = require('./config');
-const qs = require('qs');
 const requester = require('./spotify-api-requester');
 
 const play = async (auth, deviceId, context, offset, ms) => {
@@ -15,21 +14,21 @@ const play = async (auth, deviceId, context, offset, ms) => {
 
 const pause = async (auth, deviceId) => {
   return requester(auth, (client) => {
-    return client.put(config.endpoints.pause, deviceId ? qs.stringify({device_id: deviceId}) : null)
+    return client.put(config.endpoints.pause, null, {...deviceId && {params: {device_id: deviceId}}})
         .then((response) => response.data);
   });
 };
 
 const shuffle = async (auth, state) => {
   return requester(auth, (client) => {
-    return client.put(config.endpoints.shuffle, qs.stringify({state}))
+    return client.put(config.endpoints.shuffle, null, {params: {state}})
         .then((response) => response.data);
   });
 };
 
 const repeat = async (auth, state) => {
   return requester(auth, (client) => {
-    return client.put(config.endpoints.repeat, qs.stringify({state}))
+    return client.put(config.endpoints.repeat, null, {params: {state}})
         .then((response) => response.data);
   });
 };

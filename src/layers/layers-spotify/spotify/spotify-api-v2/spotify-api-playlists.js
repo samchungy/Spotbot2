@@ -1,6 +1,5 @@
 const config = require('./config');
 const requester = require('./spotify-api-requester');
-const qs = require('qs');
 const LIMIT = config.limits.playlistTracks;
 
 const addTracksToPlaylist = async (auth, playlistId, uris) => {
@@ -13,18 +12,18 @@ const addTracksToPlaylist = async (auth, playlistId, uris) => {
 
 const fetchPlaylistTotal = async (auth, playlistId) => {
   return requester(auth, (client) => {
-    return client.get(config.endpoints.playlistItems(playlistId), qs.stringify({
+    return client.get(config.endpoints.playlistItems(playlistId), {params: {
       fields: 'total',
-    })).then((response) => response.data);
+    }}).then((response) => response.data);
   });
 };
 
 const fetchPlaylists = (auth, offset, limit) => {
   return requester(auth, (client) => {
-    return client.get(config.endpoints.playlists, qs.stringify({
+    return client.get(config.endpoints.playlists, {params: {
       offset,
       limit,
-    })).then((response) => response.data);
+    }}).then((response) => response.data);
   });
 };
 
@@ -40,12 +39,12 @@ const createPlaylist = async (auth, profileId, name, collaborative, public) => {
 
 const fetchTracks = async (auth, playlistId, market, offset, limit) => {
   return requester(auth, (client) => {
-    return client.get(config.endpoints.playlistItems(playlistId), qs.stringify({
+    return client.get(config.endpoints.playlistItems(playlistId), {params: {
       ...limit ? {limit} : {limit: LIMIT},
       ...market && {market},
       ...offset && {offset},
       fields: 'items(track(id,uri,name,artists,explicit,is_playable),added_by.id,added_at)',
-    })).then((response) => response.data);
+    }}).then((response) => response.data);
   });
 };
 

@@ -1,6 +1,5 @@
 const config = require('./config');
 const client = require('./spotify-api-auth-client');
-const qs = require('qs');
 const logger = require('/opt/utils/util-logger');
 const ERRORS = {
   fetch: 'Fetching tokens failed',
@@ -28,11 +27,11 @@ const fetchAuthUrl = (scopes, redirectUri, state) => {
  * @param {string} url
  */
 const fetchTokens = async (code, url) => {
-  return client.post(config.authEndpoints.token, qs.stringify({
+  return client.post(config.authEndpoints.token, null, {params: {
     grant_type: 'authorization_code',
     code,
     redirect_uri: url,
-  })).then((response) => response.data).catch((err) => {
+  }}).then((response) => response.data).catch((err) => {
     if (err.response) {
       const error = err.response.data.error;
       logger.error({error}, ERRORS.fetch);
@@ -45,10 +44,10 @@ const fetchTokens = async (code, url) => {
  * @param {string} refreshToken
  */
 const refreshAccessToken = async (refreshToken) => {
-  return client.post(config.authEndpoints.token, qs.stringify({
+  return client.post(config.authEndpoints.token, null, {params: {
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
-  })).then((response) => response.data);
+  }}).then((response) => response.data);
 };
 
 module.exports = {
