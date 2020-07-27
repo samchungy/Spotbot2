@@ -16,7 +16,7 @@ const mockSlackErrorReporter = {
 
 jest.doMock('/opt/sns', () => mockSns, {virtual: true});
 jest.doMock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
-jest.doMock('/opt/spotify/spotify-api/spotify-api-refresh', () => mockSpotifyApiRefresh, {virtual: true});
+jest.doMock('/opt/spotify/spotify-auth/spotify-auth-refresh', () => mockSpotifyApiRefresh, {virtual: true});
 jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 
 const mod = require('../../../src/components/settings/settings-auth-change');

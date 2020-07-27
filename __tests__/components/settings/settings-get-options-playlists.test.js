@@ -66,7 +66,7 @@ jest.doMock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', m
 jest.doMock('/opt/slack/format/slack-format-modal', () => mockSlackFormat, {virtual: true});
 jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 jest.doMock('/opt/db/settings-interface', () => mockSettings, {virtual: true});
-jest.doMock('/opt/spotify/spotify-api/spotify-api-playlists', () => mockPlaylists, {virtual: true});
+jest.doMock('/opt/spotify/spotify-api-v2/spotify-api-playlists', () => mockPlaylists, {virtual: true});
 jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
 
 const mod = require('../../../src/components/settings/settings-get-options-playlists');

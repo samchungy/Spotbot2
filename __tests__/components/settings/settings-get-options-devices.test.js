@@ -65,7 +65,7 @@ jest.doMock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', m
 jest.doMock('/opt/slack/format/slack-format-modal', () => mockSlackFormat, {virtual: true});
 jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 jest.doMock('/opt/db/settings-interface', () => mockSettings, {virtual: true});
-jest.doMock('/opt/spotify/spotify-api/spotify-api-devices', () => mockDevices, {virtual: true});
+jest.doMock('/opt/spotify/spotify-api-v2/spotify-api-devices', () => mockDevices, {virtual: true});
 jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
 jest.doMock('/opt/spotify/spotify-objects/util-spotify-device', () => mockUtilDevice, {virtual: true});
 
@@ -114,7 +114,7 @@ describe('Get Device Options', () => {
       await expect(main(...parameters)).resolves.toStrictEqual(
           {'options': [{'text': 'no_devices_label', 'value': 'no_devices'}, {'text': 'AU13282 - Computer', 'value': '87997bb4312981a00f1d8029eb874c55a211a0cc'}, {'text': 'name', 'value': 'id'}]},
       );
-      expect(mockDevices.fetchDevices).toHaveBeenCalledWith(teamId, channelId, {'auth': true});
+      expect(mockDevices.fetchDevices).toHaveBeenCalledWith({'auth': true});
       expect(mockSettings.storeDevices).toHaveBeenCalledWith(teamId, channelId, {'value': [{'id': '87997bb4312981a00f1d8029eb874c55a211a0cc', 'name': 'AU13282 - Computer'}, {'id': 'id', 'name': 'name'}]}, 1111111111);
       expect(momentMock.add).toHaveBeenCalledWith(1, 'hour');
       expect(momentMock.unix).toHaveBeenCalled();
@@ -129,7 +129,7 @@ describe('Get Device Options', () => {
       await expect(main(...parameters)).resolves.toStrictEqual(
           {'options': [{'text': 'no_devices_label', 'value': 'no_devices'}, {'text': 'AU13282 - Computer', 'value': '87997bb4312981a00f1d8029eb874c55a211a0cc'}]},
       );
-      expect(mockDevices.fetchDevices).toHaveBeenCalledWith(teamId, channelId, {'auth': true});
+      expect(mockDevices.fetchDevices).toHaveBeenCalledWith({'auth': true});
       expect(mockSettings.storeDevices).toHaveBeenCalledWith(teamId, channelId, {'value': [{'id': '87997bb4312981a00f1d8029eb874c55a211a0cc', 'name': 'AU13282 - Computer'}]}, 1111111111);
       expect(momentMock.add).toHaveBeenCalledWith(1, 'hour');
       expect(momentMock.unix).toHaveBeenCalled();
@@ -144,7 +144,7 @@ describe('Get Device Options', () => {
       await expect(main(teamId, channelId, undefined)).resolves.toStrictEqual(
           {'options': [{'text': 'no_devices_label', 'value': 'no_devices'}]},
       );
-      expect(mockDevices.fetchDevices).toHaveBeenCalledWith(teamId, channelId, {'auth': true});
+      expect(mockDevices.fetchDevices).toHaveBeenCalledWith({'auth': true});
       expect(mockSettings.storeDevices).toHaveBeenCalledWith(teamId, channelId, {'value': []}, 1111111111);
       expect(momentMock.add).toHaveBeenCalledWith(1, 'hour');
       expect(momentMock.unix).toHaveBeenCalled();
