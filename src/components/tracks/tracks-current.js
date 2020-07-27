@@ -16,6 +16,8 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 // Skip
 const {onBlacklist} = require('/opt/control-skip/control-skip');
 
+const {sleep} = require('/opt/utils/util-timeout');
+
 const LIMIT = config.spotify_api.playlists.tracks.limit;
 const BACK_TO_PLAYLIST = config.dynamodb.settings.back_to_playlist;
 const PLAYLIST = config.dynamodb.settings.playlist;
@@ -91,6 +93,10 @@ const getCurrent = async (teamId, channelId, settings, afterSkip=false) => {
   const auth = await authSession(teamId, channelId);
   const backToPlaylist = settings[BACK_TO_PLAYLIST];
   const playlist = settings[PLAYLIST];
+
+  if (afterSkip) {
+    await sleep(2000);
+  }
 
   const status = await fetchCurrentPlayback(auth);
   if (!isPlaying(status)) {
