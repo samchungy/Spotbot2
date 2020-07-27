@@ -1,6 +1,6 @@
 const config = require('/opt/config/config');
 const logger = require('/opt/utils/util-logger');
-const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {loadBlacklist, loadSkip} = require('/opt/db/settings-extra-interface');
 const {fetchCurrentPlayback, fetchRecent} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 const {updateModal} = require('/opt/slack/slack-api');

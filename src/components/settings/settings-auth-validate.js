@@ -5,7 +5,7 @@ const sns = require('/opt/sns');
 
 // Spotify
 const {loadState, storeAuth, changeProfile} = require('/opt/db/spotify-auth-interface');
-const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchTokens} = require('/opt/spotify/spotify-api-v2/spotify-api-auth');
 const {fetchProfile} = require('/opt/spotify/spotify-api-v2/spotify-api-profile');
 

@@ -11,7 +11,7 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Spotify
 const {createPlaylist} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
-const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {removeState} = require('/opt/db/spotify-auth-interface');
 
 // Util

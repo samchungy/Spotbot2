@@ -54,4 +54,4 @@ const authSession = async (teamId, channelId) => {
   };
 };
 
-module.exports = authSession;
+module.exports = {authSession};

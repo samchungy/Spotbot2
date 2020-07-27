@@ -6,7 +6,7 @@ const logger = require('/opt/utils/util-logger');
 const {fetchProfile} = require('/opt/spotify/spotify-api-v2/spotify-api-profile');
 const {fetchAuthUrl} = require('/opt/spotify/spotify-api-v2/spotify-api-auth');
 const {modelState, storeState} = require('/opt/db/spotify-auth-interface');
-const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 
 // Errors
 const {AuthError, PremiumError} = require('/opt/errors/errors-spotify');

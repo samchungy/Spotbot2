@@ -3,7 +3,7 @@ const logger = require('/opt/utils/util-logger');
 const sns = require('/opt/sns');
 
 // Spotify
-const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 
 // Slack

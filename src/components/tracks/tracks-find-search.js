@@ -3,7 +3,7 @@ const logger = require('/opt/utils/util-logger');
 const config = require('/opt/config/config');
 
 // Spotify
-const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
+const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchSearchTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-search');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
