@@ -5,7 +5,7 @@ const glob = require('glob-promise');
 const shell = require('shelljs');
 
 const layersRegex = {
-  0: /^layers\/(.*?)\//,
+  0: /^src\/layers\/(.*?)\//,
   1: /^(.*?)\//,
 };
 const layerDestination = '/opt';
@@ -51,7 +51,7 @@ gulp.task('watch-copy-layers-to-opt', () => {
   };
 
   copyAllFiles();
-  const layerWatcher = gulp.watch(`layers/*/**/*`);
+  const layerWatcher = gulp.watch(`src/layers/*/**/*`);
   layerWatcher
       .on('add', (path, stats) => {
         copyFile(path);

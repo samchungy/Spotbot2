@@ -5,7 +5,7 @@
     "baseUrl": "./",
     "paths": {
       "/opt/config/config": ["src/layers/layers-core/config/config"],
-      "/opt/utils/util-logger": ["src/layers/layers-core/utils/util-logger"],
+      "/opt/utils/*": ["src/layers/layers-core/utils/*"],
       "/opt/slack/*": ["src/layers/layers-slack/slack/*"],
       "/opt/nodejs/moment-timezone/*": ["src/layers/layers-core/nodejs/moment-timezone/*"],
       "/opt/sns": ["src/layers/layers-core/sns"],
@@ -13,7 +13,8 @@
       "/opt/router/*": ["src/layers/layers-router-core/router/*"],
       "/opt/errors/*": ["src/layers/layers-core/errors/*"],
       "/opt/db/*": ["src/layers/layers-core/db/*"],
-      "/opt/spotify/*": ["src/layers/layers-spotify/spotify/*"]
+      "/opt/spotify/*": ["src/layers/layers-spotify/spotify/*"],
+      "/opt/control-skip/*": ["src/layers/layers-control-skip/*"]
     }
   },
   "exclude": ["node_modules", "dist"]
