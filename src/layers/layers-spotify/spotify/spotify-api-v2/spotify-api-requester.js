@@ -58,6 +58,7 @@ const requester = async (auth, apiCall) => {
           } else if (status >= 500 ) {
             return request(attempt+1, false, 0.5);
           } else {
+            logger.error(err.toJSON());
             logger.error(error, ERRORS.uncategorized);
             throw new Error(ERRORS.uncategorized);
           }

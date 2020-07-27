@@ -18,6 +18,7 @@ const config = {
     artistsTracks: (id) => `/artists/${id}/top-tracks`,
     search: '/search',
     profile: (id) => `/users/${id}`,
+    track: (id) => `/tracks/${id}`,
   },
   authEndpoints: {
     token: '/api/token',

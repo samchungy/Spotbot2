@@ -8,8 +8,8 @@ const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-19
 const authSession = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchPlaylistTotal, addTracksToPlaylist, deleteTracks, fetchTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
-const {play} = require('/opt/spotify/spotify-api/spotify-api-playback');
-const {fetchTrackInfo} = require('/opt/spotify/spotify-api/spotify-api-tracks');
+const {play} = require('/opt/spotify/spotify-api-v2/spotify-api-playback');
+const {fetchTrackInfo} = require('/opt/spotify/spotify-api-v2/spotify-api-tracks');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 const {isPlaying, onPlaylist} = require('/opt/spotify/spotify-helper');
 const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
@@ -117,7 +117,7 @@ const addTrack = async (teamId, channelId, settings, userId, trackId, responseUr
     return TRACK_ADD_RESPONSE.blacklist(track.title);
   }
 
-  const history = await loadTrackHistory(track.id);
+  const history = await loadTrackHistory(teamId, channelId, track.id);
   // Handle Repeats
   if (history && moment.unix(history.timeAdded).add(repeatDuration, 'hours').isAfter(moment())) {
     return TRACK_ADD_RESPONSE.repeat(track.title, moment.unix(history.timeAdded).fromNow(), repeatDuration);

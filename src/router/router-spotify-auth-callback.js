@@ -8,7 +8,7 @@ const logger = require('/opt/utils/util-logger');
 
 const router = async (event, context) => {
   if (!event.headers.Referer || !event.headers.Referer.includes('https://accounts.spotify.com')) {
-    throw new BadRequestError('Bad Request.');
+    throw new BadRequestError('Bad Request');
   }
   const stage = `/${event.requestContext.stage}`;
   const url = `${event.headers['X-Forwarded-Proto']}://${event.headers.Host}${stage}`;

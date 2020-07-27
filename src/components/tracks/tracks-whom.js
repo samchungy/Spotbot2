@@ -101,7 +101,7 @@ const getWhom = async (teamId, channelId, settings) => {
       if (playlistTrack.addedBy.id === profile.id) {
         // Check if it is our account which added it
         const history = await loadTrackHistory(teamId, channelId, statusTrack.id);
-        if (!history) {
+        if (history) {
           const message = inChannelPost(channelId, WHOM_RESPONSE.now_playing(statusTrack.title, `<@${history.userId}>`, moment.unix(history.timeAdded).fromNow()), null);
           return await post(message);
         }

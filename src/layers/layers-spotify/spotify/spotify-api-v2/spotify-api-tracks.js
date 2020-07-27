@@ -25,10 +25,19 @@ const fetchArtistTracks = async (auth, country, artistId) => {
   });
 };
 
+const fetchTrackInfo = async (auth, market, trackId) => {
+  return requester(auth, (client) => {
+    return client.get(config.endpoints.track(trackId), qs.stringify({
+      ...market && {market},
+    })).then((response) => response.data);
+  });
+};
+
 
 module.exports = {
   fetchArtistTracks,
   fetchDevices,
+  fetchTrackInfo,
   fetchTracksInfo,
 };
 
