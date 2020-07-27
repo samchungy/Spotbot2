@@ -21,7 +21,7 @@ const PLAYLIST = config.dynamodb.settings.playlist;
 const TRACKS_CURRENT = process.env.SNS_PREFIX + 'tracks-current';
 
 const PLAY_RESPONSE = {
-  already: ':information_source: Spotify is already playing. Check if the speaker is muted.',
+  already: (vol) => `:information_source: Spotify is already playing. Spotify's volume is currently set at ${vol}%. Check if the speaker is muted.`,
   empty: ':information_source: Playlist is empty. Please add songs to the playlist.',
   no_device: ':warning: Spotify is not open on the default device listed in the settings.',
   no_devices: ':warning: Spotify is not open on any device.',
@@ -68,7 +68,7 @@ const startPlay = async (teamId, channelId, settings, userId) => {
 
   // Spotify is already running
   if (isPlaying(status)) {
-    const message = inChannelPost(channelId, PLAY_RESPONSE.already);
+    const message = inChannelPost(channelId, PLAY_RESPONSE.already(status.device.volume_percent));
     return await post(message);
   }
   // We have an empty playlist and status is IsPlaying -edge case where Spotify is stuck
