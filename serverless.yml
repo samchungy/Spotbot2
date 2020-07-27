@@ -119,11 +119,6 @@ layers:
     compatibleRuntimes:
       - nodejs12.x
   # Other Layers
-  control-panel:
-    name: ${self:custom.prefix}-control-panel
-    path: src/components/control/layers/layers-control-panel
-    compatibleRuntimes:
-      - nodejs12.x
   control-skip:
     name: ${self:custom.prefix}-control-skip
     path: src/components/control/layers/layers-control-skip
@@ -690,7 +685,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-jump:
     events:
       - sns: ${self:custom.prefix}-control-jump
@@ -705,7 +699,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-pause:
     events:
       - sns: ${self:custom.prefix}-control-pause
@@ -720,7 +713,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-play:
     events:
       - sns: ${self:custom.prefix}-control-play
@@ -735,7 +727,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-open:
     events:
       - sns: ${self:custom.prefix}-control-open
@@ -750,7 +741,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-repeat:
     events:
       - sns: ${self:custom.prefix}-control-repeat
@@ -765,7 +755,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-reset-start:
     events:
       - sns: ${self:custom.prefix}-control-reset-start
@@ -781,7 +770,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-reset-set:
     events:
       - sns: ${self:custom.prefix}-control-reset-set
@@ -796,7 +784,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-reset-review-open:
     events:
       - sns: ${self:custom.prefix}-control-reset-review-open
@@ -812,7 +799,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-reset-review-submit:
     events:
       - sns: ${self:custom.prefix}-control-reset-review-submit
@@ -827,7 +813,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-shuffle:
     events:
       - sns: ${self:custom.prefix}-control-shuffle
@@ -842,7 +827,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-skip-add-vote:
     events:
       - sns: ${self:custom.prefix}-control-skip-add-vote
@@ -858,7 +842,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
       - { Ref: ControlDashskipLambdaLayer}
   control-skip-start:
     events:
@@ -875,7 +858,6 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
       - { Ref: ControlDashskipLambdaLayer}
 #Tracks
   tracks-current:
