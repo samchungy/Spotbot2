@@ -32,6 +32,7 @@ const verifyState = async (state) => {
     if (currentState && isEqual(stateJson, currentState.state)) {
       return currentState.state;
     }
+    throw new Error('State not equal');
   } catch (error) {
     logger.error(error, 'Verify State failed');
     throw error;
