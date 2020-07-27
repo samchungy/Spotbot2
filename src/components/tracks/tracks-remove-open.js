@@ -70,8 +70,12 @@ const openRemove = async (teamId, channelId, settings, userId, viewId ) => {
 
   // Get a list of unique URIs
   const uniqueIds = [...new Set(allTracks.map((item) => item.id))];
-  const uniqueTracks = allTracks.reduce((unique, track, index) => { // Highly efficient way to filter the tracks after finding the unique Uris
-    return (uniqueIds[index - unique.length] == track.id) ? [...unique, track] : unique;
+  const uniqueTracks = allTracks.reduce((unique, track) => {
+    // Highly efficient way to filter the tracks after finding the unique Uris
+    if (unique.length === uniqueIds.length) {
+      return unique;
+    }
+    return (uniqueIds[unique.length] === track.id) ? [...unique, track] : unique;
   }, []);
 
   // Check our db for songs only the User added
