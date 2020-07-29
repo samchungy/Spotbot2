@@ -169,7 +169,7 @@ describe('Validate auth from Spotify callback', () => {
 
     it('should fail to validate state', async () => {
       expect.assertions(2);
-      await expect(main(...parameters[1])).rejects.toThrowError('Unexpected token m in JSON at position 0');
+      await expect(main(...parameters[1])).rejects.toHaveProperty('message', 'Unexpected token m in JSON at position 0');
       expect(mockLogger.error).toBeCalledWith(expect.any(Error), 'Verify State failed');
     });
 
@@ -177,7 +177,7 @@ describe('Validate auth from Spotify callback', () => {
       mockAuthInterface.loadState.mockResolvedValue({'state': 'bad state'});
       mockUtilObjects.isEqual.mockReturnValue(false);
       expect.assertions(1);
-      await expect(main(...parameters[0])).rejects.toThrow('State not equal');
+      await expect(main(...parameters[0])).rejects.toHaveProperty('message', 'State not equal');
     });
   });
 });
