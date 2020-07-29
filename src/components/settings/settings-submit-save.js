@@ -24,7 +24,7 @@ const COLLABORATIVE = config.spotify_api.playlists.collaborative;
 const PUBLIC = config.spotify_api.playlists.public;
 const NEW_PLAYLIST_REGEX = new RegExp(`^${NEW_PLAYLIST}`);
 
-const SETTINGS_RESPONSE = {
+const RESPONSE = {
   failed: 'Settings failed to save',
   success: ':white_check_mark: Settings successfully saved.',
 };
@@ -60,17 +60,26 @@ const getPlaylistValue = async (teamId, channelId, newValue, oldValue) => {
   if (oldValue && oldValue.id === newValue) {
     return oldValue;
   }
-  const auth = await authSession(teamId, channelId);
-  const profile = auth.getProfile();
   if (newValue.includes(NEW_PLAYLIST)) {
+    const auth = await authSession(teamId, channelId);
+    const profile = auth.getProfile();
     newValue = newValue.replace(NEW_PLAYLIST_REGEX, '');
     // Create a new playlist using Spotify API
     const newPlaylist = await createPlaylist(auth, profile.id, newValue, COLLABORATIVE, PUBLIC);
     return modelPlaylist(newPlaylist);
   } else {
     // Grab the playlist object from our earlier Database playlist fetch
-    const {value: playlists} = await loadPlaylists(teamId, channelId);
-    return playlists.find((playlist) => playlist.id === newValue);
+    const {value: playlists} = await loadPlaylists(teamId, channelId).then((data) => {
+      if (!data) {
+        throw new Error('No playlist data was captured for Settings');
+      }
+      return data;
+    });
+    const playlist = playlists.find((playlist) => playlist.id === newValue);
+    if (!playlist) {
+      throw new Error('Selected Spotify playlist is invalid');
+    }
+    return playlist;
   }
 };
 
@@ -82,24 +91,33 @@ const getPlaylistValue = async (teamId, channelId, newValue, oldValue) => {
  * @param {string} oldValue
  */
 const getDeviceValue = async (teamId, channelId, newValue, oldValue) => {
+  if (oldValue && oldValue.id === newValue) {
+    return oldValue;
+  }
   switch (newValue) {
-    case (oldValue ? oldValue.id : null):
-      return oldValue;
     case SETTINGS_HELPER.no_devices:
       return modelDevice(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices);
     default: {
-      const {value: spotifyDevices} = await loadDevices(teamId, channelId);
-      return spotifyDevices.find((device) => device.id === newValue);
+      const {value: spotifyDevices} = await loadDevices(teamId, channelId).then((data) => {
+        if (!data) {
+          throw new Error('No Spotify device data was captured for Settings');
+        }
+        return data;
+      });
+      const device = spotifyDevices.find((device) => device.id === newValue);
+      if (!device) {
+        throw new Error('Selected Spotify device is invalid');
+      }
+      return device;
     }
   }
 };
 
-const saveSettings = async (teamId, channelId, userId, submissions) => {
+const main = async (teamId, channelId, userId, submissions) => {
   const dbSettings = await loadSettings(teamId, channelId);
   const settings = {
     ...dbSettings ? dbSettings : SETTINGS, // Load settings or load default settings
   };
-
   const newSettings = await Object.keys(settings).reduce(async (submit, key) => {
     const acc = await submit;
     const oldValue = settings[key];
@@ -109,20 +127,21 @@ const saveSettings = async (teamId, channelId, userId, submissions) => {
     }
     return acc;
   }, {});
-  const message = ephemeralPost(channelId, userId, SETTINGS_RESPONSE.success, null);
 
   await Promise.all([
     ...!isEmpty(newSettings) ? [changeSettings(teamId, channelId, newSettings)] : [],
     removeState(teamId, channelId), // DELETE STATE
-    postEphemeral(message), // Report back to Slack
   ]);
+
+  const message = ephemeralPost(channelId, userId, RESPONSE.success, null);
+  await postEphemeral(message);
 };
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, submissions} = JSON.parse(event.Records[0].Sns.Message);
-  await saveSettings(teamId, channelId, userId, submissions)
+  await main(teamId, channelId, userId, submissions)
       .catch((error)=>{
-        logger.error(error, SETTINGS_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, SETTINGS_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
