@@ -6,7 +6,7 @@ const {deepEqual} = require('fast-equals');
  * @return {boolean} True or False
  */
 function isEmpty(obj) {
-  return Object.entries(obj).length === 0 && obj.constructor === Object;
+  return obj.constructor === Object && Object.entries(obj).length === 0;
 }
 
 /**
