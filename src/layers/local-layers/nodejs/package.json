@@ -9,12 +9,10 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		"@slack/web-api": "^5.11.0",
+		"aws-sdk": "^2.725.0",
 		"fast-equals": "^2.0.0",
-		"pino": "^6.2.1",
-		"qs": "^6.9.3",
-		"@slack/web-api": "^5.8.0",
-		"spotify-web-api-node": "git+https://github.com/samchungy/spotify-web-api-node.git#spotbot",
-		"aws-sdk": "^2.663.0",
-		"pino-pretty": "^4.0.0"
+		"pino": "^6.4.1",
+		"pino-pretty": "^4.1.0"
 	}
 }

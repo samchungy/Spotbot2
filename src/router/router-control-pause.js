@@ -1,5 +1,5 @@
 'use strict';
-const qs = require('qs');
+const qs = require('querystring');
 const sns = require('/opt/sns');
 const logger = require('/opt/utils/util-logger');
 

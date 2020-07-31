@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@slack/web-api": "^5.8.0"
+    "@slack/web-api": "^5.11.0"
   }
 }

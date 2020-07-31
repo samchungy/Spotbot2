@@ -1,4 +1,4 @@
-const qs = require('qs');
+const qs = require('querystring');
 const sns = require('/opt/sns');
 const lambda = require('/opt/lambda');
 const logger = require('/opt/utils/util-logger');
