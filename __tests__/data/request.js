@@ -19,7 +19,7 @@ module.exports = {
       'URVUTD7UP',
     ],
     'ghost_mode': 'true',
-    'back_to_playlist': 'true',
+    'back_to_playlist': 'false',
     'disable_repeats_duration': '0',
   },
   viewId: 'V016R2YRZHS',

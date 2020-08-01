@@ -34,7 +34,7 @@ const LABELS = {
   reauth_confirm: 'Are you sure?',
   reauth: 'Click to re-authenticate with Spotify.',
 };
-const AUTH_RESPONSE = {
+const RESPONSE = {
   auth_statement: (user) => `:white_check_mark: Authenticated with ${user} - Spotify Premium`,
   premium_error: `:x: The Spotify account used is not a Premium account`,
 };
@@ -64,7 +64,7 @@ const getAuthorizationURL = async (teamId, channelId, viewId, url) => {
 // Authenticated Block
 const getProfileBlock = (profile) => [
   buttonSection(SETTINGS_AUTH.reauth, LABELS.reauth, HINTS.reauth_url_button, null, null, SETTINGS_AUTH.reauth, confirmObject(LABELS.reauth_confirm, HINTS.reauth_confirm, 'Reset Authentication', 'Cancel')),
-  contextSection(SETTINGS_AUTH.auth_confirmation, AUTH_RESPONSE.auth_statement(profile.display_name ? profile.display_name : profile.id)),
+  contextSection(SETTINGS_AUTH.auth_confirmation, RESPONSE.auth_statement(profile.display_name ? profile.display_name : profile.id)),
 ];
 
 // Non-Authenticated Block
@@ -72,7 +72,7 @@ const getNoAuthBlock = async (teamId, channelId, viewId, url, premiumError) => {
   const authUrl = await getAuthorizationURL(teamId, channelId, viewId, url);
   return [
     buttonSection(SETTINGS_AUTH.auth_url, LABELS.auth_url, HINTS.auth_url_button, null, authUrl, null),
-    ...premiumError ? [contextSection(SETTINGS_AUTH.auth_error, AUTH_RESPONSE.premium_error)] : [],
+    ...premiumError ? [contextSection(SETTINGS_AUTH.auth_error, RESPONSE.premium_error)] : [],
   ];
 };
 
