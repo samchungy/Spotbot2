@@ -10,7 +10,7 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 const SETTINGS_SUBMIT_SAVE = process.env.SNS_PREFIX + 'settings-submit-save';
 const DB = config.dynamodb.settings;
-const VERIFY_RESPONSE = {
+const RESPONSE = {
   failed: 'Settings verification failed',
   integer_error: 'Please enter a valid integer',
 };
@@ -59,7 +59,7 @@ const verifySettings = (submission) => {
       case DB.skip_votes:
       case DB.skip_votes_ah:
         if (!isPositiveInteger(value)) {
-          errs[setting] = VERIFY_RESPONSE.integer_error;
+          errs[setting] = RESPONSE.integer_error;
         }
         break;
     }
@@ -68,7 +68,7 @@ const verifySettings = (submission) => {
   return errors;
 };
 
-const startVerification = async (teamId, channelId, view, userId) => {
+const main = async (teamId, channelId, view, userId) => {
   // LAMBDA
   const submissions = extractSubmissions(view);
   const errors = verifySettings(submissions);
@@ -90,9 +90,9 @@ const startVerification = async (teamId, channelId, view, userId) => {
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, view, userId} = event;
-  return await startVerification(teamId, channelId, view, userId)
+  return await main(teamId, channelId, view, userId)
       .catch((error)=>{
-        logger.error(error, VERIFY_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, VERIFY_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
