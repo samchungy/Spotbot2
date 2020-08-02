@@ -12,8 +12,13 @@ const {checkIsAdmin, checkIsInChannel, checkIsSetup, checkIsPreviouslySetup} = r
 const {SettingsError, SetupError} = require('/opt/errors/errors-settings');
 
 const EMPTY_MODAL = config.slack.actions.empty_modal;
-const HELP = 'To get started, add the Spotbot to a channel and then run `/spotbot settings`.\n\n*Find Tracks*\n\n`/find [track]` - Find a track on Spotify\n`/artist [artist]` - Find an artist on Spotify\n`/removetracks` - Lists tracks you added to remove from the playlist\n\n*Playback Status*\n\n`/current` - Show the current playing track and it’s position in the playlist\n`/whom` - Show who requested the current track\n\n*Control*\n\n`/control` - Opens the Spotbot control panel\n`/play` - Pauses playback of Spotify\n`/pause`- Pauses playback of Spotify\n`/skip` - Starts a vote to skip a track\n`/reset` - Nukes the playlist\n\n*Admin Commands*\n\n`/spotbot settings` - Opens the Spotbot Settings panel.\n`/spotbot blacklist` - Opens the Spotbot Blacklist panel.\n`/spotbot device` - Opens the Spotbot Device switch panel.\n\nTo delete Spotbot and it\'s configurations from a channel, simply remove the app from the channel.';
-const INVALID = `:information_source: Invalid Command.`;
+const RESPONSE = {
+  help: 'To get started, add the Spotbot to a channel and then run `/spotbot settings`.\n\n*Find Tracks*\n\n`/find [track]` - Find a track on Spotify\n`/artist [artist]` - Find an artist on Spotify\n`/removetracks` - Lists tracks you added to remove from the playlist\n\n*Playback Status*\n\n`/current` - Show the current playing track and it’s position in the playlist\n`/whom` - Show who requested the current track\n\n*Control*\n\n`/control` - Opens the Spotbot control panel\n`/play` - Pauses playback of Spotify\n`/pause`- Pauses playback of Spotify\n`/skip` - Starts a vote to skip a track\n`/reset` - Nukes the playlist\n\n*Admin Commands*\n\n`/spotbot settings` - Opens the Spotbot Settings panel.\n`/spotbot blacklist` - Opens the Spotbot Blacklist panel.\n`/spotbot device` - Opens the Spotbot Device switch panel.\n\nTo delete Spotbot and it\'s configurations from a channel, simply remove the app from the channel.',
+  invalid: `:information_source: Invalid Command.`,
+  failed: 'Uncategorized Error in Settings Router',
+  error: ':warning: An error occured. Please try again.',
+  unauthorized: 'Unauathorized',
+};
 
 const SETTINGS_OPEN = process.env.SNS_PREFIX + 'settings-open';
 const SETTINGS_BLACKLIST_OPEN = process.env.SNS_PREFIX + 'settings-blacklist-open';
@@ -28,7 +33,7 @@ const router = async (event, context) => {
   if (payload.text) {
     const textSplit = payload.text.split(' ');
     if (textSplit.length == 0 || textSplit[0] == 'help') {
-      return HELP;
+      return RESPONSE.help;
     }
     switch (textSplit[0]) {
       case 'settings': {
@@ -37,7 +42,7 @@ const router = async (event, context) => {
               if (error.constructor === SetupError) {
               // Check if Spotbot is installed in this channel:
                 if (await checkIsInChannel(payload.channel_id)) {
-                  return;
+                  return null;
                 }
               }
               throw error;
@@ -54,13 +59,13 @@ const router = async (event, context) => {
               throw error;
             });
 
-        const modalPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotbot Settings', null, 'Cancel');
+        const modal = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotbot Settings', null, 'Cancel');
         const params = {
           Message: JSON.stringify({
             teamId: payload.team_id,
             channelId: payload.channel_id,
             settings,
-            viewId: modalPayload.view.id,
+            viewId: modal.view.id,
             userId: payload.user_id,
             url,
           }),
@@ -70,14 +75,14 @@ const router = async (event, context) => {
         return;
       }
       case 'blacklist': {
-        const modalPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, `Spotbot Blacklist`, null, 'Cancel');
+        const modal = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, `Spotbot Blacklist`, null, 'Cancel');
         const params = {
           Message: JSON.stringify({
             teamId: payload.team_id,
             channelId: payload.channel_id,
             settings: await checkIsSetup(payload.team_id, payload.channel_id).then(async (data) => (await checkIsAdmin(data, payload.user_id), data)),
-            viewId: modalPayload.view.id,
-            suserId: payload.user_id,
+            viewId: modal.view.id,
+            userId: payload.user_id,
           }),
           TopicArn: SETTINGS_BLACKLIST_OPEN,
         };
@@ -85,13 +90,13 @@ const router = async (event, context) => {
         return;
       }
       case 'device': {
-        const modalPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotify Devices', null, 'Cancel');
+        const modal = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotify Devices', null, 'Cancel');
         const params = {
           Message: JSON.stringify({
             teamId: payload.team_id,
             channelId: payload.channel_id,
             settings: await checkIsSetup(payload.team_id, payload.channel_id).then(async (data) => (await checkIsAdmin(data, payload.user_id), data)),
-            viewId: modalPayload.view.id,
+            viewId: modal.view.id,
             userId: payload.user_id,
           }),
           TopicArn: SETTINGS_DEVICE_SELECT,
@@ -100,13 +105,13 @@ const router = async (event, context) => {
         return;
       }
       case 'sonos': {
-        const modalPayload = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Sonos Settings', null, 'Cancel');
+        const modal = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Sonos Settings', null, 'Cancel');
         const params = {
           Message: JSON.stringify({
             teamId: payload.team_id,
             channelId: payload.channel_id,
             settings: await checkIsSetup(payload.team_id, payload.channel_id).then(async (data) => (await checkIsAdmin(data, payload.user_id), data)),
-            viewId: modalPayload.view.id,
+            viewId: modal.view.id,
             userId: payload.user_id,
             url,
           }),
@@ -116,16 +121,17 @@ const router = async (event, context) => {
         return;
       }
       default: {
-        return INVALID;
+        return RESPONSE.invalid;
       }
     }
   }
-  return HELP;
+  return RESPONSE.help;
 };
 
 module.exports.handler = async (event, context) => {
+  logger.info(event);
   if (!slackAuthorized(event)) {
-    return {statusCode: 401, body: 'Unauathorized'};
+    return {statusCode: 401, body: RESPONSE.unauthorized};
   }
   return await router(event, context)
       .then((data) => ({statusCode: 200, body: data ? data: ''}))
@@ -133,7 +139,7 @@ module.exports.handler = async (event, context) => {
         if (error instanceof SetupError) {
           return {statusCode: 200, body: error.message};
         }
-        logger.error(error, 'Uncategorized Error in Settings Router');
-        return {statusCode: 200, body: ':warning: An error occured. Please try again.'};
+        logger.error(error, RESPONSE.failed);
+        return {statusCode: 200, body: RESPONSE.error};
       });
 };
