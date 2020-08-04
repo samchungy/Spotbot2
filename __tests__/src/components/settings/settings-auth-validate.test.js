@@ -83,15 +83,15 @@ jest.doMock('/opt/spotify/spotify-api-v2/spotify-api-profile', () => mockSpotify
 jest.doMock('/opt/utils/util-objects', () => mockUtilObjects, {virtual: true});
 jest.doMock('/opt/utils/util-transform', () => mockUtilTransform, {virtual: true});
 
-const mod = require('../../../src/components/settings/settings-auth-validate');
+const mod = require('../../../../src/components/settings/settings-auth-validate');
 const main = mod.__get__('main');
 const response = mod.__get__('RESPONSE');
 
 const code = 'AQBxQr5L0nIJO1GtxvLNG4PE3dDgiPWCJxKPfEzaH1DroMxOmJ55DKbzOqvH_56MKydFXymnwWfx2y7EM9yjGOLCVB-VbpipXldy_-DgVT22oGx8N8sYadhWV-4teKWPr8LqpotRVt6oUHUjJHMyfoYe--danVcfQyyrrwlLSE2-R8ILNxe62TSoLe8Mio42UxB8aso_KQ4Eq2l8rEqarwTutNqyq6aDubX39jzCjCFgQkCql06c27xR_52GtKzlLNQ1Oo8qxrWVHeuRP0DakxH_XBH9BRbaBUjU-CZuiyM_rimpIVEQlX5Lp-XBjWK9LjtdmBl9pf97gRpnR7KKkwKahuCQTKb8gT5z_0lq4bAjPvMTElgLoqHQ0IJEt55g8uno2q1Kb8Vm7PgidR90LlpPvOqEs6o6U96tgaEHRssEwEDbOhk8_1zQvmHwPF3EYXz-HTuW14hP7DStEs59k1EYqWYzbsqAUyEQZdOz2A25KlZvz7H6sIKoesh5Dwwj85g';
 const state = 'eyJ0ZWFtSWQiOiJUUlZVVEQ3RE0iLCJjaGFubmVsSWQiOiJDUlUzSDRNRUMiLCJ2aWV3SWQiOiJWMDE3RFRBM01UUSJ9';
 const url = 'https://31ec3279fbac.ngrok.io/local';
-const profileData = require('../../data/spotify/profile');
-const {teamId, channelId} = require('../../data/request');
+const profileData = require('../../../data/spotify/profile');
+const {teamId, channelId} = require('../../../data/request');
 
 const params = {code, state, url};
 const parameters = {

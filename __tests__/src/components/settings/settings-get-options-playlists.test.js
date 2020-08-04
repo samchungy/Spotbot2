@@ -69,11 +69,11 @@ jest.doMock('/opt/db/settings-interface', () => mockSettings, {virtual: true});
 jest.doMock('/opt/spotify/spotify-api-v2/spotify-api-playlists', () => mockPlaylists, {virtual: true});
 jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
 
-const mod = require('../../../src/components/settings/settings-get-options-playlists');
+const mod = require('../../../../src/components/settings/settings-get-options-playlists');
 const main = mod.__get__('main');
-const playlistData = require('../../data/spotify/playlist');
+const playlistData = require('../../../data/spotify/playlist');
 const response = mod.__get__('RESPONSE');
-const {teamId, channelId, userId, settings} = require('../../data/request');
+const {teamId, channelId, userId, settings} = require('../../../data/request');
 const query = {
   0: 'winter',
   1: 'no playlist',

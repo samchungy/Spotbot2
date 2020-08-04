@@ -32,10 +32,10 @@ jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {vi
 
 
 // Main
-const mod = require('../../../src/components/settings/settings-get-options-timezones');
+const mod = require('../../../../src/components/settings/settings-get-options-timezones');
 const main = mod.__get__('main');
 const response = mod.__get__('RESPONSE');
-const {teamId, channelId, userId} = require('../../data/request');
+const {teamId, channelId, userId} = require('../../../data/request');
 const query = {
   0: 'melbourne',
   1: 'Australia',

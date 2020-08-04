@@ -76,12 +76,12 @@ jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSess
 jest.doMock('/opt/db/spotify-auth-interface', () => mockAuthInterface, {virtual: true});
 jest.doMock('/opt/utils/util-objects', () => mockUtilObjects, {virtual: true});
 
-const mod = require('../../../src/components/settings/settings-submit-save');
+const mod = require('../../../../src/components/settings/settings-submit-save');
 const main = mod.__get__('main');
 const response = mod.__get__('RESPONSE');
 
-const spotifyPlaylists = require('../../data/spotify/playlist');
-const {teamId, channelId, userId, settings} = require('../../data/request');
+const spotifyPlaylists = require('../../../data/spotify/playlist');
+const {teamId, channelId, userId, settings} = require('../../../data/request');
 const submissions = {
   0: {
     channel_admins: [

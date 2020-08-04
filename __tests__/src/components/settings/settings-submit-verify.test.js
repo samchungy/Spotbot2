@@ -38,12 +38,12 @@ jest.doMock('/opt/utils/util-objects', () => mockUtilObjects, {virtual: true});
 
 jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 
-const mod = require('../../../src/components/settings/settings-submit-verify');
+const mod = require('../../../../src/components/settings/settings-submit-verify');
 const main = mod.__get__('main');
 const response = mod.__get__('RESPONSE');
 const settingsSubmitSave = mod.__get__('SETTINGS_SUBMIT_SAVE');
 
-const {teamId, channelId, userId} = require('../../data/request');
+const {teamId, channelId, userId} = require('../../../data/request');
 const view = {
   0: {
     'id': 'V018U14N7CG',

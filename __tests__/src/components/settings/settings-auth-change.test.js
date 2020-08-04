@@ -19,11 +19,11 @@ jest.doMock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
 jest.doMock('/opt/spotify/spotify-auth/spotify-auth-refresh', () => mockSpotifyApiRefresh, {virtual: true});
 jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 
-const mod = require('../../../src/components/settings/settings-auth-change');
+const mod = require('../../../../src/components/settings/settings-auth-change');
 const main = mod.__get__('main');
 const response = mod.__get__('RESPONSE');
 
-const {teamId, channelId, viewId, userId, url} = require('../../data/request');
+const {teamId, channelId, viewId, userId, url} = require('../../../data/request');
 const params = {teamId, channelId, viewId, userId, url};
 const parameters = [teamId, channelId, viewId, url];
 

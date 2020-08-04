@@ -101,13 +101,13 @@ jest.doMock('/opt/slack/format/slack-format-modal', () => mockSlackFormatModal, 
 jest.doMock('/opt/slack/format/slack-format-blocks', () => mockSlackFormatBlocks, {virtual: true});
 jest.doMock('/opt/utils/util-transform', () => mockUtilTransform, {virtual: true});
 
-const mod = require('../../../../src/components/settings/layers/settings-auth-blocks');
+const mod = require('../../../../../src/components/settings/layers/settings-auth-blocks');
 const response = mod.__get__('RESPONSE');
 const labels = mod.__get__('LABELS');
 const hints = mod.__get__('HINTS');
 
-const profile = require('../../../data/spotify/profile');
-const {teamId, channelId, viewId, url} = require('../../../data/request');
+const profile = require('../../../../data/spotify/profile');
+const {teamId, channelId, viewId, url} = require('../../../../data/request');
 
 
 describe('Settings Auth Block', () => {

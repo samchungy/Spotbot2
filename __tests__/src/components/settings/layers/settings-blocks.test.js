@@ -54,11 +54,11 @@ jest.doMock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', m
 jest.doMock('/opt/config/config', () => mockConfig, {virtual: true});
 jest.doMock('/opt/slack/format/slack-format-modal', () => mockSlackFormatModal, {virtual: true});
 
-const mod = require('../../../../src/components/settings/layers/settings-blocks');
+const mod = require('../../../../../src/components/settings/layers/settings-blocks');
 const labels = mod.__get__('LABELS');
 const hints = mod.__get__('HINTS');
 const place = mod.__get__('PLACE');
-const {settings} = require('../../../data/request');
+const {settings} = require('../../../../data/request');
 
 describe('Settings Block', () => {
   describe('getSettings block', () => {

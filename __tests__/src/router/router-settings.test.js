@@ -62,7 +62,7 @@ const mockCheckSettings = {
   checkIsSetup: jest.fn(),
   checkIsPreviouslySetup: jest.fn(),
 };
-const {SetupError, SettingsError, ChannelAdminError} = require('../../src/layers/layers-core/errors/errors-settings');
+const {SetupError, SettingsError, ChannelAdminError} = require('../../../src/layers/layers-core/errors/errors-settings');
 const mockErrorsSettings = {
   SettingsError: SettingsError,
   SetupError: SetupError,
@@ -79,10 +79,10 @@ jest.doMock('/opt/router/slack-modal', () => mockSlackModal, {virtual: true});
 jest.doMock('/opt/router/check-settings', () => mockCheckSettings, {virtual: true});
 jest.doMock('/opt/errors/errors-settings', () => mockErrorsSettings, {virtual: true});
 
-const {settings} = require('../data/request');
+const {settings} = require('../../data/request');
 const querystring = require('querystring');
-const mod = require('../../src/router/router-settings');
-const modal = require('../data/slack/open-modal');
+const mod = require('../../../src/router/router-settings');
+const modal = require('../../data/slack/open-modal');
 const router = mod.__get__('router');
 const response = mod.__get__('RESPONSE');
 const settingsOpen = mod.__get__('SETTINGS_OPEN');

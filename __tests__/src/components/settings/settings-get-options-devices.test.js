@@ -69,11 +69,11 @@ jest.doMock('/opt/spotify/spotify-api-v2/spotify-api-devices', () => mockDevices
 jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
 jest.doMock('/opt/spotify/spotify-objects/util-spotify-device', () => mockUtilDevice, {virtual: true});
 
-const mod = require('../../../src/components/settings/settings-get-options-devices');
+const mod = require('../../../../src/components/settings/settings-get-options-devices');
 const main = mod.__get__('main');
 const response = mod.__get__('RESPONSE');
-const deviceData = require('../../data/spotify/device');
-const {teamId, channelId, userId, settings} = require('../../data/request');
+const deviceData = require('../../../data/spotify/device');
+const {teamId, channelId, userId, settings} = require('../../../data/request');
 const params = {teamId, channelId, userId, settings};
 const parameters = [teamId, channelId, settings];
 
