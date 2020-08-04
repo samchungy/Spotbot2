@@ -105,6 +105,7 @@ module.exports = {
       'sonos_modal': 'sonos_modal',
       'settings_modal': 'settings_modal',
       'device_modal': 'device_modal',
+      'empty_modal': 'empty_modal',
       'remove_modal': 'remove_modal',
       'reset_modal': 'reset_modal',
       'playlist': 'playlist',
