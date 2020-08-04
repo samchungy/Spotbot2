@@ -1,4 +1,4 @@
-const {deepEqual} = require('fast-equals');
+const assert = require('assert');
 
 /**
  * Returns a boolean based on if object is empty or not
@@ -29,7 +29,12 @@ function nullOrValue(obj) {
  * @return {boolean} True or False
  */
 function isEqual(obj1, obj2) {
-  return deepEqual(obj1, obj2);
+  try {
+    assert.deepStrictEqual(obj1, obj2);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 /**

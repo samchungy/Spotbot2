@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "fast-equals": "^2.0.0",
     "pino": "^6.4.1"
   }
 }
