@@ -25,7 +25,7 @@ const ERROR_MESSAGES = {
  * @param {*} settings
  */
 const checkIsSetup = async (teamId, channelId, settings) => {
-  settings = settings ? null : await loadSettings(teamId, channelId);
+  settings = settings !== undefined ? settings : await loadSettings(teamId, channelId);
   if (settings && settings[PLAYLIST]) {
     return settings;
   } else {
