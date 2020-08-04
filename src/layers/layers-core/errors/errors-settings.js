@@ -27,7 +27,7 @@ class SettingsError extends SetupError {
 /**
  * Admin Error
  */
-class ChannelAdminError extends Error {
+class ChannelAdminError extends SetupError {
   /**
    * @param {string} message
    */

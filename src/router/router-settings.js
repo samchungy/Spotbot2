@@ -23,7 +23,7 @@ const RESPONSE = {
 const SETTINGS_OPEN = process.env.SNS_PREFIX + 'settings-open';
 const SETTINGS_BLACKLIST_OPEN = process.env.SNS_PREFIX + 'settings-blacklist-open';
 const SETTINGS_DEVICE_SELECT = process.env.SNS_PREFIX + 'settings-device-select';
-const SETTINGS_SONOS_OPEN = process.env.SNS_PREFIX + 'settings-sonos-open';
+// const SETTINGS_SONOS_OPEN = process.env.SNS_PREFIX + 'settings-sonos-open';
 
 const router = async (event, context) => {
   const stage = `/${event.requestContext.stage}`;
@@ -41,9 +41,8 @@ const router = async (event, context) => {
             .catch(async (error) => {
               if (error.constructor === SetupError) {
               // Check if Spotbot is installed in this channel:
-                if (await checkIsInChannel(payload.channel_id)) {
-                  return null;
-                }
+                await checkIsInChannel(payload.channel_id);
+                return null;
               }
               throw error;
             });
@@ -104,22 +103,22 @@ const router = async (event, context) => {
         await sns.publish(params).promise();
         return;
       }
-      case 'sonos': {
-        const modal = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Sonos Settings', null, 'Cancel');
-        const params = {
-          Message: JSON.stringify({
-            teamId: payload.team_id,
-            channelId: payload.channel_id,
-            settings: await checkIsSetup(payload.team_id, payload.channel_id).then(async (data) => (await checkIsAdmin(data, payload.user_id), data)),
-            viewId: modal.view.id,
-            userId: payload.user_id,
-            url,
-          }),
-          TopicArn: SETTINGS_SONOS_OPEN,
-        };
-        await sns.publish(params).promise();
-        return;
-      }
+      // case 'sonos': {
+      //   const modal = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Sonos Settings', null, 'Cancel');
+      //   const params = {
+      //     Message: JSON.stringify({
+      //       teamId: payload.team_id,
+      //       channelId: payload.channel_id,
+      //       settings: await checkIsSetup(payload.team_id, payload.channel_id).then(async (data) => (await checkIsAdmin(data, payload.user_id), data)),
+      //       viewId: modal.view.id,
+      //       userId: payload.user_id,
+      //       url,
+      //     }),
+      //     TopicArn: SETTINGS_SONOS_OPEN,
+      //   };
+      //   await sns.publish(params).promise();
+      //   return;
+      // }
       default: {
         return RESPONSE.invalid;
       }
@@ -129,7 +128,6 @@ const router = async (event, context) => {
 };
 
 module.exports.handler = async (event, context) => {
-  logger.info(event);
   if (!slackAuthorized(event)) {
     return {statusCode: 401, body: RESPONSE.unauthorized};
   }
