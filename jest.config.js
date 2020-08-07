@@ -192,4 +192,5 @@ module.exports = {
 
 process.env = Object.assign(process.env, {
   SNS_PREFIX: 'arn:aws:sns:region:accnum:',
+  SLACK_SIGNING_SECRET: 'slack-secret',
 });
