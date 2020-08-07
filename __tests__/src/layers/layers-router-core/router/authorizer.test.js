@@ -13,7 +13,7 @@ const mockBuffer = jest.spyOn(Buffer, 'from');
 // eslint-disable-next-line no-global-assign
 Date = mockDate;
 
-const mod = require('../../../../src/layers/layers-router-core/router/authorizer');
+const mod = require('../../../../../src/layers/layers-router-core/router/authorizer');
 const secret = mod.__get__('SLACK_SIGNING_SECRET');
 const event = {
   0: {
