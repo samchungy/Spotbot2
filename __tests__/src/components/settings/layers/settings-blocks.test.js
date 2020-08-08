@@ -27,17 +27,12 @@ const mockConfig = {
 };
 
 // Mock Modules
-const momentMock = {
+const mockMoment = {
   tz: jest.fn().mockReturnThis(),
   format: jest.fn(),
   add: jest.fn(),
   unix: jest.fn(),
   names: jest.fn(),
-};
-const mockMoment = () => {
-  const mock = () => momentMock;
-  mock.tz = momentMock;
-  return mock;
 };
 
 const mockSlackFormatModal = {
@@ -50,14 +45,18 @@ const mockSlackFormatModal = {
   yesOrNo: jest.fn(),
 };
 
-jest.doMock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', mockMoment, {virtual: true});
-jest.doMock('/opt/config/config', () => mockConfig, {virtual: true});
-jest.doMock('/opt/slack/format/slack-format-modal', () => mockSlackFormatModal, {virtual: true});
+jest.mock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', () => {
+  const mock = () => mockMoment;
+  mock.tz = mockMoment;
+  return mock;
+}, {virtual: true});
+jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
+jest.mock('/opt/slack/format/slack-format-modal', () => mockSlackFormatModal, {virtual: true});
 
 const mod = require('../../../../../src/components/settings/layers/settings-blocks');
-const labels = mod.__get__('LABELS');
-const hints = mod.__get__('HINTS');
-const place = mod.__get__('PLACE');
+const labels = mod.LABELS;
+const hints = mod.HINTS;
+const place = mod.PLACE;
 const {settings} = require('../../../../data/request');
 
 describe('Settings Block', () => {
@@ -111,8 +110,8 @@ describe('Settings Block', () => {
       mockSlackFormatModal.selectExternal.mockReturnValue(selectExternal);
       mockSlackFormatModal.textInput.mockReturnValue(textInput);
       mockSlackFormatModal.yesOrNo.mockReturnValue(yesOrNo);
-      momentMock.tz.mockReturnThis();
-      momentMock.format.mockReturnValue(momentFormat);
+      mockMoment.tz.mockReturnThis();
+      mockMoment.format.mockReturnValue(momentFormat);
 
       expect.assertions(16);
       expect(mod.getSettingsBlocks(settings)).toStrictEqual([multiUsers, selectExternal, selectExternal, textInput, selectStatic, selectStatic, selectExternal, textInput, textInput]);
@@ -127,7 +126,7 @@ describe('Settings Block', () => {
       expect(mockSlackFormatModal.selectStatic).toBeCalledWith(mockConfig.dynamodb.settings.ghost_mode, labels.ghost_mode, hints.ghost_mode, option, yesOrNo);
       expect(mockSlackFormatModal.option).nthCalledWith(4, 'Yes', 'true');
       expect(mockSlackFormatModal.selectExternal).toBeCalledWith(mockConfig.dynamodb.settings.timezone, labels.timezone, hints.timezone, option, mockConfig.settings.query_lengths.timezone, place.timezone);
-      expect(momentMock.tz).toBeCalledWith(settings.timezone);
+      expect(mockMoment.tz).toBeCalledWith(settings.timezone);
       expect(mockSlackFormatModal.option).nthCalledWith(5, `${settings.timezone} (${momentFormat})`, settings.timezone);
       expect(mockSlackFormatModal.textInput).toBeCalledWith(mockConfig.dynamodb.settings.skip_votes, labels.skip_votes, hints.skip_votes, settings.skip_votes, mockConfig.settings.limits.skip_votes, place.skip_votes);
       expect(mockSlackFormatModal.textInput).toBeCalledWith(mockConfig.dynamodb.settings.skip_votes_ah, labels.skip_votes_ah, hints.skip_votes_ah, settings.skip_votes_ah, mockConfig.settings.limits.skip_votes, place.skip_votes_ah);

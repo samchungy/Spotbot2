@@ -30,17 +30,12 @@ const mockLogger = {
   error: jest.fn(),
 };
 // Mock Modules
-const momentMock = {
+const mockMoment = {
   tz: jest.fn().mockReturnThis(),
   format: jest.fn(),
   add: jest.fn(),
   unix: jest.fn(),
   names: jest.fn(),
-};
-const mockMoment = () => {
-  const mock = () => momentMock;
-  mock.tz = momentMock;
-  return mock;
 };
 
 const mockSpotifyAuth = {
@@ -87,24 +82,28 @@ const mockUtilTransform = {
   decode64: jest.fn(),
 };
 
-jest.doMock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', mockMoment, {virtual: true});
-jest.doMock('/opt/config/config', () => mockConfig, {virtual: true});
-jest.doMock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
+jest.mock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', () => {
+  const mock = () => mockMoment;
+  mock.tz = mockMoment;
+  return mock;
+}, {virtual: true});
+jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
+jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
 
-jest.doMock('/opt/spotify/spotify-api-v2/spotify-api-auth', () => mockSpotifyAuth, {virtual: true});
-jest.doMock('/opt/spotify/spotify-api-v2/spotify-api-profile', () => mockSpotifyProfile, {virtual: true});
-jest.doMock('/opt/db/spotify-auth-interface', () => mockAuthInterface, {virtual: true});
-jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
-jest.doMock('/opt/errors/errors-spotify', () => mockAuthErrors, {virtual: true});
+jest.mock('/opt/spotify/spotify-api-v2/spotify-api-auth', () => mockSpotifyAuth, {virtual: true});
+jest.mock('/opt/spotify/spotify-api-v2/spotify-api-profile', () => mockSpotifyProfile, {virtual: true});
+jest.mock('/opt/db/spotify-auth-interface', () => mockAuthInterface, {virtual: true});
+jest.mock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
+jest.mock('/opt/errors/errors-spotify', () => mockAuthErrors, {virtual: true});
 
-jest.doMock('/opt/slack/format/slack-format-modal', () => mockSlackFormatModal, {virtual: true});
-jest.doMock('/opt/slack/format/slack-format-blocks', () => mockSlackFormatBlocks, {virtual: true});
-jest.doMock('/opt/utils/util-transform', () => mockUtilTransform, {virtual: true});
+jest.mock('/opt/slack/format/slack-format-modal', () => mockSlackFormatModal, {virtual: true});
+jest.mock('/opt/slack/format/slack-format-blocks', () => mockSlackFormatBlocks, {virtual: true});
+jest.mock('/opt/utils/util-transform', () => mockUtilTransform, {virtual: true});
 
 const mod = require('../../../../../src/components/settings/layers/settings-auth-blocks');
-const response = mod.__get__('RESPONSE');
-const labels = mod.__get__('LABELS');
-const hints = mod.__get__('HINTS');
+const response = mod.RESPONSE;
+const labels = mod.LABELS;
+const hints = mod.HINTS;
 
 const profile = require('../../../../data/spotify/profile');
 const {teamId, channelId, viewId, url} = require('../../../../data/request');
@@ -165,8 +164,8 @@ describe('Settings Auth Block', () => {
       mockAuthInterface.storeState.mockResolvedValue();
       mockSpotifyAuth.fetchAuthUrl.mockResolvedValue(authenticationUrl);
       mockUtilTransform.encode64.mockReturnValue(encoded);
-      momentMock.add.mockReturnThis();
-      momentMock.unix.mockReturnValue(unixTime);
+      mockMoment.add.mockReturnThis();
+      mockMoment.unix.mockReturnValue(unixTime);
 
       await expect(mod.getAuthBlock(teamId, channelId, viewId, url)).resolves.toStrictEqual({authBlock: [button], authError: true});
       expect(mockAuthInterface.storeState).toBeCalledWith(teamId, channelId, {state}, unixTime);
@@ -188,8 +187,8 @@ describe('Settings Auth Block', () => {
       mockAuthInterface.storeState.mockResolvedValue();
       mockSpotifyAuth.fetchAuthUrl.mockResolvedValue(authenticationUrl);
       mockUtilTransform.encode64.mockReturnValue(encoded);
-      momentMock.add.mockReturnThis();
-      momentMock.unix.mockReturnValue(unixTime);
+      mockMoment.add.mockReturnThis();
+      mockMoment.unix.mockReturnValue(unixTime);
 
       await expect(mod.getAuthBlock(teamId, channelId, viewId, url)).resolves.toStrictEqual({authBlock: [button], authError: true});
       expect(mockAuthInterface.storeState).toBeCalledWith(teamId, channelId, {state}, unixTime);
@@ -212,8 +211,8 @@ describe('Settings Auth Block', () => {
       mockAuthInterface.storeState.mockResolvedValue();
       mockSpotifyAuth.fetchAuthUrl.mockResolvedValue(authenticationUrl);
       mockUtilTransform.encode64.mockReturnValue(encoded);
-      momentMock.add.mockReturnThis();
-      momentMock.unix.mockReturnValue(unixTime);
+      mockMoment.add.mockReturnThis();
+      mockMoment.unix.mockReturnValue(unixTime);
 
       await expect(mod.getAuthBlock(teamId, channelId, viewId, url)).resolves.toStrictEqual({authBlock: [button, context], authError: true});
       expect(mockAuthInterface.storeState).toBeCalledWith(teamId, channelId, {state}, unixTime);
@@ -235,8 +234,8 @@ describe('Settings Auth Block', () => {
       mockAuthInterface.storeState.mockResolvedValue();
       mockSpotifyAuth.fetchAuthUrl.mockResolvedValue(authenticationUrl);
       mockUtilTransform.encode64.mockReturnValue(encoded);
-      momentMock.add.mockReturnThis();
-      momentMock.unix.mockReturnValue(unixTime);
+      mockMoment.add.mockReturnThis();
+      mockMoment.unix.mockReturnValue(unixTime);
 
       await expect(mod.getAuthBlock(teamId, channelId, viewId, url)).rejects.toBe(error);
       expect(mockLogger.error).toBeCalledWith(error, 'Failed to generate AuthBlock');

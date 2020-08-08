@@ -67,4 +67,7 @@ const setYesOrNo = (value) => {
 
 module.exports = {
   getSettingsBlocks,
+  HINTS,
+  LABELS,
+  PLACE,
 };

@@ -98,4 +98,7 @@ const getAuthBlock = async (teamId, channelId, viewId, url) => {
 module.exports = {
   getAuthBlock,
   getAuthorizationURL,
+  HINTS,
+  RESPONSE,
+  LABELS,
 };
