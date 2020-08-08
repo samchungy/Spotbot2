@@ -18,6 +18,13 @@ const SETTINGS_HELPER = config.dynamodb.settings_helper;
 const NEW_PLAYLIST = SETTINGS_HELPER.create_new_playlist;
 const PLAYLIST = config.dynamodb.settings.playlist;
 
+const OPTION = {
+  current: (name) => `${name} (Current Selection)`,
+  createPlaylist: (query) => `Create a new playlist called "${query}"`,
+  newPlaylist: (query) => NEW_PLAYLIST + query,
+  none: (query) => `No query results for "${query}"`,
+};
+
 const RESPONSE = {
   failed: 'Fetching Spotify playlists in settings failed',
 };
@@ -53,8 +60,8 @@ const main = async (teamId, channelId, settings, query) => {
   const currentPlaylist = settings ? settings[PLAYLIST] : null;
   // Convert our saved setting to a Slack option, adds a create new playlist option
   const other = [
-    ...currentPlaylist ? [option(`${currentPlaylist.name} (Current Selection)`, `${currentPlaylist.id}`)] : [],
-    option(`Create a new playlist called "${query}"`, `${NEW_PLAYLIST}${query}`),
+    ...currentPlaylist ? [option(OPTION.current(currentPlaylist.name), currentPlaylist.id)] : [],
+    option(OPTION.createPlaylist(query), OPTION.newPlaylist(query)),
   ];
   const playlists = await getCompatiblePlaylists(teamId, channelId, currentPlaylist);
   await storePlaylists(teamId, channelId, {value: playlists}, moment().add(1, 'hour').unix());
@@ -65,7 +72,7 @@ const main = async (teamId, channelId, settings, query) => {
 
   if (!searchPlaylists.length) {
     return {
-      option_groups: [optionGroup(`No query results for "${query}"`, other)],
+      option_groups: [optionGroup(OPTION.none(query), other)],
     };
   }
   return {
@@ -85,3 +92,6 @@ module.exports.handler = async (event, context) => {
         reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
+
+module.exports.RESPONSE = RESPONSE;
+module.exports.OPTION = OPTION;
