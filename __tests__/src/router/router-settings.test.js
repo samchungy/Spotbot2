@@ -68,26 +68,25 @@ const mockErrorsSettings = {
   SetupError: SetupError,
 };
 
-jest.doMock('/opt/config/config', () => mockConfig, {virtual: true});
-jest.doMock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
-jest.doMock('/opt/sns', () => mockSns, {virtual: true});
+jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
+jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
+jest.mock('/opt/sns', () => mockSns, {virtual: true});
 
-jest.doMock('/opt/router/authorizer', () => mockAuthorizer, {virtual: true});
+jest.mock('/opt/router/authorizer', () => mockAuthorizer, {virtual: true});
 
-jest.doMock('/opt/router/slack-modal', () => mockSlackModal, {virtual: true});
+jest.mock('/opt/router/slack-modal', () => mockSlackModal, {virtual: true});
 
-jest.doMock('/opt/router/check-settings', () => mockCheckSettings, {virtual: true});
-jest.doMock('/opt/errors/errors-settings', () => mockErrorsSettings, {virtual: true});
+jest.mock('/opt/router/check-settings', () => mockCheckSettings, {virtual: true});
+jest.mock('/opt/errors/errors-settings', () => mockErrorsSettings, {virtual: true});
 
 const {settings} = require('../../data/request');
 const querystring = require('querystring');
 const mod = require('../../../src/router/router-settings');
 const modal = require('../../data/slack/open-modal');
-const router = mod.__get__('router');
-const response = mod.__get__('RESPONSE');
-const settingsOpen = mod.__get__('SETTINGS_OPEN');
-const settingsBlacklistOpen = mod.__get__('SETTINGS_BLACKLIST_OPEN');
-const settingsDeviceSelect = mod.__get__('SETTINGS_DEVICE_SELECT');
+const response = mod.RESPONSE;
+const settingsOpen = mod.SETTINGS_OPEN;
+const settingsBlacklistOpen = mod.SETTINGS_BLACKLIST_OPEN;
+const settingsDeviceSelect = mod.SETTINGS_DEVICE_SELECT;
 // const settingsSonosOpen = mod.__get__('SETTINGS_SONOS_OPEN');
 
 const event = {
@@ -183,27 +182,23 @@ describe('Router Settings', () => {
   });
 
   describe('handler', () => {
-    afterAll(() => {
-      mod.__ResetDependency__('main');
-    });
     describe('success', () => {
-      it('should call the router function and return a 200 with no data', async () => {
-        mod.__set__('router', () => Promise.resolve());
+      it('should call the router function and return a 200 with data', async () => {
         mockAuthorizer.mockReturnValue(true);
 
         expect.assertions(2);
-        await expect(mod.handler(event[0])).resolves.toStrictEqual({statusCode: 200, body: ''});
+        await expect(mod.handler(event[0])).resolves.toStrictEqual({statusCode: 200, body: response.help});
         expect(mockAuthorizer).toBeCalledWith(event[0]);
       });
 
-      it('should call the router function and return a 200 with data', async () => {
-        const data = {data: true};
-        mod.__set__('router', () => Promise.resolve(data));
+      it('should call the router function and return a 200 with no data', async () => {
+        const modal = {view: {id: 'abc'}};
         mockAuthorizer.mockReturnValue(true);
+        mockCheckSettings.checkIsSetup.mockResolvedValue();
+        mockSlackModal.openModal.mockResolvedValue(modal);
 
-        expect.assertions(2);
-        await expect(mod.handler(event[0])).resolves.toStrictEqual({statusCode: 200, body: data});
-        expect(mockAuthorizer).toBeCalledWith(event[0]);
+        await expect(mod.handler(event[5])).resolves.toStrictEqual({statusCode: 200, body: ''});
+        expect(mockAuthorizer).toBeCalledWith(event[5]);
       });
     });
     describe('auth', () => {
@@ -219,22 +214,24 @@ describe('Router Settings', () => {
       it('should report a setup error to Slack', async () => {
         const error = new mockErrorsSettings.SetupError();
         error.message = 'A setup error';
+        const modal = {view: {id: 'abc'}};
 
-        mod.__set__('router', () => Promise.reject(error));
         mockAuthorizer.mockReturnValue(true);
+        mockSlackModal.openModal.mockResolvedValue(modal);
+        mockCheckSettings.checkIsSetup.mockRejectedValue(error);
 
         expect.assertions(1);
-        await expect(mod.handler(event[0])).resolves.toStrictEqual({statusCode: 200, body: error.message});
+        await expect(mod.handler(event[5])).resolves.toStrictEqual({statusCode: 200, body: error.message});
       });
 
       it('should report a generic error to Slack', async () => {
         const error = new Error();
 
-        mod.__set__('router', () => Promise.reject(error));
         mockAuthorizer.mockReturnValue(true);
+        mockSlackModal.openModal.mockRejectedValue(error);
 
         expect.assertions(2);
-        await expect(mod.handler(event[0])).resolves.toStrictEqual({statusCode: 200, body: response.error});
+        await expect(mod.handler(event[5])).resolves.toStrictEqual({statusCode: 200, body: response.error});
         expect(mockLogger.error).toBeCalledWith(error, response.failed);
       });
     });
@@ -242,16 +239,16 @@ describe('Router Settings', () => {
 
   describe('router', () => {
     it('should respond to help', async () => {
-      await expect(router(event[0])).resolves.toBe(response.help);
+      await expect(mod.handler(event[0])).resolves.toStrictEqual({statusCode: 200, body: response.help});
     });
     it('should respond to no text and respond with help', async () => {
-      await expect(router(event[1])).resolves.toBe(response.help);
+      await expect(mod.handler(event[1])).resolves.toStrictEqual({statusCode: 200, body: response.help});
     });
-    it('should respond to no payload text at all and respond with help', async () => {
-      await expect(router(event[2])).resolves.toBe(response.help);
+    it('should respond to absolutely no text and respond with help', async () => {
+      await expect(mod.handler(event[2])).resolves.toStrictEqual({statusCode: 200, body: response.help});
     });
     it('should respond to garbage payload text at all and respond with invalid', async () => {
-      await expect(router(event[6])).resolves.toBe(response.invalid);
+      await expect(mod.handler(event[6])).resolves.toStrictEqual({statusCode: 200, body: response.invalid});
     });
 
     describe('settings', () => {
@@ -277,7 +274,7 @@ describe('Router Settings', () => {
         mockSlackModal.openModal.mockResolvedValue(modal[0]);
         mockSns.promise.mockResolvedValue();
 
-        await expect(router(event[3])).resolves.toBe();
+        await expect(mod.handler(event[3])).resolves.toStrictEqual({statusCode: 200, body: ''});
         expect(mockCheckSettings.checkIsPreviouslySetup).toBeCalledWith(teamId, channelId);
         expect(mockCheckSettings.checkIsInChannel).toBeCalledWith(channelId);
         expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId, null);
@@ -305,7 +302,7 @@ describe('Router Settings', () => {
         mockSlackModal.openModal.mockResolvedValue(modal[0]);
         mockSns.promise.mockResolvedValue();
 
-        await expect(router(event[3])).resolves.toBe();
+        await expect(mod.handler(event[3])).resolves.toStrictEqual({statusCode: 200, body: ''});
         expect(mockCheckSettings.checkIsPreviouslySetup).toBeCalledWith(teamId, channelId);
         expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId, settings);
         expect(mockCheckSettings.checkIsAdmin).toBeCalledWith(settings, userId);
@@ -323,7 +320,7 @@ describe('Router Settings', () => {
         mockSlackModal.openModal.mockResolvedValue(modal[0]);
         mockSns.promise.mockResolvedValue();
 
-        await expect(router(event[3])).rejects.toBe(adminError);
+        await expect(mod.handler(event[3])).resolves.toStrictEqual({statusCode: 200, body: adminError.message});
         expect(mockCheckSettings.checkIsPreviouslySetup).toBeCalledWith(teamId, channelId);
         expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId, settings);
         expect(mockCheckSettings.checkIsAdmin).toBeCalledWith(settings, userId);
@@ -335,7 +332,7 @@ describe('Router Settings', () => {
 
         mockCheckSettings.checkIsPreviouslySetup.mockRejectedValue(error);
 
-        await expect(router(event[3])).rejects.toBe(error);
+        await expect(mod.handler(event[3])).resolves.toStrictEqual({statusCode: 200, body: response.error});
         expect(mockCheckSettings.checkIsPreviouslySetup).toBeCalledWith(teamId, channelId);
       });
 
@@ -346,7 +343,7 @@ describe('Router Settings', () => {
         mockCheckSettings.checkIsPreviouslySetup.mockResolvedValue(settings);
         mockCheckSettings.checkIsSetup.mockRejectedValue(error);
 
-        await expect(router(event[3])).rejects.toBe(error);
+        await expect(mod.handler(event[3])).resolves.toStrictEqual({statusCode: 200, body: response.error});
         expect(mockCheckSettings.checkIsPreviouslySetup).toBeCalledWith(teamId, channelId);
       });
     });
@@ -369,8 +366,8 @@ describe('Router Settings', () => {
         mockCheckSettings.checkIsAdmin.mockResolvedValue(true);
         mockSlackModal.openModal.mockResolvedValue(modal[0]);
         mockSns.promise.mockResolvedValue();
-        await expect(router(event[4])).resolves.toBe();
 
+        await expect(mod.handler(event[4])).resolves.toStrictEqual({statusCode: 200, body: ''});
         expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId);
         expect(mockCheckSettings.checkIsAdmin).toBeCalledWith(settings, userId);
         expect(mockSlackModal.openModal).toBeCalledWith(teamId, channelId, triggerId, mockConfig.slack.actions.empty_modal, 'Spotbot Blacklist', null, 'Cancel');
@@ -381,7 +378,7 @@ describe('Router Settings', () => {
         const {team_id: teamId, channel_id: channelId} = querystring.parse(event[4].body);
         const setupError = new SetupError();
         mockCheckSettings.checkIsSetup.mockRejectedValue(setupError);
-        await expect(router(event[4])).rejects.toBe(setupError);
+        await expect(mod.handler(event[4])).resolves.toStrictEqual({statusCode: 200, body: setupError.message});
 
         expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId);
       });
@@ -391,8 +388,7 @@ describe('Router Settings', () => {
         const channelError = new ChannelAdminError();
         mockCheckSettings.checkIsSetup.mockResolvedValue(settings);
         mockCheckSettings.checkIsAdmin.mockRejectedValue(channelError);
-        await expect(router(event[4])).rejects.toBe(channelError);
-
+        await expect(mod.handler(event[4])).resolves.toStrictEqual({statusCode: 200, body: channelError.message});
         expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId);
         expect(mockCheckSettings.checkIsAdmin).toBeCalledWith(settings, userId);
       });
@@ -416,7 +412,7 @@ describe('Router Settings', () => {
         mockCheckSettings.checkIsAdmin.mockResolvedValue(true);
         mockSlackModal.openModal.mockResolvedValue(modal[0]);
         mockSns.promise.mockResolvedValue();
-        await expect(router(event[5])).resolves.toBe();
+        await expect(mod.handler(event[5])).resolves.toStrictEqual({statusCode: 200, body: ''});
 
         expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId);
         expect(mockCheckSettings.checkIsAdmin).toBeCalledWith(settings, userId);
@@ -428,8 +424,8 @@ describe('Router Settings', () => {
         const {team_id: teamId, channel_id: channelId} = querystring.parse(event[5].body);
         const setupError = new SetupError();
         mockCheckSettings.checkIsSetup.mockRejectedValue(setupError);
-        await expect(router(event[5])).rejects.toBe(setupError);
 
+        await expect(mod.handler(event[5])).resolves.toStrictEqual({statusCode: 200, body: setupError.message});
         expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId);
       });
 
@@ -438,8 +434,8 @@ describe('Router Settings', () => {
         const channelError = new ChannelAdminError();
         mockCheckSettings.checkIsSetup.mockResolvedValue(settings);
         mockCheckSettings.checkIsAdmin.mockRejectedValue(channelError);
-        await expect(router(event[5])).rejects.toBe(channelError);
 
+        await expect(mod.handler(event[5])).resolves.toStrictEqual({statusCode: 200, body: channelError.message});
         expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId);
         expect(mockCheckSettings.checkIsAdmin).toBeCalledWith(settings, userId);
       });

@@ -141,3 +141,8 @@ module.exports.handler = async (event, context) => {
         return {statusCode: 200, body: RESPONSE.error};
       });
 };
+
+module.exports.RESPONSE = RESPONSE;
+module.exports.SETTINGS_OPEN = SETTINGS_OPEN;
+module.exports.SETTINGS_BLACKLIST_OPEN = SETTINGS_BLACKLIST_OPEN;
+module.exports.SETTINGS_DEVICE_SELECT = SETTINGS_DEVICE_SELECT;
