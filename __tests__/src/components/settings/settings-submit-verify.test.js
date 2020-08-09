@@ -30,18 +30,17 @@ const mockSlackErrorReporter = {
   reportErrorToSlack: jest.fn(),
 };
 
-jest.doMock('/opt/config/config', () => mockConfig, {virtual: true});
-jest.doMock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
-jest.doMock('/opt/sns', () => mockSns, {virtual: true});
+jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
+jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
+jest.mock('/opt/sns', () => mockSns, {virtual: true});
 
-jest.doMock('/opt/utils/util-objects', () => mockUtilObjects, {virtual: true});
+jest.mock('/opt/utils/util-objects', () => mockUtilObjects, {virtual: true});
 
-jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
+jest.mock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 
 const mod = require('../../../../src/components/settings/settings-submit-verify');
-const main = mod.__get__('main');
-const response = mod.__get__('RESPONSE');
-const settingsSubmitSave = mod.__get__('SETTINGS_SUBMIT_SAVE');
+const response = mod.RESPONSE;
+const settingsSubmitSave = mod.SETTINGS_SUBMIT_SAVE;
 
 const {teamId, channelId, userId} = require('../../../data/request');
 const view = {
@@ -974,30 +973,25 @@ const view = {
     'bot_id': 'B012FPR625Q',
   },
 };
-const params = {teamId, channelId, view: view[0], userId};
-const parameters = {
-  0: [teamId, channelId, view[0], userId], // Fine
-  1: [teamId, channelId, view[1], userId], // Bad input
+const params = {
+  0: {teamId, channelId, view: view[0], userId},
+  1: {teamId, channelId, view: view[1], userId},
 };
 
 describe('Settings submission verfification', () => {
   describe('handler', () => {
-    afterAll(() => {
-      mod.__ResetDependency__('main');
-    });
-    const event = params;
+    const event = params[0];
     describe('success', () => {
       it('should call the main function', async () => {
-        mod.__set__('main', () => Promise.resolve());
-
+        mockUtilObjects.isEmpty.mockReturnValue(true);
         expect.assertions(1);
-        await expect(mod.handler(event)).resolves.toBe();
+        await expect(mod.handler(event)).resolves.toBe(null);
       });
     });
     describe('error', () => {
       it('should report the error to Slack', async () => {
         const error = new Error();
-        mod.__set__('main', () => Promise.reject(error));
+        mockSns.promise.mockRejectedValue(error);
 
         expect.assertions(3);
         await expect(mod.handler(event)).resolves.toBe();
@@ -1009,6 +1003,7 @@ describe('Settings submission verfification', () => {
 
   describe('main', () => {
     it('should extract submissions and call to save settings', async () => {
+      const event = params[0];
       const submissions = {
         'channel_admins': [
           'URVUTD7UP',
@@ -1022,7 +1017,7 @@ describe('Settings submission verfification', () => {
         'skip_votes': '2',
         'skip_votes_ah': '2',
       };
-      const params = {
+      const sns = {
         Message: JSON.stringify({teamId, channelId, userId, submissions}),
         TopicArn: settingsSubmitSave,
       };
@@ -1030,19 +1025,19 @@ describe('Settings submission verfification', () => {
       mockUtilObjects.isEmpty.mockReturnValue(true);
       mockSns.promise.mockResolvedValue();
 
-      expect.assertions(3);
-      await expect(main(...parameters[0])).resolves.toBe(null);
+      await expect(mod.handler(event)).resolves.toBe(null);
       expect(mockUtilObjects.isPositiveInteger).toBeCalledTimes(3);
-      expect(mockSns.publish).toBeCalledWith(params);
+      expect(mockSns.publish).toBeCalledWith(sns);
     });
 
     it('should return errors with non positive integers', async () => {
+      const event = params[1];
       mockUtilObjects.isPositiveInteger.mockReturnValue(false);
       mockUtilObjects.isEmpty.mockReturnValue(false);
       mockSns.promise.mockResolvedValue();
 
       expect.assertions(2);
-      await expect(main(...parameters[1])).resolves.toStrictEqual({'errors': {'disable_repeats_duration': 'Please enter a valid integer', 'skip_votes': 'Please enter a valid integer', 'skip_votes_ah': 'Please enter a valid integer'}, 'response_action': 'errors'});
+      await expect(mod.handler(event)).resolves.toStrictEqual({'errors': {'disable_repeats_duration': 'Please enter a valid integer', 'skip_votes': 'Please enter a valid integer', 'skip_votes_ah': 'Please enter a valid integer'}, 'response_action': 'errors'});
       expect(mockUtilObjects.isPositiveInteger).toBeCalledTimes(3);
     });
   });

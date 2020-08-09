@@ -96,3 +96,5 @@ module.exports.handler = async (event, context) => {
         reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;
+module.exports.SETTINGS_SUBMIT_SAVE = SETTINGS_SUBMIT_SAVE;
