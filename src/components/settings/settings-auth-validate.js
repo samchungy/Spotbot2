@@ -80,3 +80,5 @@ module.exports.handler = async (event, context) => {
         return RESPONSE.failed;
       });
 };
+
+module.exports.RESPONSE = RESPONSE;

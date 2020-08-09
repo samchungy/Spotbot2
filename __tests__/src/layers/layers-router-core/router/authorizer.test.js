@@ -8,13 +8,13 @@ const mockDate = {
   now: jest.fn(),
 };
 
-jest.doMock('crypto', () => mockCrypto, {virtual: true});
+jest.mock('crypto', () => mockCrypto, {virtual: true});
 const mockBuffer = jest.spyOn(Buffer, 'from');
 // eslint-disable-next-line no-global-assign
 Date = mockDate;
 
 const mod = require('../../../../../src/layers/layers-router-core/router/authorizer');
-const secret = mod.__get__('SLACK_SIGNING_SECRET');
+const secret = process.env.SLACK_SIGNING_SECRET;
 const event = {
   0: {
     'body': 'token=GR0v8MoxmPNjtsD0rHn9NMIo&team_id=TRVUTD7DM&team_domain=spotbottest&channel_id=CRU3H4MEC&channel_name=general&user_id=URVUTD7UP&user_name=samchungy&command=%2Fdspotbot&text=settings&response_url=https%3A%2F%2Fhooks.slack.com%2Fcommands%2FTRVUTD7DM%2F1273433407174%2F96nQIMGR7zu5OZxAD2bH0n3o&trigger_id=1304004152144.879979449463.77bbc613de6ddf581ea50db35033ce1f',

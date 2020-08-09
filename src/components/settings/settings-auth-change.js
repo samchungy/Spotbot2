@@ -32,3 +32,5 @@ module.exports.handler = async (event, context) => {
       });
 };
 
+module.exports.RESPONSE = RESPONSE;
+module.exports.SETTINGS_AUTH_UPDATE_VIEW = SETTINGS_AUTH_UPDATE_VIEW;

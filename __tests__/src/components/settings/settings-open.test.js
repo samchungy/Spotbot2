@@ -30,45 +30,36 @@ const mockSettingsBlocks = {
 };
 
 // Mock Declarations
-jest.doMock('../../../../src/components/settings/layers/settings-auth-blocks', () => mockAuth);
-jest.doMock('../../../../src/components/settings/layers/settings-blocks', () => mockSettingsBlocks);
-jest.doMock('/opt/slack/format/slack-format-modal', () => mockSlackFormat, {virtual: true});
-jest.doMock('/opt/config/config', () => mockConfig, {virtual: true});
-jest.doMock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
-jest.doMock('/opt/slack/slack-api', () => mockSlackApi, {virtual: true});
-jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
+jest.mock('../../../../src/components/settings/layers/settings-auth-blocks', () => mockAuth);
+jest.mock('../../../../src/components/settings/layers/settings-blocks', () => mockSettingsBlocks);
+jest.mock('/opt/slack/format/slack-format-modal', () => mockSlackFormat, {virtual: true});
+jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
+jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
+jest.mock('/opt/slack/slack-api', () => mockSlackApi, {virtual: true});
+jest.mock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 
 const mod = require('../../../../src/components/settings/settings-open');
-const main = mod.__get__('main');
-const response = mod.__get__('RESPONSE');
+const response = mod.RESPONSE;
 
 const {teamId, channelId, settings, viewId, userId, url} = require('../../../data/request');
 const params = {teamId, channelId, settings, viewId, userId, url};
-const parameters = [teamId, channelId, settings, viewId, url];
+const event = (params) => ({
+  Records: [{Sns: {Message: JSON.stringify(params)}}],
+});
 
 describe('Get Settings Blocks', () => {
   describe('handler', () => {
-    afterAll(() => {
-      mod.__ResetDependency__('main');
-    });
-    const event = {
-      Records: [{Sns: {Message: JSON.stringify(params)}}],
-    };
     describe('success', () => {
       it('should call the main function', async () => {
-        mod.__set__('main', () => Promise.resolve());
-
-        expect.assertions(1);
-        await expect(mod.handler(event)).resolves.toBe();
+        await expect(mod.handler(event(params))).resolves.toBe();
       });
     });
     describe('error', () => {
       it('should report the error to Slack', async () => {
         const error = new Error();
-        mod.__set__('main', () => Promise.reject(error));
+        mockAuth.getAuthBlock.mockRejectedValue(error);
 
-        expect.assertions(3);
-        await expect(mod.handler(event)).resolves.toBe();
+        await expect(mod.handler(event(params))).resolves.toBe();
         expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
         expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, userId, response.failed);
       });
@@ -81,9 +72,9 @@ describe('Get Settings Blocks', () => {
       mockSettingsBlocks.getSettingsBlocks.mockResolvedValue([{settings: 'block'}]);
       mockSlackFormat.slackModal.mockReturnValue({modal: 'slack'});
 
-      expect.assertions(4);
-      await expect(main(...parameters)).resolves.toBe();
+      await expect(mod.handler(event(params))).resolves.toBe();
       expect(mockAuth.getAuthBlock).toHaveBeenCalledWith(teamId, channelId, viewId, url);
+      expect(mockSettingsBlocks.getSettingsBlocks).toBeCalledWith(settings);
       expect(mockSlackFormat.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.settings_modal, `Spotbot Settings`, `Save`, `Cancel`, [{auth: 'block'}, {settings: 'block'}], false, channelId);
       expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, {modal: 'slack'});
     });
@@ -93,8 +84,7 @@ describe('Get Settings Blocks', () => {
       mockSettingsBlocks.getSettingsBlocks.mockResolvedValue([{settings: 'block'}]);
       mockSlackFormat.slackModal.mockReturnValue({modal: 'slack'});
 
-      expect.assertions(4);
-      await expect(main(...parameters)).resolves.toBe();
+      await expect(mod.handler(event(params))).resolves.toBe();
       expect(mockAuth.getAuthBlock).toHaveBeenCalledWith(teamId, channelId, viewId, url);
       expect(mockSlackFormat.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.settings_modal, `Spotbot Settings`, null, `Close`, [{auth: 'block'}], false, channelId);
       expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, {modal: 'slack'});

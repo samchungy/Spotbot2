@@ -72,26 +72,6 @@ const momentData = {
 
 
 describe('Get Timezone Options', () => {
-  beforeAll(() => {
-    expect.extend({
-      toHaveLength(received, length) {
-        const pass = Array.isArray(received) && received.length === length;
-        if (pass) {
-          return {
-            message: () =>
-              `expected ${received} not to have length ${length}`,
-            pass: true,
-          };
-        } else {
-          return {
-            message: () =>
-              `expected ${received} to be have length ${length}`,
-            pass: false,
-          };
-        }
-      },
-    });
-  });
   describe('handler', () => {
     const event = params[0];
     describe('success', () => {
