@@ -22,6 +22,7 @@ module.exports = {
     'back_to_playlist': 'false',
     'disable_repeats_duration': '0',
   },
+  userId: 'URVUTD7UP',
   viewId: 'V016R2YRZHS',
   url: 'https://939f6b415fb5.ngrok.io/local',
 };

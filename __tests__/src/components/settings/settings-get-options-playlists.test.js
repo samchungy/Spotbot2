@@ -77,8 +77,8 @@ const query = {
   0: 'winter',
 };
 const params = {
-  0: {teamId, channelId, settings, query: query[0]}, // winter queru
-  1: {teamId, channelId, settings: null, query: query[0]}, // no settings
+  0: {teamId, channelId, userId, settings, query: query[0]}, // winter queru
+  1: {teamId, channelId, userId, settings: null, query: query[0]}, // no settings
 };
 
 describe('Get Playlist Options', () => {

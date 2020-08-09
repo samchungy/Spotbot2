@@ -42,9 +42,8 @@ const checkIsPreviouslySetup = async (teamId, channelId) => {
   const settings = await loadSettings(teamId, channelId);
   if (settings) {
     return settings;
-  } else {
-    return Promise.reject(new SetupError(ERROR_MESSAGES.setup_error));
   }
+  return Promise.reject(new SetupError(ERROR_MESSAGES.setup_error));
 };
 
 /**
@@ -70,7 +69,7 @@ const checkIsInChannel = async (channelId) => {
   if (info.ok && info.channel && info.channel.is_member) {
     return true;
   }
-  return false;
+  return Promise.reject(new SetupError(ERROR_MESSAGES.setup_error));
 };
 
 module.exports = {
@@ -78,4 +77,5 @@ module.exports = {
   checkIsInChannel,
   checkIsSetup,
   checkIsPreviouslySetup,
+  ERROR_MESSAGES,
 };
