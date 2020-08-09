@@ -24,5 +24,6 @@ module.exports = {
   },
   userId: 'URVUTD7UP',
   viewId: 'V016R2YRZHS',
+  triggerId: '12345.98765.abcd2358fdea',
   url: 'https://939f6b415fb5.ngrok.io/local',
 };
