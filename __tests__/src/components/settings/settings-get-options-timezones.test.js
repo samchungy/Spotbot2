@@ -2,16 +2,10 @@ const mockSlackErrorReporter = {
   reportErrorToSlack: jest.fn(),
 };
 
-const momentMock = {
-  tz: jest.fn().mockReturnThis(),
+const mockMoment = {
+  tz: jest.fn(),
   format: jest.fn(),
   names: jest.fn(),
-};
-
-const mockMoment = () => {
-  const mock = () => momentMock;
-  mock.tz = momentMock;
-  return mock;
 };
 
 const mockLogger = {
@@ -20,30 +14,33 @@ const mockLogger = {
 };
 
 const mockSlackFormat = {
-  option: jest.fn().mockImplementation((name, value) => ({text: name, value: value})),
-  optionGroup: jest.fn().mockImplementation((name, value) => ({text: name, value: value})),
+  option: jest.fn(),
+  optionGroup: jest.fn(),
 };
 
 // Mock Declarations
-jest.doMock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
-jest.doMock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', mockMoment, {virtual: true});
-jest.doMock('/opt/slack/format/slack-format-modal', () => mockSlackFormat, {virtual: true});
-jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
+jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
+jest.mock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', () => {
+  const mock = () => mockMoment;
+  mock.tz = mockMoment;
+  return mock;
+}, {virtual: true});
+jest.mock('/opt/slack/format/slack-format-modal', () => mockSlackFormat, {virtual: true});
+jest.mock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 
 
 // Main
 const mod = require('../../../../src/components/settings/settings-get-options-timezones');
-const main = mod.__get__('main');
-const response = mod.__get__('RESPONSE');
+const response = mod.RESPONSE;
+const option = mod.OPTION;
 const {teamId, channelId, userId} = require('../../../data/request');
 const query = {
   0: 'melbourne',
   1: 'Australia',
 };
-const params = {teamId, channelId, userId, query};
-const parameters = {
-  0: [query[0]], // winter queru
-  1: [query[1]], // no playlist query
+const params = {
+  0: {teamId, channelId, userId, query: query[0]},
+  1: {teamId, channelId, userId, query: query[1]},
 };
 const momentData = {
   0: [
@@ -96,14 +93,9 @@ describe('Get Timezone Options', () => {
     });
   });
   describe('handler', () => {
-    afterAll(() => {
-      mod.__ResetDependency__('main');
-    });
-    const event = params;
+    const event = params[0];
     describe('success', () => {
       it('should call the main function', async () => {
-        mod.__set__('main', () => Promise.resolve());
-
         expect.assertions(1);
         await expect(mod.handler(event)).resolves.toBe();
       });
@@ -111,11 +103,11 @@ describe('Get Timezone Options', () => {
     describe('error', () => {
       it('should report the error to Slack', async () => {
         const error = new Error();
-        mod.__set__('main', () => Promise.reject(error));
+        mockMoment.tz.mockRejectedValue(error);
 
         expect.assertions(3);
         await expect(mod.handler(event)).resolves.toBe();
-        expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
+        expect(mockLogger.error).toHaveBeenCalledWith(expect.any(Error), response.failed);
         expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, userId, response.failed);
       });
     });
@@ -123,46 +115,66 @@ describe('Get Timezone Options', () => {
 
   describe('main', () => {
     it('should return Slack options containing 1 timezone result', async () => {
-      momentMock.names.mockReturnValue(momentData[0]);
-      momentMock.format.mockReturnValue('+10:00');
+      const event = params[0];
+      const opt = {option: true};
+      const optionGroup = {optionGroup: true};
+      const format = '+10:00';
+      const matchTimezone = 'Australia/Melbourne';
 
-      expect.assertions(1);
-      await expect(main(...parameters[0])).resolves.toStrictEqual({'option_groups': [{'text': '1 query for "melbourne".', 'value': [{'text': 'Australia/Melbourne (+10:00)', 'value': 'Australia/Melbourne'}]}]});
+      mockSlackFormat.option.mockReturnValue(opt);
+      mockSlackFormat.optionGroup.mockReturnValue(optionGroup);
+      mockMoment.tz.mockReturnThis();
+      mockMoment.names.mockReturnValue(momentData[0]);
+      mockMoment.format.mockReturnValue(format);
+
+      await expect(mod.handler(event)).resolves.toStrictEqual({option_groups: [optionGroup]});
+      expect(mockMoment.names).toHaveBeenCalled();
+      expect(mockMoment.tz).toHaveBeenCalled();
+      expect(mockMoment.format).toHaveBeenCalled();
+      expect(mockSlackFormat.option).toHaveBeenNthCalledWith(1, option.timezone(matchTimezone, format), matchTimezone);
+      expect(mockSlackFormat.optionGroup).toHaveBeenCalledWith(option.results(1, query[0]), [opt]);
     });
 
     it('should return Slack options containing multiple timezone results', async () => {
-      momentMock.names.mockReturnValue(momentData[0]);
-      momentMock.format.mockReturnValue('+10:00');
+      const event = params[1];
+      const opt = {option: true};
+      const optionGroup = {optionGroup: true};
+      const format = '+10:00';
 
-      expect.assertions(1);
-      await expect(main(...parameters[1])).resolves.toEqual(
-          {
-            option_groups: expect.arrayContaining([
-              expect.objectContaining({
-                text: expect.stringContaining('queries'),
-                value: expect.toHaveLength(momentData[0].length),
-              }),
-            ]),
-          },
-      );
+      mockSlackFormat.option.mockReturnValue(opt);
+      mockSlackFormat.optionGroup.mockReturnValue(optionGroup);
+      mockMoment.tz.mockReturnThis();
+      mockMoment.names.mockReturnValue(momentData[0]);
+      mockMoment.format.mockReturnValue(format);
+
+      await mod.handler(event);
+      expect(mockMoment.names).toHaveBeenCalled();
+      expect(mockMoment.tz).toHaveBeenCalled();
+      expect(mockMoment.format).toHaveBeenCalled();
+      expect(mockSlackFormat.option).toHaveBeenCalledTimes(momentData[0].length);
+      expect(mockSlackFormat.optionGroup).toHaveBeenCalledWith(option.results(momentData[0].length, query[1]), momentData[0].map(() => opt));
     });
 
 
     it('should return Slack options containing over 100 timezone results', async () => {
       const bigMomentData = new Array(101).fill().map(() => momentData[0][Math.floor(Math.random() * momentData[0].length)]);
-      momentMock.names.mockReturnValue(bigMomentData);
-      momentMock.format.mockReturnValue('+10:00');
-      expect.assertions(1);
-      await expect(main(...parameters[1])).resolves.toEqual(
-          {
-            option_groups: expect.arrayContaining([
-              expect.objectContaining({
-                text: expect.stringContaining('101'),
-                value: expect.toHaveLength(100),
-              }),
-            ]),
-          },
-      );
+      const event = params[1];
+      const opt = {option: true};
+      const optionGroup = {optionGroup: true};
+      const format = '+10:00';
+
+      mockSlackFormat.option.mockReturnValue(opt);
+      mockSlackFormat.optionGroup.mockReturnValue(optionGroup);
+      mockMoment.tz.mockReturnThis();
+      mockMoment.names.mockReturnValue(bigMomentData);
+      mockMoment.format.mockReturnValue(format);
+
+      await mod.handler(event);
+      expect(mockMoment.names).toHaveBeenCalled();
+      expect(mockMoment.tz).toHaveBeenCalled();
+      expect(mockMoment.format).toHaveBeenCalled();
+      expect(mockSlackFormat.option).toHaveBeenCalledTimes(bigMomentData.length);
+      expect(mockSlackFormat.optionGroup).toHaveBeenCalledWith(option.resultsHundred(bigMomentData.length, query[1]), bigMomentData.map(() => opt).slice(0, 100));
     });
   });
 });

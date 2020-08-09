@@ -9,21 +9,26 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 const RESPONSE = {
   failed: 'Getting timezone data failed',
 };
+const OPTION = {
+  resultsHundred: (total, query) => `${total} queries for "${query}". Displaying 100 of ${total}."`,
+  results: (total, query) => `${total} ${total === 1 ? 'query' : 'queries'} for "${query}".`,
+  timezone: (name, offset) => `${name} (${offset})`,
+};
 
 const main = async (query) => {
   const timezones = moment.tz.names();
   const options = timezones
       .filter((timezone) => timezone.toLowerCase().includes(query.toLowerCase().replace(' ', '_')))
-      .map((timezone) => option(`${timezone} (${moment().tz(timezone).format('Z')})`, timezone));
+      .map((timezone) => option(OPTION.timezone(timezone, moment().tz(timezone).format('Z')), timezone));
 
   if (options.length > 100) {
     return {
-      option_groups: [optionGroup(`${options.length} queries for "${query}". Displaying 100 of ${options.length}."`, options.slice(0, 100))],
+      option_groups: [optionGroup(OPTION.resultsHundred(options.length, query), options.slice(0, 100))],
     };
   }
 
   return {
-    option_groups: [optionGroup(`${options.length} ${options.length === 1 ? 'query' : 'queries'} for "${query}".`, options)],
+    option_groups: [optionGroup(OPTION.results(options.length, query), options)],
   };
 };
 
@@ -35,3 +40,5 @@ module.exports.handler = async (event, context) => {
         reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
+module.exports.OPTION = OPTION;
+module.exports.RESPONSE = RESPONSE;
