@@ -32,10 +32,10 @@ const updateModal = async (viewId, view) => {
 
 /**
  * Pushed a modal on top to Slack
- * @param {object} view Slack View
  * @param {string} triggerId Slack trigger id
+ * @param {object} view Slack View
  */
-const pushModal = async (view, triggerId) => {
+const pushModal = async (triggerId, view) => {
   return await slackClient.views.push({
     view: view,
     trigger_id: triggerId,
