@@ -63,22 +63,21 @@ const mockUtilObjects = {
   isEqual: jest.fn(),
   isEmpty: jest.fn(),
 };
-jest.doMock('/opt/utils/util-objects', () => mockUtilObjects, {virtual: true});
+jest.mock('/opt/utils/util-objects', () => mockUtilObjects, {virtual: true});
 
-jest.doMock('/opt/config/config', () => mockConfig, {virtual: true});
-jest.doMock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
-jest.doMock('/opt/db/settings-interface', () => mockSettingsInterface, {virtual: true});
-jest.doMock('/opt/slack/format/slack-format-reply', () => mockSlackFormat, {virtual: true});
-jest.doMock('/opt/slack/slack-api', () => mockSlack, {virtual: true});
-jest.doMock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
-jest.doMock('/opt/spotify/spotify-api-v2/spotify-api-playlists', () => mockPlaylists, {virtual: true});
-jest.doMock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
-jest.doMock('/opt/db/spotify-auth-interface', () => mockAuthInterface, {virtual: true});
-jest.doMock('/opt/utils/util-objects', () => mockUtilObjects, {virtual: true});
+jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
+jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
+jest.mock('/opt/db/settings-interface', () => mockSettingsInterface, {virtual: true});
+jest.mock('/opt/slack/format/slack-format-reply', () => mockSlackFormat, {virtual: true});
+jest.mock('/opt/slack/slack-api', () => mockSlack, {virtual: true});
+jest.mock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
+jest.mock('/opt/spotify/spotify-api-v2/spotify-api-playlists', () => mockPlaylists, {virtual: true});
+jest.mock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
+jest.mock('/opt/db/spotify-auth-interface', () => mockAuthInterface, {virtual: true});
+jest.mock('/opt/utils/util-objects', () => mockUtilObjects, {virtual: true});
 
 const mod = require('../../../../src/components/settings/settings-submit-save');
-const main = mod.__get__('main');
-const response = mod.__get__('RESPONSE');
+const response = mod.RESPONSE;
 
 const spotifyPlaylists = require('../../../data/spotify/playlist');
 const {teamId, channelId, userId, settings} = require('../../../data/request');
@@ -123,12 +122,15 @@ const submissions = {
     skip_votes_ah: '1',
   },
 };
-const params = {teamId, channelId, userId, submissions: submissions[0]};
-const parameters = {
-  0: [teamId, channelId, userId, submissions[0]],
-  1: [teamId, channelId, userId, submissions[1]], // New playlist
-  2: [teamId, channelId, userId, submissions[2]], // No device
+const params = {
+  0: {teamId, channelId, userId, submissions: submissions[0]},
+  1: {teamId, channelId, userId, submissions: submissions[1]}, // New playlist
+  2: {teamId, channelId, userId, submissions: submissions[2]}, // No device
 };
+
+const event = (params) => ({
+  Records: [{Sns: {Message: JSON.stringify(params)}}],
+});
 
 describe('Settings - Submit Save', () => {
   beforeAll(() => {
@@ -151,33 +153,25 @@ describe('Settings - Submit Save', () => {
       },
     });
   });
-  describe('handler', () => {
-    afterAll(() => {
-      mod.__ResetDependency__('main');
-    });
-    const event = {
-      Records: [{Sns: {Message: JSON.stringify(params)}}],
-    };
-    describe('success', () => {
-      it('should call the main function', async () => {
-        mod.__set__('main', () => Promise.resolve());
+  // describe('handler', () => {
+  //   describe('success', () => {
+  //     it('should call the main function', async () => {
+  //       expect.assertions(1);
+  //       await expect(mod.handler(event(params[0]))).resolves.toBe();
+  //     });
+  //   });
+  //   describe('error', () => {
+  //     it('should report the error to Slack', async () => {
+  //       const error = new Error();
+  //       mockSettingsInterface.loadSettings.mockRejectedValue(error);
 
-        expect.assertions(1);
-        await expect(mod.handler(event)).resolves.toBe();
-      });
-    });
-    describe('error', () => {
-      it('should report the error to Slack', async () => {
-        const error = new Error();
-        mod.__set__('main', () => Promise.reject(error));
-
-        expect.assertions(3);
-        await expect(mod.handler(event)).resolves.toBe();
-        expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
-        expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, userId, response.failed);
-      });
-    });
-  });
+  //       expect.assertions(3);
+  //       await expect(mod.handler(event(params[0]))).resolves.toBe();
+  //       expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
+  //       expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, userId, response.failed);
+  //     });
+  //   });
+  // });
 
   describe('main', () => {
     const playlists = {'value': [
@@ -309,33 +303,12 @@ describe('Settings - Submit Save', () => {
       mockSettingsInterface.changeSettings.mockResolvedValue();
       mockAuthInterface.removeState.mockResolvedValue();
 
-      expect.assertions(6);
-      await expect(main(...parameters[0])).resolves.toBe();
+      await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.loadDevices).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSettingsInterface.loadDevices).toHaveBeenCalledWith(teamId, channelId);
       expect(mockAuthInterface.removeState).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.changeSettings).toHaveBeenCalledWith(teamId, channelId, {
-        'back_to_playlist': 'true',
-        'channel_admins': [
-          'URVUTD7UP',
-        ],
-        'default_device': {
-          'id': '87997bb4312981a00f1d8029eb874c55a211a0cc',
-          'name': 'AU13282 - Computer',
-        },
-        'disable_repeats_duration': '1',
-        'ghost_mode': 'true',
-        'playlist': {
-          'id': '2nuwjAGCHQiPabqGH6SLty',
-          'name': 'Test',
-          'uri': 'spotify:playlist:2nuwjAGCHQiPabqGH6SLty',
-          'url': 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty',
-        },
-        'skip_votes': '0',
-        'skip_votes_ah': '1',
-        'timezone': 'Australia/Melbourne',
-      });
+      expect(mockSettingsInterface.changeSettings).toHaveBeenCalledWith(teamId, channelId, {'back_to_playlist': 'true', 'channel_admins': ['URVUTD7UP'], 'default_device': {'id': '87997bb4312981a00f1d8029eb874c55a211a0cc', 'name': 'AU13282 - Computer'}, 'disable_repeats_duration': '1', 'ghost_mode': 'true', 'playlist': {'id': '2nuwjAGCHQiPabqGH6SLty', 'name': 'Test', 'uri': 'spotify:playlist:2nuwjAGCHQiPabqGH6SLty', 'url': 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty'}, 'skip_votes': '0', 'skip_votes_ah': '1', 'timezone': 'Australia/Melbourne'});
     });
 
     it('should successfully overrite when settings some settings', async () => {
@@ -349,7 +322,7 @@ describe('Settings - Submit Save', () => {
           .mockReturnValue(true);
 
       expect.assertions(4);
-      await expect(main(...parameters[0])).resolves.toBe();
+      await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
       expect(mockAuthInterface.removeState).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsInterface.changeSettings).toHaveBeenCalledWith(teamId, channelId, expect.toHavePropertiesNum(2));
@@ -366,7 +339,7 @@ describe('Settings - Submit Save', () => {
       mockPlaylists.createPlaylist.mockResolvedValue(spotifyPlaylists[0].items[0]);
 
       expect.assertions(5);
-      await expect(main(...parameters[1])).resolves.toBe();
+      await expect(mod.handler(event(params[1]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
       expect(mockAuthInterface.removeState).toHaveBeenCalledWith(teamId, channelId);
       expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
@@ -378,10 +351,10 @@ describe('Settings - Submit Save', () => {
       mockSettingsInterface.loadDevices.mockResolvedValue(devices);
       mockSettingsInterface.loadPlaylists.mockResolvedValue(null);
 
-      expect.assertions(3);
-      await expect(main(...parameters[0])).rejects.toHaveProperty('message', 'No playlist data was captured for Settings');
+      await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.objectContaining({'message': 'No playlist data was captured for Settings'}), response.failed);
     });
 
     it('should fail when load devices is null', async () => {
@@ -389,20 +362,20 @@ describe('Settings - Submit Save', () => {
       mockSettingsInterface.loadSettings.mockResolvedValue(null);
       mockSettingsInterface.loadDevices.mockResolvedValue(null);
 
-      expect.assertions(3);
-      await expect(main(...parameters[0])).rejects.toHaveProperty('message', 'No Spotify device data was captured for Settings');
+      await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.objectContaining({'message': 'No Spotify device data was captured for Settings'}), response.failed);
     });
 
     it('should fail when load playlists does not contain selected playlist', async () => {
       mockSettingsInterface.loadPlaylists.mockResolvedValue({value: [{id: 'not our playlist'}]});
       mockSettingsInterface.loadSettings.mockResolvedValue(null);
 
-      expect.assertions(3);
-      await expect(main(...parameters[0])).rejects.toHaveProperty('message', 'Selected Spotify playlist is invalid');
+      await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.objectContaining({'message': 'Selected Spotify playlist is invalid'}), response.failed);
     });
 
     it('should fail when load devices does not contain selected device', async () => {
@@ -410,18 +383,17 @@ describe('Settings - Submit Save', () => {
       mockSettingsInterface.loadPlaylists.mockResolvedValue(playlists);
       mockSettingsInterface.loadDevices.mockResolvedValue({value: [{id: 'not our device'}]});
 
-      expect.assertions(3);
-      await expect(main(...parameters[0])).rejects.toHaveProperty('message', 'Selected Spotify device is invalid');
+      await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.objectContaining({'message': 'Selected Spotify device is invalid'}), response.failed);
     });
 
     it('should succeed when no device option is selected', async () => {
       mockSettingsInterface.loadSettings.mockResolvedValue(null);
       mockSettingsInterface.loadPlaylists.mockResolvedValue(playlists);
 
-      expect.assertions(4);
-      await expect(main(...parameters[2])).resolves.toBe();
+      await expect(mod.handler(event(params[2]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsInterface.modelDevice).toHaveBeenCalledWith(mockConfig.dynamodb.settings_helper.no_devices_label, mockConfig.dynamodb.settings_helper.no_devices);
@@ -434,8 +406,7 @@ describe('Settings - Submit Save', () => {
       mockSettingsInterface.changeSettings.mockResolvedValue();
       mockAuthInterface.removeState.mockResolvedValue();
 
-      expect.assertions(5);
-      await expect(main(...parameters[0])).resolves.toBe();
+      await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
       expect(mockAuthInterface.removeState).toHaveBeenCalledWith(teamId, channelId);
       expect(mockUtilObjects.isEmpty).toHaveBeenCalledWith({});
