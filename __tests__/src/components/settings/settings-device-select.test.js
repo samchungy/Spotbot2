@@ -162,9 +162,9 @@ describe('Settings Device Select', () => {
       expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, modal);
     });
 
-    it('should update the modal with device information', async () => {
+    it('should update the modal with device with null id', async () => {
       const auth = {auth: true};
-      const utilDevice = {name: 'device', id: '123'};
+      const utilDevice = {name: 'device', id: null};
       const text = {textSection: true};
       const option = {option: true};
       const staticSelect = {static: true};
@@ -172,7 +172,7 @@ describe('Settings Device Select', () => {
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyDevices.fetchDevices.mockResolvedValue(devices[0]);
       mockSettingsInterface.loadSettings.mockResolvedValue(settings);
-      mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue(status[0]);
+      mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue(status[1]);
       mockUtilDevice.mockReturnValue(utilDevice);
       mockSlackBlocks.textSection.mockReturnValue(text);
       mockSlackFormat.option.mockReturnValue(option);
@@ -186,8 +186,8 @@ describe('Settings Device Select', () => {
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
       expect(mockSlackBlocks.textSection).toHaveBeenCalledWith(response.default(settings.default_device.name));
-      expect(mockUtilDevice).toHaveBeenCalledWith(status[0].device);
-      expect(mockSlackFormat.option).toHaveBeenCalledWith(response.current(utilDevice.name), utilDevice.id);
+      expect(mockUtilDevice).toHaveBeenCalledWith(status[1].device);
+      expect(mockSlackFormat.option).toHaveBeenCalledWith(response.current(utilDevice.name), 'null');
       expect(mockUtilDevice).toHaveBeenCalledWith(devices[0].devices[0]);
       expect(mockSlackFormat.option).toHaveBeenCalledWith(utilDevice.name, utilDevice.id);
       expect(mockSlackFormat.selectStatic).toHaveBeenCalledWith(mockConfig.slack.actions.device_modal, response.title, response.hint, option, [option, option], null);
