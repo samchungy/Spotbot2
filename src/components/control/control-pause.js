@@ -12,29 +12,27 @@ const {post} = require('/opt/slack/slack-api');
 const {inChannelPost} = require('/opt/slack/format/slack-format-reply');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
-const PAUSE_RESPONSE = {
+const RESPONSE = {
   success: (userId) => `:double_vertical_bar: Spotify was paused by <@${userId}>.`,
   no_devices: ':warning: Spotify is not open on any device.',
   already: ':information_source: Spotify is already paused.',
   failed: 'Pause failed',
 };
 
-const startPause = async (teamId, channelId, userId) => {
+const main = async (teamId, channelId, userId) => {
   const auth = await authSession(teamId, channelId);
-  const [status, spotifyDevices] = await Promise.all([
-    fetchCurrentPlayback(auth),
-    fetchDevices(auth),
-  ]);
+  const spotifyDevices = await fetchDevices(auth);
 
   // No devices
   if (!spotifyDevices.devices.length) {
-    const message = inChannelPost(channelId, PAUSE_RESPONSE.no_devices);
+    const message = inChannelPost(channelId, RESPONSE.no_devices);
     return await post(message);
   }
+  const status = await fetchCurrentPlayback(auth);
 
   // Check if Spotify is already paused
   if (!isPlaying(status)) {
-    const message = inChannelPost(channelId, PAUSE_RESPONSE.already);
+    const message = inChannelPost(channelId, RESPONSE.already);
     return await post(message);
   }
 
@@ -45,15 +43,16 @@ const startPause = async (teamId, channelId, userId) => {
   if (isPlaying(newStatus)) {
     throw new Error('Failed to pause');
   }
-  const message = inChannelPost(channelId, PAUSE_RESPONSE.success(userId));
+  const message = inChannelPost(channelId, RESPONSE.success(userId));
   return await post(message);
 };
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId} = JSON.parse(event.Records[0].Sns.Message);
-  await startPause(teamId, channelId, userId)
+  await main(teamId, channelId, userId)
       .catch((error)=>{
-        logger.error(error, PAUSE_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, null, PAUSE_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, null, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;
