@@ -14,13 +14,13 @@ const {ephemeralPost, inChannelPost} = require('/opt/slack/format/slack-format-r
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 const DEVICE_MODAL = config.slack.actions.device_modal;
-const DEVICE_RESPONSE = {
+const RESPONSE = {
   select: (device, user) => `:arrows_clockwise: Playback on Spotbot was switched to ${device} by <@${user}>.`,
   select_fail: `:information_source: The selected device is no longer available to switch to.`,
   failed: 'Switching devices failed',
 };
 
-const switchDevice = async (teamId, channelId, userId, view) => {
+const main = async (teamId, channelId, userId, view) => {
   const auth = await authSession(teamId, channelId);
   const submission = extractSubmission(view);
 
@@ -33,12 +33,12 @@ const switchDevice = async (teamId, channelId, userId, view) => {
     const device = spotifyDevices.devices.find((device) => device.id === submission.value);
     if (device) {
       const deviceObj = new Device(device);
-      await transferDevice(auth, submission.value);
-      const message = inChannelPost(channelId, DEVICE_RESPONSE.select(deviceObj.name, userId), null);
+      await transferDevice(auth, deviceObj.id);
+      const message = inChannelPost(channelId, RESPONSE.select(deviceObj.name, userId), null);
       return await post(message);
     }
   }
-  const message = ephemeralPost(channelId, userId, DEVICE_RESPONSE.select_fail, null);
+  const message = ephemeralPost(channelId, userId, RESPONSE.select_fail, null);
   await postEphemeral(message);
 };
 
@@ -49,24 +49,23 @@ const switchDevice = async (teamId, channelId, userId, view) => {
  */
 const extractSubmission = (view) => {
   const values = view.state.values;
-  let submission;
-  for (const device in values) {
-    if ({}.hasOwnProperty.call(values, device)) {
-      switch (device) {
-        case DEVICE_MODAL:
-          submission = values[device][device].selected_option;
-          break;
-      }
+  const submission = Object.entries(values).reduce((sub, [device, value]) => {
+    switch (device) {
+      case DEVICE_MODAL:
+        sub = value[device].selected_option;
+        break;
     }
-  }
+    return sub;
+  }, null);
   return submission;
 };
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, view} = JSON.parse(event.Records[0].Sns.Message);
-  await switchDevice(teamId, channelId, userId, view)
+  await main(teamId, channelId, userId, view)
       .catch((error)=>{
-        logger.error(error, DEVICE_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, DEVICE_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;

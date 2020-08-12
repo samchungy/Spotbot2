@@ -212,57 +212,34 @@ describe('Settings Device Select', () => {
       expect(mockSlackFormat.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.device_modal, `Spotify Devices`, null, `Close`, [text], false, channelId);
     });
 
-    // it('should update the modal with device information', async () => {
-    //   const auth = {auth: true};
-    //   const utilDevice = {name: 'device', id: '123'};
-    //   const text = {textSection: true};
-    //   const option = {option: true};
-    //   const staticSelect = {static: true};
-    //   const modal = {modal: true};
-    //   mockAuthSession.authSession.mockResolvedValue(auth);
-    //   mockSpotifyDevices.fetchDevices.mockResolvedValue(devices[0]);
-    //   mockSettingsInterface.loadSettings.mockResolvedValue(settings);
-    //   mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue(status[0]);
-    //   mockUtilDevice.mockReturnValue(utilDevice);
-    //   mockSlackBlocks.textSection.mockReturnValue(text);
-    //   mockSlackFormat.option.mockReturnValue(option);
-    //   mockSlackFormat.selectStatic.mockReturnValue(staticSelect);
-    //   mockSlackFormat.slackModal.mockReturnValue(modal);
-    //   mockSlackApi.updateModal.mockReturnValue();
+    it('should update the modal with device information when status is empty', async () => {
+      const auth = {auth: true};
+      const utilDevice = {name: 'device', id: '123'};
+      const text = {textSection: true};
+      const option = {option: true};
+      const staticSelect = {static: true};
+      const modal = {modal: true};
+      mockAuthSession.authSession.mockResolvedValue(auth);
+      mockSpotifyDevices.fetchDevices.mockResolvedValue(devices[0]);
+      mockSettingsInterface.loadSettings.mockResolvedValue(settings);
+      mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue('');
+      mockUtilDevice.mockReturnValue(utilDevice);
+      mockSlackBlocks.textSection.mockReturnValue(text);
+      mockSlackFormat.option.mockReturnValue(option);
+      mockSlackFormat.selectStatic.mockReturnValue(staticSelect);
+      mockSlackFormat.slackModal.mockReturnValue(modal);
+      mockSlackApi.updateModal.mockReturnValue();
 
-    //   await expect(mod.handler(event(params[0]))).resolves.toBeUndefined();
-    //   expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
-    //   expect(mockSpotifyDevices.fetchDevices).toHaveBeenCalledWith(auth);
-    //   expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
-    //   expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
-    //   expect(mockSlackBlocks.textSection).toHaveBeenCalledWith(response.default(settings.default_device.name));
-    //   expect(mockUtilDevice).toHaveBeenCalledWith(status[0].device);
-    //   expect(mockSlackFormat.option).toHaveBeenCalledWith(response.current(utilDevice.name), utilDevice.id);
-    //   expect(mockUtilDevice).toHaveBeenCalledWith(devices[0].devices[0]);
-    //   expect(mockSlackFormat.option).toHaveBeenCalledWith(utilDevice.name, utilDevice.id);
-    //   expect(mockSlackFormat.selectStatic).toHaveBeenCalledWith(mockConfig.slack.actions.device_modal, response.title, response.hint, option, [option, option], null);
-    //   expect(mockSlackFormat.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.device_modal, `Spotify Devices`, `Switch to Device`, `Cancel`, [text, staticSelect], false, channelId);
-    //   expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, modal);
-    // });
-
-    // it('should update the modal with device information', async () => {
-    //   const auth = {auth: true};
-    //   const utilDevice = {name: 'device', id: '123'};
-    //   const text = {textSection: true};
-    //   mockAuthSession.authSession.mockResolvedValue(auth);
-    //   mockSpotifyDevices.fetchDevices.mockResolvedValue(devices[0]);
-    //   mockSettingsInterface.loadSettings.mockResolvedValue(settings);
-    //   mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue(status[0]);
-    //   mockUtilDevice.mockReturnValue(utilDevice);
-    //   mockSlackBlocks.textSection.mockReturnValue(text);
-
-    //   await expect(mod.handler(event(params[0]))).resolves.toBeUndefined();
-    //   expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
-    //   expect(mockSpotifyDevices.fetchDevices).toHaveBeenCalledWith(auth);
-    //   expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
-    //   expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
-    //   expect(mockSlackBlocks.textSection).toHaveBeenCalledWith(response.default(settings.default_device.name));
-    //   expect(mockUtilDevice).toHaveBeenCalledWith(status[0].device);
-    // });
+      await expect(mod.handler(event(params[0]))).resolves.toBeUndefined();
+      expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSpotifyDevices.fetchDevices).toHaveBeenCalledWith(auth);
+      expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
+      expect(mockSlackBlocks.textSection).toHaveBeenCalledWith(response.default(settings.default_device.name));
+      expect(mockSlackFormat.option).toHaveBeenCalledWith(`${devices[0].devices[0].name} - ${devices[0].devices[0].type}`, devices[0].devices[0].id);
+      expect(mockSlackFormat.selectStatic).toHaveBeenCalledWith(mockConfig.slack.actions.device_modal, response.title, response.hint, null, [option], null);
+      expect(mockSlackFormat.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.device_modal, `Spotify Devices`, `Switch to Device`, `Cancel`, [text, staticSelect], false, channelId);
+      expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, modal);
+    });
   });
 });

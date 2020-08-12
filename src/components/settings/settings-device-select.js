@@ -42,9 +42,14 @@ const getBlocks = async (teamId, channelId, auth, devices) => {
 
   const blocks = [
     textSection(RESPONSE.default(defaultDevice.name)),
-    getStatusBlock(status, devices),
+    ...status.device ? [getStatusBlock(status, devices)] : [getDeviceBlock(devices)],
   ];
   return blocks;
+};
+
+const getDeviceBlock = (devices) => {
+  const options = devices.map((device) => option(`${device.name} - ${device.type}`, device.id));
+  return selectStatic(DEVICE_MODAL, RESPONSE.title, RESPONSE.hint, null, options, null);
 };
 
 const getStatusBlock = (status, devices) => {
