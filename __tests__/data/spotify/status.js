@@ -9,8 +9,8 @@ module.exports = {
       'type': 'Computer',
       'volume_percent': 100,
     },
-    'shuffle_state': false,
-    'repeat_state': 'off',
+    'shuffle_state': true,
+    'repeat_state': 'context',
     'timestamp': 1596978883315,
     'context': {
       'external_urls': {
@@ -313,6 +313,109 @@ module.exports = {
     'actions': {
       'disallows': {
         'pausing': true,
+      },
+    },
+    'is_playing': true,
+  },
+  3: {
+    'device': {
+      'id': '87997bb4312981a00f1d8029eb874c55a211a0cc',
+      'is_active': true,
+      'is_private_session': false,
+      'is_restricted': false,
+      'name': 'AU13282',
+      'type': 'Computer',
+      'volume_percent': 0,
+    },
+    'shuffle_state': false,
+    'repeat_state': 'off',
+    'timestamp': 1597415958655,
+    'context': null,
+    'progress_ms': 20420,
+    'item': {
+      'album': {
+        'album_type': 'single',
+        'artists': [
+          {
+            'external_urls': {
+              'spotify': 'https://open.spotify.com/artist/0Ou0138wEd8XWebhc4j7O0',
+            },
+            'href': 'https://api.spotify.com/v1/artists/0Ou0138wEd8XWebhc4j7O0',
+            'id': '0Ou0138wEd8XWebhc4j7O0',
+            'name': 'San Cisco',
+            'type': 'artist',
+            'uri': 'spotify:artist:0Ou0138wEd8XWebhc4j7O0',
+          },
+        ],
+        'external_urls': {
+          'spotify': 'https://open.spotify.com/album/6dKn49EgxDIBpiWnrIoW4h',
+        },
+        'href': 'https://api.spotify.com/v1/albums/6dKn49EgxDIBpiWnrIoW4h',
+        'id': '6dKn49EgxDIBpiWnrIoW4h',
+        'images': [
+          {
+            'height': 640,
+            'url': 'https://i.scdn.co/image/ab67616d0000b2739d5ad8ac25bee56d219111c8',
+            'width': 640,
+          },
+          {
+            'height': 300,
+            'url': 'https://i.scdn.co/image/ab67616d00001e029d5ad8ac25bee56d219111c8',
+            'width': 300,
+          },
+          {
+            'height': 64,
+            'url': 'https://i.scdn.co/image/ab67616d000048519d5ad8ac25bee56d219111c8',
+            'width': 64,
+          },
+        ],
+        'name': '4EVER (triple j Like A Version)',
+        'release_date': '2018-08-31',
+        'release_date_precision': 'day',
+        'total_tracks': 1,
+        'type': 'album',
+        'uri': 'spotify:album:6dKn49EgxDIBpiWnrIoW4h',
+      },
+      'artists': [
+        {
+          'external_urls': {
+            'spotify': 'https://open.spotify.com/artist/0Ou0138wEd8XWebhc4j7O0',
+          },
+          'href': 'https://api.spotify.com/v1/artists/0Ou0138wEd8XWebhc4j7O0',
+          'id': '0Ou0138wEd8XWebhc4j7O0',
+          'name': 'San Cisco',
+          'type': 'artist',
+          'uri': 'spotify:artist:0Ou0138wEd8XWebhc4j7O0',
+        },
+      ],
+      'disc_number': 1,
+      'duration_ms': 195971,
+      'explicit': false,
+      'external_ids': {
+        'isrc': 'AUAB01801282',
+      },
+      'external_urls': {
+        'spotify': 'https://open.spotify.com/track/1gV1kl0v2aUGHz1qNJGOQJ',
+      },
+      'href': 'https://api.spotify.com/v1/tracks/1gV1kl0v2aUGHz1qNJGOQJ',
+      'id': '1gV1kl0v2aUGHz1qNJGOQJ',
+      'is_local': false,
+      'is_playable': true,
+      'name': '4EVER - triple j Like A Version',
+      'popularity': 47,
+      'preview_url': 'https://p.scdn.co/mp3-preview/aedee8ff9b37637dc65f1eac4242292b88adc8be?cid=774b29d4f13844c495f206cafdad9c86',
+      'track_number': 1,
+      'type': 'track',
+      'uri': 'spotify:track:1gV1kl0v2aUGHz1qNJGOQJ',
+    },
+    'currently_playing_type': 'track',
+    'actions': {
+      'disallows': {
+        'resuming': true,
+        'skipping_prev': true,
+        'toggling_repeat_context': true,
+        'toggling_repeat_track': true,
+        'toggling_shuffle': true,
       },
     },
     'is_playing': true,
