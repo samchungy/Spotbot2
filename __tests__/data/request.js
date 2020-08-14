@@ -26,4 +26,5 @@ module.exports = {
   viewId: 'V016R2YRZHS',
   triggerId: '12345.98765.abcd2358fdea',
   url: 'https://939f6b415fb5.ngrok.io/local',
+  responseUrl: 'https://hooks.slack.com/actions/T1ABCD2E12/330361579271/0dAEyLY19ofpLwxqozy3firz',
 };
