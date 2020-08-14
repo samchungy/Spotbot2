@@ -165,6 +165,33 @@ const controlActionsRouter = async (actionId, payload) => {
       };
       return await sns.publish(params).promise();
     }
+    case CONTROLS.play_close: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          userId: payload.user.id,
+          responseUrl: payload.response_url,
+        }),
+        TopicArn: CONTROL_PLAY,
+      };
+      return await sns.publish(params).promise();
+    }
+    case CONTROLS.play_track: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          userId: payload.user.id,
+          responseUrl: payload.response_url,
+          trackUri: payload.actions[0].value,
+        }),
+        TopicArn: CONTROL_PLAY,
+      };
+      return await sns.publish(params).promise();
+    }
     case CONTROLS.pause: {
       const params = {
         Message: JSON.stringify({
@@ -186,6 +213,19 @@ const controlActionsRouter = async (actionId, payload) => {
           userId: payload.user.id,
         }),
         TopicArn: CONTROL_SKIP_START,
+      };
+      return await sns.publish(params).promise();
+    }
+    case CONTROLS.jump_to_start_close: {
+      const params = {
+        Message: JSON.stringify({
+          teamId: payload.team.id,
+          channelId: payload.channel.id,
+          settings: await checkIsSetup(payload.team.id, payload.channel.id),
+          userId: payload.user.id,
+          responseUrl: payload.response_url,
+        }),
+        TopicArn: CONTROL_JUMP,
       };
       return await sns.publish(params).promise();
     }

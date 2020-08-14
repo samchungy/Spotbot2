@@ -15,8 +15,9 @@ const {isPlaying, onPlaylist} = require('/opt/spotify/spotify-helper');
 const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
 
 // Slack
-const {post, reply} = require('/opt/slack/slack-api');
-const {inChannelPost, deleteReply} = require('/opt/slack/format/slack-format-reply');
+const {post, reply, postEphemeral} = require('/opt/slack/slack-api');
+const {inChannelPost, deleteReply, ephemeralPost} = require('/opt/slack/format/slack-format-reply');
+const {actionSection, textSection, buttonActionElement} = require('/opt/slack/format/slack-format-blocks');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Settings
@@ -32,8 +33,9 @@ const REPEAT_DURATION = config.dynamodb.settings.disable_repeats_duration;
 const BACK_TO_PLAYLIST = config.dynamodb.settings.back_to_playlist;
 const PLAYLIST = config.dynamodb.settings.playlist;
 const LIMIT = config.spotify_api.playlists.tracks.limit;
+const CONTROLS = config.slack.actions.controls;
 
-const TRACK_ADD_RESPONSE = {
+const RESPONSE = {
   failed: 'Adding a track failed',
   blacklist: (title) => `:no_entry_sign: ${title} is blacklisted and cannot be added.`,
   error: ':warning: An error occured. Please try again.',
@@ -41,6 +43,14 @@ const TRACK_ADD_RESPONSE = {
   repeat: (title, timeAgo, repeatDuration) => `:no_entry_sign: ${title} was already added ${timeAgo}. Repeats are disabled for ${repeatDuration} hours in this channel's settings.`,
   success: (title) => `:tada: ${title} was added to the playlist.`,
   success_back: (title) => `:tada: ${title} was added to the playlist. Spotify will return back to the playlist after this song.`,
+  resume: (track) => `:information_source: Spotify is currently paused. Would you like to resume playback, start playing from ${track}, or jump to the start of the playlist?`,
+  back: (track) => `Spotify is currently not playing from the playlist, would you like to start playing from ${track}, or jump to the start of the playlist?`,
+};
+
+const BUTTON = {
+  track: ':arrow_forward: Play Track',
+  resume: ':black_right_pointing_triangle_with_double_vertical_bar: Resume',
+  jump: `:leftwards_arrow_with_hook: Jump to Start of Playlist`,
 };
 
 /**
@@ -98,6 +108,34 @@ const handleBackToPlaylist = async (teamId, channelId, userId, auth, playlist, s
   }
 };
 
+const sendResumeQuestion = async (channelId, userId, track) => {
+  const elements = [
+    buttonActionElement(CONTROLS.play_close, BUTTON.resume, CONTROLS.play_close),
+    buttonActionElement(CONTROLS.play_track, BUTTON.track, track.uri),
+    buttonActionElement(CONTROLS.jump_to_start_close, BUTTON.jump, CONTROLS.jump_to_start_close),
+  ];
+  const blocks = [
+    textSection(RESPONSE.resume(track.title)),
+    actionSection(null, elements),
+  ];
+  const message = ephemeralPost(channelId, userId, RESPONSE.resume(track.title), blocks);
+  await postEphemeral(message);
+};
+
+
+const sendBackQuestion = async (channelId, userId, track) => {
+  const elements = [
+    buttonActionElement(CONTROLS.play_track, BUTTON.track, track.uri),
+    buttonActionElement(CONTROLS.jump_to_start_close, BUTTON.jump, CONTROLS.jump_to_start_close),
+  ];
+  const blocks = [
+    textSection(RESPONSE.resume(track.title)),
+    actionSection(null, elements),
+  ];
+  const message = ephemeralPost(channelId, userId, RESPONSE.resume(track.title), blocks);
+  await postEphemeral(message);
+};
+
 const addTrack = async (teamId, channelId, settings, userId, trackId, responseUrl) => {
   const repeatDuration = settings[REPEAT_DURATION];
   const playlist = settings[PLAYLIST];
@@ -114,13 +152,13 @@ const addTrack = async (teamId, channelId, settings, userId, trackId, responseUr
 
   // Handle Blacklist
   if (blacklist && blacklist.blacklist.find((trackB) => track.id === trackB.id)) {
-    return TRACK_ADD_RESPONSE.blacklist(track.title);
+    return RESPONSE.blacklist(track.title);
   }
 
   const history = await loadTrackHistory(teamId, channelId, track.id);
   // Handle Repeats
   if (history && moment.unix(history.timeAdded).add(repeatDuration, 'hours').isAfter(moment())) {
-    return TRACK_ADD_RESPONSE.repeat(track.title, moment.unix(history.timeAdded).fromNow(), repeatDuration);
+    return RESPONSE.repeat(track.title, moment.unix(history.timeAdded).fromNow(), repeatDuration);
   }
 
   // Add to our playlist
@@ -136,7 +174,7 @@ const addTrack = async (teamId, channelId, settings, userId, trackId, responseUr
             throw error;
           });
       if (back) {
-        const message = inChannelPost(channelId, TRACK_ADD_RESPONSE.success_back(track.title));
+        const message = inChannelPost(channelId, RESPONSE.success_back(track.title));
         return await post(message);
       }
     }
@@ -147,15 +185,24 @@ const addTrack = async (teamId, channelId, settings, userId, trackId, responseUr
     setHistory(teamId, channelId, track, userId),
     addTracksToPlaylist(auth, playlist.id, [track.uri]),
   ]);
-  const message = inChannelPost(channelId, TRACK_ADD_RESPONSE.success(track.title));
-  return await post(message);
+  const message = inChannelPost(channelId, RESPONSE.success(track.title));
+  await post(message);
+
+  const status = await fetchCurrentPlayback(auth);
+  if (!isPlaying(status)) {
+    return await sendResumeQuestion(channelId, userId, track);
+  }
+
+  if (backToPlaylist === `false`) {
+    return await sendBackQuestion(channelId, userId, track);
+  }
 };
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, userId, trackId, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
   await addTrack(teamId, channelId, settings, userId, trackId, responseUrl)
       .catch((error)=>{
-        logger.error(error, TRACK_ADD_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, TRACK_ADD_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
