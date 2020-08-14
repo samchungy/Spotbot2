@@ -9,13 +9,16 @@ const {play} = require('/opt/spotify/spotify-api-v2/spotify-api-playback');
 const {isPlaying, onPlaylist} = require('/opt/spotify/spotify-helper');
 
 // Slack
-const {post, postEphemeral} = require('/opt/slack/slack-api');
-const {ephemeralPost, inChannelPost} = require('/opt/slack/format/slack-format-reply');
+const {reply, post, postEphemeral} = require('/opt/slack/slack-api');
+const {deleteReply, ephemeralPost, inChannelPost} = require('/opt/slack/format/slack-format-reply');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
+
+// Util
+const {sleep} = require('/opt/utils/util-timeout');
 
 const PLAYLIST = config.dynamodb.settings.playlist;
 
-const JUMP_RESPONSE = {
+const RESPONSE = {
   failed: 'Jump to the start of playlist failed',
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   success: (userId) => `:arrow_forward: Spotify is now playing from the start of the playlist. Set by <@${userId}>.`,
@@ -23,37 +26,46 @@ const JUMP_RESPONSE = {
   empty: ':information_source: The Spotbot playlist is empty. Please add tracks before trying to jumping back to the playlist.',
 };
 
-const startJump = async (teamId, channelId, settings, userId) => {
+const main = async (teamId, channelId, settings, userId, responseUrl) => {
+  if (responseUrl) {
+    const msg = deleteReply('', null);
+    reply(msg, responseUrl);
+  }
+
   const auth = await authSession(teamId, channelId);
   const playlist = settings[PLAYLIST];
   const status = await fetchCurrentPlayback(auth);
 
   if (!isPlaying(status)) {
-    const message = ephemeralPost(channelId, userId, JUMP_RESPONSE.not_playing);
+    const message = ephemeralPost(channelId, userId, RESPONSE.not_playing);
     return await postEphemeral(message);
   }
 
   const {total} = await fetchPlaylistTotal(auth, playlist.id);
   if (!total) {
-    const message = ephemeralPost(channelId, userId, JUMP_RESPONSE.empty);
+    const message = ephemeralPost(channelId, userId, RESPONSE.empty);
     return await postEphemeral(message);
   }
 
   await play(auth, status.device.id, playlist.uri);
+  await sleep(1000);
 
-  if (isPlaying(status) && onPlaylist(status, playlist)) {
-    const message = inChannelPost(channelId, JUMP_RESPONSE.success(userId));
+  const newStatus = await fetchCurrentPlayback(auth);
+  if (isPlaying(newStatus) && onPlaylist(newStatus, playlist)) {
+    const message = inChannelPost(channelId, RESPONSE.success(userId));
     return await post(message);
   }
-  const message = inChannelPost(channelId, JUMP_RESPONSE.fail);
+  const message = inChannelPost(channelId, RESPONSE.fail);
   return await post(message);
 };
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, settings, userId} = JSON.parse(event.Records[0].Sns.Message);
-  await startJump(teamId, channelId, settings, userId)
+  const {teamId, channelId, settings, userId, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
+  await main(teamId, channelId, settings, userId, responseUrl)
       .catch((error)=>{
-        logger.error(error, JUMP_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, null, JUMP_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, null, RESPONSE.failed);
       });
 };
+
+module.exports.RESPONSE = RESPONSE;
