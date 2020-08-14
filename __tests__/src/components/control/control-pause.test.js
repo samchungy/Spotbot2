@@ -51,7 +51,7 @@ const event = (params) => ({
   Records: [{Sns: {Message: JSON.stringify(params)}}],
 });
 
-describe('Settings Device Switch', () => {
+describe('Control Pause', () => {
   describe('Handler', () => {
     it('should return successfully', async () => {
       await expect(mod.handler(event(params[0]))).resolves.toBe();
