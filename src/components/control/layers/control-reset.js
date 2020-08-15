@@ -10,13 +10,11 @@ const LIMIT = config.spotify_api.playlists.tracks.limit;
 
 /**
  * Get tracks to review (Tracks added less than half an hour ago)
- * @param {string} teamId
- * @param {string} channelId
  * @param {Object} auth
  * @param {Object} playlist
  * @param {Number} total
  */
-const getReviewTracks = async (teamId, channelId, auth, playlist, total) => {
+const getReviewTracks = async (auth, playlist, total) => {
   try {
     const timeBefore = moment().subtract(30, 'minutes');
     const offset = Math.max(0, total-LIMIT);
