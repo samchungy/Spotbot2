@@ -103,11 +103,6 @@ layers:
     path: src/layers/layers-core
     compatibleRuntimes:
       - nodejs12.x
-  sonos:
-    name: ${self:custom.prefix}-sonos
-    path: src/layers/layers-sonos
-    compatibleRuntimes:
-      - nodejs12.x
   slack:
     name: ${self:custom.prefix}-slack
     path: src/layers/layers-slack
@@ -264,24 +259,24 @@ functions:
       - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
       - { Ref: SlackLambdaLayer }
-  router-sonos-auth-callback:
-    environment:
-      SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
-    memorySize: 256
-    package:
-      include:
-        - ./src/router/router-sonos-auth-callback.js
-      exclude:
-        - ./**
-    handler: src/router/router-sonos-auth-callback.handler
-    events:
-      - http:
-          method: GET
-          path: sonos-auth-callback
-    layers:
-      - { Ref: RouterLambdaLayer }
-      - { Ref: CoreLambdaLayer }
-      - { Ref: SlackLambdaLayer }
+  # router-sonos-auth-callback:
+  #   environment:
+  #     SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+  #   memorySize: 256
+  #   package:
+  #     include:
+  #       - ./src/router/router-sonos-auth-callback.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/router/router-sonos-auth-callback.handler
+  #   events:
+  #     - http:
+  #         method: GET
+  #         path: sonos-auth-callback
+  #   layers:
+  #     - { Ref: RouterLambdaLayer }
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
   router-slack-events:
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
@@ -562,88 +557,88 @@ functions:
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
-      - { Ref: SlackLambdaLayer }
-  settings-sonos-open:
-    events:
-      - sns: ${self:custom.prefix}-settings-sonos-open
-    memorySize: 128
-    package:
-      include:
-        - ./src/components/settings/settings-sonos-open.js
-        - ./src/components/settings/layers/settings-sonos-blocks.js
-        - ./src/components/settings/layers/settings-sonos-auth-blocks.js
-      exclude:
-        - ./**
-    handler: src/components/settings/settings-sonos-open.handler
-    layers:
-      - { Ref: CoreLambdaLayer }
-      - { Ref: SpotifyLambdaLayer }
-      - { Ref: SlackLambdaLayer }
-      - { Ref: SonosLambdaLayer }
-  settings-sonos-auth-update-view:
-    events:
-      - sns: ${self:custom.prefix}-settings-sonos-auth-update-view
-    memorySize: 128
-    package:
-      include:
-        - ./src/components/settings/settings-sonos-auth-update-view.js
-        - ./src/components/settings/layers/settings-sonos-blocks.js
-        - ./src/components/settings/layers/settings-sonos-auth-blocks.js
-      exclude:
-        - ./**
-    handler: src/components/settings/settings-sonos-auth-update-view.handler
-    layers:
-      - { Ref: CoreLambdaLayer }
-      - { Ref: SpotifyLambdaLayer }
-      - { Ref: SlackLambdaLayer }
-      - { Ref: SonosLambdaLayer }
-  settings-sonos-auth-validate:
-    events:
-      - sns: ${self:custom.prefix}-settings-sonos-auth-validate
-    memorySize: 128
-    package:
-      include:
-        - ./src/components/settings/settings-sonos-auth-validate.js
-      exclude:
-        - ./**
-    handler: src/components/settings/settings-sonos-auth-validate.handler
-    layers:
-      - { Ref: CoreLambdaLayer }
-      - { Ref: SpotifyLambdaLayer }
-      - { Ref: SlackLambdaLayer }
-      - { Ref: SonosLambdaLayer }
-  settings-sonos-auth-delete:
-    events:
-      - sns: ${self:custom.prefix}-settings-sonos-auth-delete
-    memorySize: 128
-    package:
-      include:
-        - ./src/components/settings/settings-sonos-auth-delete.js
-      exclude:
-        - ./**
-    handler: src/components/settings/settings-sonos-auth-delete.handler
-    layers:
-      - { Ref: CoreLambdaLayer }
-      - { Ref: SpotifyLambdaLayer }
-      - { Ref: SlackLambdaLayer }
-      - { Ref: SonosLambdaLayer }
-  settings-sonos-groups-open:
-    events:
-      - sns: ${self:custom.prefix}-settings-sonos-groups-open
-    memorySize: 128
-    package:
-      include:
-        - ./src/components/settings/settings-sonos-groups-open.js
-        - ./src/components/settings/layers/settings-sonos-blocks.js
-        - ./src/components/settings/layers/settings-sonos-auth-blocks.js
-      exclude:
-        - ./**
-    handler: src/components/settings/settings-sonos-groups-open.handler
-    layers:
-      - { Ref: CoreLambdaLayer }
-      - { Ref: SpotifyLambdaLayer }
-      - { Ref: SlackLambdaLayer }
-      - { Ref: SonosLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  # settings-sonos-open:
+  #   events:
+  #     - sns: ${self:custom.prefix}-settings-sonos-open
+  #   memorySize: 128
+  #   package:
+  #     include:
+  #       - ./src/components/settings/settings-sonos-open.js
+  #       - ./src/components/settings/layers/settings-sonos-blocks.js
+  #       - ./src/components/settings/layers/settings-sonos-auth-blocks.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/components/settings/settings-sonos-open.handler
+  #   layers:
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  #     - { Ref: SonosLambdaLayer }
+  # settings-sonos-auth-update-view:
+  #   events:
+  #     - sns: ${self:custom.prefix}-settings-sonos-auth-update-view
+  #   memorySize: 128
+  #   package:
+  #     include:
+  #       - ./src/components/settings/settings-sonos-auth-update-view.js
+  #       - ./src/components/settings/layers/settings-sonos-blocks.js
+  #       - ./src/components/settings/layers/settings-sonos-auth-blocks.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/components/settings/settings-sonos-auth-update-view.handler
+  #   layers:
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  #     - { Ref: SonosLambdaLayer }
+  # settings-sonos-auth-validate:
+  #   events:
+  #     - sns: ${self:custom.prefix}-settings-sonos-auth-validate
+  #   memorySize: 128
+  #   package:
+  #     include:
+  #       - ./src/components/settings/settings-sonos-auth-validate.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/components/settings/settings-sonos-auth-validate.handler
+  #   layers:
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  #     - { Ref: SonosLambdaLayer }
+  # settings-sonos-auth-delete:
+  #   events:
+  #     - sns: ${self:custom.prefix}-settings-sonos-auth-delete
+  #   memorySize: 128
+  #   package:
+  #     include:
+  #       - ./src/components/settings/settings-sonos-auth-delete.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/components/settings/settings-sonos-auth-delete.handler
+  #   layers:
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  #     - { Ref: SonosLambdaLayer }
+  # settings-sonos-groups-open:
+  #   events:
+  #     - sns: ${self:custom.prefix}-settings-sonos-groups-open
+  #   memorySize: 128
+  #   package:
+  #     include:
+  #       - ./src/components/settings/settings-sonos-groups-open.js
+  #       - ./src/components/settings/layers/settings-sonos-blocks.js
+  #       - ./src/components/settings/layers/settings-sonos-auth-blocks.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/components/settings/settings-sonos-groups-open.handler
+  #   layers:
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  #     - { Ref: SonosLambdaLayer }
   settings-submit-save:
     events:
       - sns: ${self:custom.prefix}-settings-submit-save
