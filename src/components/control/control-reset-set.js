@@ -7,7 +7,6 @@ const logger = require('/opt/utils/util-logger');
 const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {deleteTracks, fetchTracks, fetchPlaylistTotal, replaceTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
-const {apiTrack} = require('/opt/spotify/spotify-api-v2/spotify-api-model');
 
 // Slack
 const {deleteReply, inChannelPost} = require('/opt/slack/format/slack-format-reply');
@@ -19,10 +18,10 @@ const LIMIT = config.spotify_api.playlists.tracks.limit;
 const AFRICA = config.spotify_api.africa;
 const PLAYLIST = config.dynamodb.settings.playlist;
 
-const RESET_RESPONSE = {
+const RESPONSE = {
   failed: 'Reset failed',
   error: ':warning: An error occured.',
-  kept: (trackUris, userId) => `${RESET_RESPONSE.success(userId)} ${trackUris.length} ${trackUris.length > 1 ? `tracks` : `track`} from the past 30 minutes ${trackUris.length > 1 ? `were` : `was`} kept.`,
+  kept: (trackUris, userId) => `${RESPONSE.success(userId)} ${trackUris.length} ${trackUris.length > 1 ? `tracks` : `track`} from the past 30 minutes ${trackUris.length > 1 ? `were` : `was`} kept.`,
   success: (userId) => `:put_litter_in_its_place: The Spotbot playlist was reset by <@${userId}>.`,
 };
 
@@ -48,8 +47,7 @@ const reduceTracks = async (auth, playlist) => {
             };
           });
       await deleteTracks(auth, playlist.id, tracksToDelete);
-      const {total: newTotal} = await fetchPlaylistTotal(auth, playlist.id);
-      await recursiveDelete(newTotal);
+      await recursiveDelete(total-range);
     }
   };
   await recursiveDelete(total);
@@ -58,17 +56,17 @@ const reduceTracks = async (auth, playlist) => {
 const keepSelectTracks = async (auth, playlist, trackUris) => {
   const spotifyTracks = await fetchTracks(auth, playlist.id, null, 0);
   if (spotifyTracks.items.length) {
-    const allTracks = [];
-    spotifyTracks.items
+    const allTracks = spotifyTracks.items
         .map((track) => new PlaylistTrack(track))
-        .forEach((track, index) => {
+        .reduce((acc, track, index) => {
           if (!trackUris.includes(track.uri)) {
-            allTracks.push({
+            acc.push({
               uri: track.uri,
               positions: [index],
             });
           }
-        });
+          return acc;
+        }, []);
     await deleteTracks(auth, playlist.id, allTracks);
   }
 };
@@ -81,28 +79,28 @@ const setJump = async (teamId, channelId, settings, userId) => {
   return await sns.publish(params).promise();
 };
 
-const reset = async (teamId, channelId, settings, trackUris, userId, jump, responseUrl) => {
+const main = async (teamId, channelId, settings, userId, trackUris, jump, responseUrl) => {
   const playlist = settings[PLAYLIST];
   const auth = await authSession(teamId, channelId);
 
   // Delete the review confirmation block
   if (responseUrl) {
     const message = deleteReply('', null);
-    await reply(message, responseUrl);
+    reply(message, responseUrl);
   }
 
   // Reset all
-  if (!trackUris) {
+  if (!trackUris || !trackUris.length) {
     await replaceTracks(auth, playlist.id, [AFRICA]);
-    await deleteTracks(auth, playlist.id, [apiTrack(AFRICA)]);
-    const message = inChannelPost(channelId, RESET_RESPONSE.success(userId));
+    await deleteTracks(auth, playlist.id, [{uri: AFRICA}]);
+    const message = inChannelPost(channelId, RESPONSE.success(userId));
     return await post(message);
   }
 
   // Cut down tracks to 100
   await reduceTracks(auth, playlist);
   await keepSelectTracks(auth, playlist, trackUris);
-  const message = inChannelPost(channelId, RESET_RESPONSE.kept(trackUris, userId));
+  const message = inChannelPost(channelId, RESPONSE.kept(trackUris, userId));
   await post(message);
   if (jump) {
     await setJump(teamId, channelId, settings, userId);
@@ -110,10 +108,12 @@ const reset = async (teamId, channelId, settings, trackUris, userId, jump, respo
 };
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, settings, trackUris, userId, jump, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
-  await reset(teamId, channelId, settings, trackUris, userId, jump, responseUrl)
+  const {teamId, channelId, settings, userId, trackUris, jump, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
+  await main(teamId, channelId, settings, userId, trackUris, jump, responseUrl)
       .catch((error)=>{
-        logger.error(error, RESET_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, null, RESET_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, null, RESPONSE.failed);
       });
 };
+
+module.exports.RESPONSE = RESPONSE;
