@@ -161,6 +161,35 @@ describe('Control Reset Start', () => {
       expect(mockSlackApi.postEphemeral).toHaveBeenCalledWith(post);
     });
 
+    it('should return a reset review block with only 1 track', async () => {
+      const auth = {auth: true};
+      const total = {total: 1};
+      const reviewTracks = ['a'];
+      const textSection = {text: true};
+      const actionSection = {action: true};
+      const buttonAction = {button: true};
+      const post = {ephemeral: true};
+
+      mockAuthSession.authSession.mockResolvedValue(auth);
+      mockSpotifyPlaylists.fetchPlaylistTotal.mockResolvedValue(total);
+      mockResetLayer.getReviewTracks.mockResolvedValue(reviewTracks);
+      mockSlackBlocks.textSection.mockReturnValue(textSection);
+      mockSlackBlocks.actionSection.mockReturnValue(actionSection);
+      mockSlackBlocks.buttonActionElement.mockReturnValue(buttonAction);
+      mockSlackFormatReply.ephemeralPost.mockReturnValue(post);
+
+      await expect(mod.handler(event(params[0]))).resolves.toBe();
+      expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSpotifyPlaylists.fetchPlaylistTotal).toHaveBeenCalledWith(auth, settings.playlist.id);
+      expect(mockResetLayer.getReviewTracks).toHaveBeenCalledWith(auth, settings.playlist, total.total);
+      expect(mockSlackBlocks.textSection).toHaveBeenCalledWith(response.review(reviewTracks.length));
+      expect(mockSlackBlocks.buttonActionElement).toHaveBeenCalledWith(mockConfig.slack.actions.reset_review_confirm, `Review Tracks`, channelId, false, mockConfig.slack.buttons.primary);
+      expect(mockSlackBlocks.buttonActionElement).toHaveBeenCalledWith(mockConfig.slack.actions.reset_review_deny, `Remove Tracks`, channelId, false, mockConfig.slack.buttons.danger);
+      expect(mockSlackBlocks.actionSection).toHaveBeenCalledWith(mockConfig.slack.actions.reset_review_confirm, [buttonAction, buttonAction]);
+      expect(mockSlackFormatReply.ephemeralPost).toHaveBeenCalledWith(channelId, userId, response.review(reviewTracks.length), [textSection, actionSection]);
+      expect(mockSlackApi.postEphemeral).toHaveBeenCalledWith(post);
+    });
+
     it('should trigger a reset of the playlist', async () => {
       const auth = {auth: true};
       const total = {total: 134};

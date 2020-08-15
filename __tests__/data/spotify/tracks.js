@@ -163,4 +163,43 @@ module.exports = {
       },
     ],
   },
+  1: {
+    'items': [
+      {
+        'added_at': '2020-08-13T13:59:49Z',
+        'added_by': {
+          'id': 'samchungy',
+        },
+        'track': {
+          'artists': [
+            {
+              'external_urls': {
+                'spotify': 'https://open.spotify.com/artist/0Cp8WN4V8Tu4QJQwCN5Md4',
+              },
+              'href': 'https://api.spotify.com/v1/artists/0Cp8WN4V8Tu4QJQwCN5Md4',
+              'id': '0Cp8WN4V8Tu4QJQwCN5Md4',
+              'name': 'BENEE',
+              'type': 'artist',
+              'uri': 'spotify:artist:0Cp8WN4V8Tu4QJQwCN5Md4',
+            },
+            {
+              'external_urls': {
+                'spotify': 'https://open.spotify.com/artist/6sHCvZe1PHrOAuYlwTLNH4',
+              },
+              'href': 'https://api.spotify.com/v1/artists/6sHCvZe1PHrOAuYlwTLNH4',
+              'id': '6sHCvZe1PHrOAuYlwTLNH4',
+              'name': 'Gus Dapperton',
+              'type': 'artist',
+              'uri': 'spotify:artist:6sHCvZe1PHrOAuYlwTLNH4',
+            },
+          ],
+          'explicit': true,
+          'id': '4nK5YrxbMGZstTLbvj6Gxw',
+          'is_playable': true,
+          'name': 'Supalonely',
+          'uri': 'spotify:track:4nK5YrxbMGZstTLbvj6Gxw',
+        },
+      },
+    ],
+  },
 };

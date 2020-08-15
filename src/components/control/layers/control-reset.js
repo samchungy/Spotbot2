@@ -18,12 +18,7 @@ const getReviewTracks = async (auth, playlist, total) => {
   const offset = Math.max(0, total-LIMIT);
   const spotifyTracks = await fetchTracks(auth, playlist.id, null, offset);
   const playlistTracks = spotifyTracks.items.map((track) => new PlaylistTrack(track)).reverse();
-  const reviewTracks = playlistTracks.reduce((review, track) => {
-    if (moment(track.addedAt).isAfter(timeBefore)) {
-      review.push(track);
-    }
-    return review;
-  }, []);
+  const reviewTracks = playlistTracks.filter((track) => moment(track.addedAt).isAfter(timeBefore));
   return reviewTracks;
 };
 
