@@ -21,21 +21,19 @@ const RESET_RESPONSE = {
  */
 const extractSubmissions = (view) => {
   const values = view.state.values;
-  const submissions = {};
-  for (const item in values) {
-    if ({}.hasOwnProperty.call(values, item)) {
-      switch (item) {
-        case RESET_MODAL:
-          if (values[item][item].selected_options) {
-            submissions[item] = values[item][item].selected_options.map((option) => option.value);
-          }
-          break;
-        case REVIEW_JUMP:
-          submissions[item] = values[item][item].selected_option.value;
-          break;
-      }
+  const submissions = Object.entries(values).reduce((subs, [key, value]) => {
+    switch (key) {
+      case RESET_MODAL:
+        if (value[key].selected_options) {
+          subs[key] = value[key].selected_options.map((option) => option.value);
+        }
+        break;
+      case REVIEW_JUMP:
+        subs[key] = value[key].selected_option.value;
+        break;
     }
-  }
+    return subs;
+  }, {});
   return submissions;
 };
 
