@@ -56,6 +56,8 @@ const mockMoment = {
   unix: jest.fn(),
   names: jest.fn(),
 };
+const mockMom = jest.fn(() => mockMoment);
+mockMom.tz = jest.fn(() => mockMoment);
 const mockAuthSession = {
   authSession: jest.fn(),
 };
@@ -76,11 +78,7 @@ const mockUtilTrack = jest.fn();
 
 jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
 jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
-jest.mock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', () => {
-  const mock = () => mockMoment;
-  mock.tz = mockMoment;
-  return mock;
-}, {virtual: true});
+jest.mock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', () => mockMom, {virtual: true});
 
 jest.mock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
 jest.mock('/opt/spotify/spotify-api-v2/spotify-api-playlists', () => mockSpotifyPlaylists, {virtual: true});

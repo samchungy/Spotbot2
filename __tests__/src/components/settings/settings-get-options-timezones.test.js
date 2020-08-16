@@ -7,6 +7,8 @@ const mockMoment = {
   format: jest.fn(),
   names: jest.fn(),
 };
+const mockMom = jest.fn(() => mockMoment);
+mockMom.tz = mockMoment;
 
 const mockLogger = {
   info: jest.fn(),
@@ -20,11 +22,7 @@ const mockSlackFormat = {
 
 // Mock Declarations
 jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
-jest.mock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', () => {
-  const mock = () => mockMoment;
-  mock.tz = mockMoment;
-  return mock;
-}, {virtual: true});
+jest.mock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', () => mockMom, {virtual: true});
 jest.mock('/opt/slack/format/slack-format-modal', () => mockSlackFormat, {virtual: true});
 jest.mock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 

@@ -72,7 +72,7 @@ const mockMoment = {
   isSameOrAfter: jest.fn(),
 };
 const mockMom = jest.fn(() => mockMoment);
-mockMom.tz = mockMoment;
+mockMom.tz = jest.fn(() => mockMoment);
 const mockAuthSession = {
   authSession: jest.fn(),
 };

@@ -43,7 +43,7 @@ const mockMoment = {
   isAfter: jest.fn(),
 };
 const mockMom = jest.fn(() => mockMoment);
-mockMom.tz = mockMoment;
+mockMom.tz = jest.fn(() => mockMoment);
 
 jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
 jest.mock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', () => mockMom, {virtual: true});
