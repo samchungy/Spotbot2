@@ -14,7 +14,7 @@
       "/opt/errors/*": ["src/layers/layers-core/errors/*"],
       "/opt/db/*": ["src/layers/layers-core/db/*"],
       "/opt/spotify/*": ["src/layers/layers-spotify/spotify/*"],
-      "/opt/control-skip/*": ["src/layers/layers-control-skip/*"]
+      "/opt/control-skip/*": ["src/layers/layers-control-skip/control-skip/*"]
     }
   },
   "exclude": ["node_modules", "dist"]
