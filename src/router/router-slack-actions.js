@@ -348,7 +348,6 @@ const controlSubmitRouter = async (callbackId, payload) => {
           channelId: payload.view.private_metadata,
           settings: await checkIsSetup(payload.team.id, payload.view.private_metadata),
           view: payload.view,
-          isClose: false,
           userId: payload.user.id,
         }),
         TopicArn: CONTROL_RESET_REVIEW_SUBMIT,
@@ -368,11 +367,9 @@ const controlCloseRouter = async (callbackId, payload) => {
           teamId: payload.team.id,
           channelId: payload.view.private_metadata,
           settings: await checkIsSetup(payload.team.id, payload.view.private_metadata),
-          trackUris: null,
-          isClose: true,
           userId: payload.user.id,
         }),
-        TopicArn: CONTROL_RESET_REVIEW_SUBMIT,
+        TopicArn: CONTROL_RESET_SET,
       };
       await sns.publish(params).promise();
       return;
