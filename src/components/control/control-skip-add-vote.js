@@ -7,7 +7,7 @@ const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
 // Slack
-const {reply} = require('/opt/slack/slack-api');
+const {reply, postEphemeral} = require('/opt/slack/slack-api');
 const {textSection} = require('/opt/slack/format/slack-format-blocks');
 const {ephemeralPost, updateReply} = require('/opt/slack/format/slack-format-reply');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
@@ -16,7 +16,7 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 const {addVote} = require('/opt/control-skip/control-skip');
 const {loadSkip} = require('/opt/db/settings-extra-interface');
 
-const SKIP_RESPONSE = {
+const RESPONSE = {
   error: `:warning: Adding skip vote failed.`,
   expired: ':information_source: Skip vote has expired.',
   failed: 'Adding skip vote failed',
@@ -32,9 +32,9 @@ const isExpired = async (statusTrack, currentSkip, responseUrl) => {
   const expired = !statusTrack || !currentSkip || !currentSkip.skip || (currentSkip.skip.track.id != statusTrack.id);
   if (expired) {
     // Expire Vote
-    const expiredBlock = [textSection(SKIP_RESPONSE.expired)];
+    const expiredBlock = [textSection(RESPONSE.expired)];
     await reply(
-        updateReply(SKIP_RESPONSE.expired, expiredBlock),
+        updateReply(RESPONSE.expired, expiredBlock),
         responseUrl,
     );
     return true;
@@ -50,13 +50,13 @@ const isExpired = async (statusTrack, currentSkip, responseUrl) => {
  * @param {string} userId
  * @param {string} responseUrl
  */
-const startAddVote = async (teamId, channelId, settings, userId, responseUrl) => {
+const main = async (teamId, channelId, settings, userId, responseUrl) => {
   const auth = await authSession(teamId, channelId);
   const {country} = auth.getProfile();
   const status = await fetchCurrentPlayback(auth, country);
   if (!isPlaying(status)) {
-    const message = ephemeralPost(channelId, userId, SKIP_RESPONSE.not_playing, null);
-    return await ephemeralPost(message);
+    const message = ephemeralPost(channelId, userId, RESPONSE.not_playing, null);
+    return await postEphemeral(message);
   }
   const statusTrack = new Track(status.item);
   const currentSkip = await loadSkip(teamId, channelId);
@@ -68,9 +68,10 @@ const startAddVote = async (teamId, channelId, settings, userId, responseUrl) =>
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, userId, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
-  await startAddVote(teamId, channelId, settings, userId, responseUrl)
+  await main(teamId, channelId, settings, userId, responseUrl)
       .catch((error)=>{
-        logger.error(error, SKIP_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, SKIP_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;

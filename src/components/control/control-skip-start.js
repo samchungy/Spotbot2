@@ -22,8 +22,8 @@ const SKIP_VOTES = config.dynamodb.settings.skip_votes;
 const SKIP_VOTES_AH = config.dynamodb.settings.skip_votes_ah;
 const TIMEZONE = config.dynamodb.settings.timezone;
 
-const SKIP_RESPONSE = {
-  confirmation: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} was skipped by ${SKIP_RESPONSE.users(users)}.`,
+const RESPONSE = {
+  confirmation: (title, users) => `:black_right_pointing_double_triangle_with_vertical_bar: ${title} was skipped by ${RESPONSE.users(users)}.`,
   not_playing: ':information_source: Spotify is currently not playing. Please play Spotify first.',
   failed: 'Skip Failed',
   request: (userId, title) => `:black_right_pointing_double_triangle_with_vertical_bar: Skip Request:\n\n <@${userId}> has requested to skip ${title}`,
@@ -33,7 +33,7 @@ const SKIP_RESPONSE = {
 const createSkipVote = async (teamId, channelId, userId, statusTrack, extraVotesNeeded, totalVotes) => {
   // else Generate a skip request
   const skipBlock = getSkipBlock(userId, extraVotesNeeded, statusTrack.title, statusTrack.id, [userId]);
-  const message = inChannelPost(channelId, SKIP_RESPONSE.request(userId, statusTrack.title), skipBlock);
+  const message = inChannelPost(channelId, RESPONSE.request(userId, statusTrack.title), skipBlock);
   const slackPost = await post(message);
   await createNewSkip(teamId, channelId, slackPost.message.ts, statusTrack, [userId], totalVotes);
 };
@@ -44,7 +44,7 @@ const isAfterHours = (timezone) => {
   return (now.isBefore(moment.tz(`${currentDay} 06:00`, timezone)) || now.isAfter(moment.tz(`${currentDay} 18:00`, timezone)));
 };
 
-const startSkip = async (teamId, channelId, settings, userId) => {
+const main = async (teamId, channelId, settings, userId) => {
   const playlist = settings[PLAYLIST];
   const auth = await authSession(teamId, channelId);
   const {country} = auth.getProfile();
@@ -52,7 +52,7 @@ const startSkip = async (teamId, channelId, settings, userId) => {
 
   // Check if Spotify is playing first
   if (!isPlaying(status)) {
-    const message = inChannelPost(channelId, SKIP_RESPONSE.not_playing);
+    const message = inChannelPost(channelId, RESPONSE.not_playing);
     return await post(message);
   }
 
@@ -72,7 +72,7 @@ const startSkip = async (teamId, channelId, settings, userId) => {
   const extraVotesNeeded = isAfterHours(settings[TIMEZONE]) ? parseInt(settings[SKIP_VOTES_AH]) : parseInt(settings[SKIP_VOTES]);
   if (!extraVotesNeeded) {
     // Skip!
-    const message = inChannelPost(channelId, SKIP_RESPONSE.confirmation(statusTrack.title, [userId]));
+    const message = inChannelPost(channelId, RESPONSE.confirmation(statusTrack.title, [userId]));
     return Promise.all([
       skipTrack(teamId, channelId, auth, settings, statusTrack),
       post(message),
@@ -84,9 +84,10 @@ const startSkip = async (teamId, channelId, settings, userId) => {
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, userId} = JSON.parse(event.Records[0].Sns.Message);
-  await startSkip(teamId, channelId, settings, userId)
+  await main(teamId, channelId, settings, userId)
       .catch((error)=>{
-        logger.error(error, SKIP_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, SKIP_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;
