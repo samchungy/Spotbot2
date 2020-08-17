@@ -58,6 +58,9 @@ const place = mod.PLACE;
 const {settings} = require('../../../../data/request');
 
 describe('Settings Block', () => {
+  beforeEach(() => {
+    mockMom.mockImplementation(() => mockMoment);
+  });
   describe('getSettings block', () => {
     it('should get a settings block with no existing settings', async () => {
       const multiUsers = {multi: true};

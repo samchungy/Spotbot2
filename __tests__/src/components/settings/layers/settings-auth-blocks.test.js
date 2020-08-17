@@ -108,6 +108,9 @@ const {teamId, channelId, viewId, url} = require('../../../../data/request');
 
 
 describe('Settings Auth Block', () => {
+  beforeEach(() => {
+    mockMom.mockImplementation(() => mockMoment);
+  });
   describe('getAuthBlock', () => {
     it('should get an authenticated settings block', async () => {
       const auth = {auth: true, getAccess: async () => Promise.resolve('accessToken')};
@@ -164,6 +167,7 @@ describe('Settings Auth Block', () => {
       mockUtilTransform.encode64.mockReturnValue(encoded);
       mockMoment.add.mockReturnThis();
       mockMoment.unix.mockReturnValue(unixTime);
+      mockSlackFormatModal.buttonSection.mockReturnValue(button);
 
       await expect(mod.getAuthBlock(teamId, channelId, viewId, url)).resolves.toStrictEqual({authBlock: [button], authError: true});
       expect(mockAuthInterface.storeState).toBeCalledWith(teamId, channelId, {state}, unixTime);
@@ -187,6 +191,7 @@ describe('Settings Auth Block', () => {
       mockUtilTransform.encode64.mockReturnValue(encoded);
       mockMoment.add.mockReturnThis();
       mockMoment.unix.mockReturnValue(unixTime);
+      mockSlackFormatModal.buttonSection.mockReturnValue(button);
 
       await expect(mod.getAuthBlock(teamId, channelId, viewId, url)).resolves.toStrictEqual({authBlock: [button], authError: true});
       expect(mockAuthInterface.storeState).toBeCalledWith(teamId, channelId, {state}, unixTime);
@@ -211,6 +216,8 @@ describe('Settings Auth Block', () => {
       mockUtilTransform.encode64.mockReturnValue(encoded);
       mockMoment.add.mockReturnThis();
       mockMoment.unix.mockReturnValue(unixTime);
+      mockSlackFormatModal.buttonSection.mockReturnValue(button);
+      mockSlackFormatBlocks.contextSection.mockReturnValue(context);
 
       await expect(mod.getAuthBlock(teamId, channelId, viewId, url)).resolves.toStrictEqual({authBlock: [button, context], authError: true});
       expect(mockAuthInterface.storeState).toBeCalledWith(teamId, channelId, {state}, unixTime);

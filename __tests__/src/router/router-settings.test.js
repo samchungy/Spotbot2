@@ -179,6 +179,7 @@ const event = {
 describe('Router Settings', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSns.publish.mockReturnThis();
   });
 
   describe('handler', () => {
@@ -238,6 +239,10 @@ describe('Router Settings', () => {
   });
 
   describe('router', () => {
+    beforeEach(() => {
+      mockSns.publish.mockReturnThis();
+      mockAuthorizer.mockReturnValue(true);
+    });
     it('should respond to help', async () => {
       await expect(mod.handler(event[0])).resolves.toStrictEqual({statusCode: 200, body: response.help});
     });
