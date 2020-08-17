@@ -91,7 +91,7 @@ const mockLogger = {
   error: jest.fn(),
 };
 const mockSns = {
-  publish: jest.fn().mockReturnThis(),
+  publish: jest.fn(),
   promise: jest.fn(),
 };
 const mockAuthSession = {
@@ -322,6 +322,7 @@ describe('Control Reset Set', () => {
 
       mockSlackFormatReply.inChannelPost.mockReturnValue(post);
       mockSlackApi.post.mockResolvedValue();
+      mockSns.publish.mockReturnThis();
 
       await expect(mod.handler(event({...params[2], trackUris: uris}))).resolves.toBe();
       expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);

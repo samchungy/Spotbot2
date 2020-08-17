@@ -146,6 +146,9 @@ describe('Control Reset Review Open', () => {
     });
   });
   describe('main', () => {
+    beforeEach(() => {
+      mockMom.mockImplementation(() => mockMoment);
+    });
     it('should put all tracks into the 10 minute bucket and update modal', async () => {
       const auth = {auth: true};
       const reply = {delete: true};

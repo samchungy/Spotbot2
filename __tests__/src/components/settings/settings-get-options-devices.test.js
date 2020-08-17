@@ -98,6 +98,9 @@ describe('Get Device Options', () => {
   });
 
   describe('main', () => {
+    beforeEach(() => {
+      mockMom.mockImplementation(() => mockMoment);
+    });
     it('should return a Slack option containing a Spotify device', async () => {
       const event = params[0];
 

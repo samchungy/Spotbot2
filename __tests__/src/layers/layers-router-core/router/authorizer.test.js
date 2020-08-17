@@ -9,7 +9,6 @@ const mockDate = {
 };
 
 jest.mock('crypto', () => mockCrypto, {virtual: true});
-const mockBuffer = jest.spyOn(Buffer, 'from');
 // eslint-disable-next-line no-global-assign
 Date = mockDate;
 
@@ -285,6 +284,7 @@ describe('Slack Authorizer', () => {
   it('should successfully verify a Slack Request', async () => {
     const validTime = (parseInt(event[0].headers['X-Slack-Request-Timestamp'])+100)*1000;
     const sigBaseString = 'v0:' + event[0].headers['X-Slack-Request-Timestamp'] + ':' + event[0].body;
+    const mockBuffer = jest.spyOn(Buffer, 'from');
 
     mockDate.now.mockReturnValue(validTime);
     mockCrypto.createHmac.mockReturnThis();
@@ -297,7 +297,6 @@ describe('Slack Authorizer', () => {
     expect(mockCrypto.createHmac).toBeCalledWith('sha256', secret);
     expect(mockCrypto.update).toBeCalledWith(sigBaseString, 'utf8');
     expect(mockCrypto.digest).toBeCalledWith('hex');
-    expect(mockCrypto.timingSafeEqual).toBeCalledWith(expect.anything(), expect.anything());
     expect(mockBuffer).toBeCalledWith('v0=' + 'valid signature', 'utf8');
     expect(mockBuffer).toBeCalledWith(event[0].headers['X-Slack-Signature'], 'utf8');
     expect(mockCrypto.timingSafeEqual).toBeCalledWith(expect.anything(), expect.anything());
@@ -306,6 +305,7 @@ describe('Slack Authorizer', () => {
   it('should fail when signatures do not match', async () => {
     const validTime = (parseInt(event[0].headers['X-Slack-Request-Timestamp'])+100)*1000;
     const sigBaseString = 'v0:' + event[0].headers['X-Slack-Request-Timestamp'] + ':' + event[0].body;
+    const mockBuffer = jest.spyOn(Buffer, 'from');
 
     mockDate.now.mockReturnValue(validTime);
     mockCrypto.createHmac.mockReturnThis();
@@ -318,10 +318,9 @@ describe('Slack Authorizer', () => {
     expect(mockCrypto.createHmac).toBeCalledWith('sha256', secret);
     expect(mockCrypto.update).toBeCalledWith(sigBaseString, 'utf8');
     expect(mockCrypto.digest).toBeCalledWith('hex');
-    expect(mockCrypto.timingSafeEqual).toBeCalledWith(expect.anything(), expect.anything());
     expect(mockBuffer).toBeCalledWith('v0=' + 'invalid signature', 'utf8');
     expect(mockBuffer).toBeCalledWith(event[0].headers['X-Slack-Signature'], 'utf8');
-    expect(mockCrypto.timingSafeEqual).toBeCalledWith(expect.anything(), expect.anything());
+    expect(mockCrypto.timingSafeEqual).toBeCalled();
   });
 
   it('should fail when slack signature is not provided', async () => {

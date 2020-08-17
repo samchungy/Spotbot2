@@ -49,7 +49,7 @@ const mockLogger = {
   error: jest.fn(),
 };
 const mockSns = {
-  publish: jest.fn().mockReturnThis(),
+  publish: jest.fn(),
   promise: jest.fn(),
 };
 const mockSlackErrorReporter = {
@@ -407,6 +407,7 @@ describe('Control Reset Review Submit', () => {
     it('should handle errors gracefully', async () => {
       const error = new Error();
       mockSns.promise.mockRejectedValue(error);
+      mockSns.publish.mockReturnThis();
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);

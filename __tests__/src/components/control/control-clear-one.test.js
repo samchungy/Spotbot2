@@ -56,7 +56,7 @@ const mockMoment = {
   unix: jest.fn(),
   names: jest.fn(),
 };
-const mockMom = jest.fn(() => mockMoment);
+const mockMom = () => mockMoment;
 mockMom.tz = jest.fn(() => mockMoment);
 const mockAuthSession = {
   authSession: jest.fn(),

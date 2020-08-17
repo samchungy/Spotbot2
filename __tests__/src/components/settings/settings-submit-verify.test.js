@@ -19,7 +19,7 @@ const mockLogger = {
   error: jest.fn(),
 };
 const mockSns = {
-  publish: jest.fn().mockReturnThis(),
+  publish: jest.fn(),
   promise: jest.fn(),
 };
 const mockUtilObjects = {
@@ -979,6 +979,9 @@ const params = {
 };
 
 describe('Settings submission verfification', () => {
+  beforeEach(() => {
+    mockSns.publish.mockReturnThis();
+  });
   describe('handler', () => {
     const event = params[0];
     describe('success', () => {
@@ -992,6 +995,7 @@ describe('Settings submission verfification', () => {
       it('should report the error to Slack', async () => {
         const error = new Error();
         mockSns.promise.mockRejectedValue(error);
+        mockUtilObjects.isEmpty.mockReturnValue(true);
 
         expect.assertions(3);
         await expect(mod.handler(event)).resolves.toBe();

@@ -97,6 +97,9 @@ const params = {
 };
 
 describe('Validate auth from Spotify callback', () => {
+  beforeEach(() => {
+    mockMom.mockImplementation(() => mockMoment);
+  });
   describe('main', () => {
     const state = {
       'state': {
@@ -127,6 +130,7 @@ describe('Validate auth from Spotify callback', () => {
       mockSpotifyProfile.fetchProfile.mockResolvedValue(profileData[0]);
       mockAuthInterface.changeProfile.mockResolvedValue();
       mockAuthInterface.storeAuth.mockResolvedValue();
+      mockSns.publish.mockReturnThis();
       mockSns.promise.mockResolvedValue();
       mockMoment.add.mockReturnThis();
       mockMoment.unix.mockReturnValue('12345');

@@ -100,6 +100,9 @@ describe('Get Playlist Options', () => {
   });
 
   describe('main', () => {
+    beforeEach(() => {
+      mockMom.mockImplementation(() => mockMoment);
+    });
     it('should return Slack options containing Spotify playlist results', async () => {
       const event = params[0];
       const opt = {option: true};

@@ -55,6 +55,9 @@ const {settings} = require('../../../../data/request');
 const tracks = require('../../../../data/spotify/tracks');
 
 describe('Control Reset Layers', () => {
+  beforeEach(() => {
+    mockMom.mockImplementation(() => mockMoment);
+  });
   it('should return reviewTracks', async () => {
     const auth = {auth: true};
     const playlistTrack = {track: true, addedAt: 'date'};

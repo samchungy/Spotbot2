@@ -92,6 +92,9 @@ describe('Get Timezone Options', () => {
   });
 
   describe('main', () => {
+    beforeEach(() => {
+      mockMom.mockImplementation(() => mockMoment);
+    });
     it('should return Slack options containing 1 timezone result', async () => {
       const event = params[0];
       const opt = {option: true};
