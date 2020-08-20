@@ -24,8 +24,8 @@ module.exports = {
   },
   settings2: {
     'default_device': {
-      'name': 'AU13282 - Computer',
-      'id': '87997bb4312981a00f1d8029eb874c55a211a0cc',
+      'name': 'None',
+      'id': 'no_devices',
     },
     'playlist': {
       'name': 'Test',

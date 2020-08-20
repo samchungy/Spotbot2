@@ -420,4 +420,32 @@ module.exports = {
     },
     'is_playing': true,
   },
+  4: {
+    'device': {
+      'id': '87997bb4312981a00f1d8029eb874c55a211a0cc',
+      'is_active': true,
+      'is_private_session': false,
+      'is_restricted': false,
+      'name': 'AU13282',
+      'type': 'Computer',
+      'volume_percent': 0,
+    },
+    'shuffle_state': false,
+    'repeat_state': 'off',
+    'timestamp': 1597415958655,
+    'context': null,
+    'progress_ms': 20420,
+    'item': null,
+    'currently_playing_type': 'unknown',
+    'actions': {
+      'disallows': {
+        'resuming': true,
+        'skipping_prev': true,
+        'toggling_repeat_context': true,
+        'toggling_repeat_track': true,
+        'toggling_shuffle': true,
+      },
+    },
+    'is_playing': true,
+  },
 };
