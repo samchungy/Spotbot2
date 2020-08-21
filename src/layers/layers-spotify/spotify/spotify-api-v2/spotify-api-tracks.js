@@ -10,7 +10,7 @@ const fetchTracksInfo = async (auth, market, ids) => {
   return requester(auth, (client) => {
     return client.get(config.endpoints.tracks, {params: {
       ...market && {market},
-      ids,
+      ids: ids.join(),
     }}).then((response) => response.data);
   });
 };

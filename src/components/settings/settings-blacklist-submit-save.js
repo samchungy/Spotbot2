@@ -14,12 +14,13 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 // Settings
 const {changeBlacklistRemove, loadBlacklist, changeBlacklist} = require('/opt/db/settings-extra-interface');
 const INFO_LIMIT = config.spotify_api.tracks.info_limit;
-const BLACKLIST_RESPONSE = {
-  failed: 'Blacklist failed to save.',
+const RESPONSE = {
+  failed: 'Blacklist failed to save',
   success: `:white_check_mark: Blacklisted successfully updated.`,
 };
 
-const transformToBlacklistTrack = async (teamId, channelId, auth, country, trackIdsToAdd) => {
+const transformToBlacklistTrack = async (auth, country, trackIdsToAdd) => {
+  console.log(trackIdsToAdd);
   const allTrackInfoPromises = [];
   const attempts = Math.ceil(trackIdsToAdd.length/INFO_LIMIT);
   for (let attempt = 0; attempt < attempts; attempt++) {
@@ -30,7 +31,7 @@ const transformToBlacklistTrack = async (teamId, channelId, auth, country, track
   return allSpotifyTrackInfos.map((track) => new TrackMin(track));
 };
 
-const blacklistSave = async (teamId, channelId, userId, submissions) => {
+const main = async (teamId, channelId, userId, submissions) => {
   const [auth, blacklist] = await Promise.all([authSession(teamId, channelId), loadBlacklist(teamId, channelId)]);
   const blacklistTracks = blacklist ? blacklist.blacklist : [];
   const {country} = auth.getProfile();
@@ -48,22 +49,22 @@ const blacklistSave = async (teamId, channelId, userId, submissions) => {
     await changeBlacklistRemove(teamId, channelId, tracksToRemove);
   }
 
-  const tracksToAdd = trackIdsToAdd.length ? transformToBlacklistTrack(teamId, channelId, auth, country, trackIdsToAdd) : [];
+  const tracksToAdd = trackIdsToAdd.length ? await transformToBlacklistTrack(auth, country, trackIdsToAdd) : [];
 
   if (trackIdsToAdd.length) {
     await changeBlacklist(teamId, channelId, tracksToAdd);
   }
 
-  const message = ephemeralPost(channelId, userId, BLACKLIST_RESPONSE.success);
+  const message = ephemeralPost(channelId, userId, RESPONSE.success);
   return await postEphemeral(message);
 };
 
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, submissions} = JSON.parse(event.Records[0].Sns.Message);
-  return await blacklistSave(teamId, channelId, userId, submissions)
+  return await main(teamId, channelId, userId, submissions)
       .catch((error)=>{
-        logger.error(error, BLACKLIST_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, BLACKLIST_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
