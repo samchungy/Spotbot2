@@ -33,10 +33,8 @@ const isExpired = async (statusTrack, currentSkip, responseUrl) => {
   if (expired) {
     // Expire Vote
     const expiredBlock = [textSection(RESPONSE.expired)];
-    await reply(
-        updateReply(RESPONSE.expired, expiredBlock),
-        responseUrl,
-    );
+    const update = updateReply(RESPONSE.expired, expiredBlock);
+    await reply(update, responseUrl);
     return true;
   }
   return false;

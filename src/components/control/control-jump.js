@@ -29,7 +29,7 @@ const RESPONSE = {
 const main = async (teamId, channelId, settings, userId, responseUrl) => {
   if (responseUrl) {
     const msg = deleteReply('', null);
-    reply(msg, responseUrl);
+    reply(msg, responseUrl).catch(logger.error);
   }
 
   const auth = await authSession(teamId, channelId);

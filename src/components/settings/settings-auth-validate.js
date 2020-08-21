@@ -22,21 +22,17 @@ const RESPONSE = {
 };
 
 const decodeState = (state) => transform.decode64(decodeURIComponent(state));
+const parseJSON = async (string) => JSON.parse(string);
 
 // Verifies that our attempt came from a legitimate source
 const verifyState = async (state) => {
-  try {
-    const stateJson = JSON.parse(decodeState(state));
-    // Check state is valid, else redirect.
-    const currentState = await loadState(stateJson.teamId, stateJson.channelId);
-    if (currentState && isEqual(stateJson, currentState.state)) {
-      return currentState.state;
-    }
+  const stateJson = await parseJSON(decodeState(state));
+  // Check state is valid, else redirect.
+  const currentState = await loadState(stateJson.teamId, stateJson.channelId);
+  if (!currentState || !isEqual(stateJson, currentState.state)) {
     throw new Error('State not equal');
-  } catch (error) {
-    logger.error(error, 'Verify State failed');
-    throw error;
   }
+  return currentState.state;
 };
 
 // Exchanges our code for an access token and refresh token
@@ -76,7 +72,7 @@ module.exports.handler = async (event, context) => {
   const {code, state, url} = event;
   return await main(code, state, url)
       .catch((error) =>{
-        logger.error(error, 'Settings Auth Validation failed');
+        logger.error(error, RESPONSE.failed);
         return RESPONSE.failed;
       });
 };

@@ -94,7 +94,7 @@ const playWithDevice = async (teamId, channelId, auth, deviceId, status, playlis
 const main = async (teamId, channelId, settings, userId, responseUrl, trackUri) => {
   if (responseUrl) {
     const msg = deleteReply('', null);
-    reply(msg, responseUrl);
+    reply(msg, responseUrl).catch(logger.error);
   }
   const playlist = settings[PLAYLIST];
   const device = settings[DEFAULT_DEVICE];
@@ -122,7 +122,7 @@ const main = async (teamId, channelId, settings, userId, responseUrl, trackUri) 
   }
   if (device.id !== NO_DEVICES) {
     const message = inChannelPost(channelId, RESPONSE.no_default);
-    post(message);
+    post(message).catch(logger.error);
   }
   return await playWithDevice(teamId, channelId, auth, spotifyDevices.devices[0].id, status, playlist, 0, userId, settings, trackUri);
 };

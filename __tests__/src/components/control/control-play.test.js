@@ -114,6 +114,7 @@ describe('Control Play', () => {
 
     it('should handle errors gracefully', async () => {
       const error = new Error();
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockRejectedValue(error);
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
@@ -131,6 +132,7 @@ describe('Control Play', () => {
       const auth = {auth: true, getProfile: () => country};
       const post = {inChannelPost: true};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback
           .mockResolvedValueOnce(status[0])
@@ -163,6 +165,7 @@ describe('Control Play', () => {
       const warning = {warning: true};
       const post = {inChannelPost: true};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback
           .mockResolvedValueOnce('')
@@ -200,6 +203,7 @@ describe('Control Play', () => {
       const auth = {auth: true, getProfile: () => country};
       const post = {inChannelPost: true};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback
           .mockResolvedValueOnce('')
@@ -267,6 +271,7 @@ describe('Control Play', () => {
       const post = {inChannelPost: true};
       const total = {total: 69};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback
           .mockResolvedValueOnce(status[0])
@@ -308,6 +313,7 @@ describe('Control Play', () => {
       const playlistTrack = {uri: 'not the track'};
       const playingTrack = {uri: matchedUri.uri, title: 'The Song'};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyPlaylists.fetchPlaylistTotal.mockReturnValue(total);
       mockSpotifyPlaylists.fetchTracks.mockResolvedValue(tracks[0]);
@@ -344,6 +350,7 @@ describe('Control Play', () => {
       const playlistTrack = {uri: 'not the track'};
       const playingTrack = {uri: 'not', title: 'The Song'};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyPlaylists.fetchPlaylistTotal.mockReturnValue(total);
       mockSpotifyPlaylists.fetchTracks.mockResolvedValue(tracks[0]);
@@ -380,6 +387,7 @@ describe('Control Play', () => {
       const matchedUri = {uri: params[2].trackUri};
       const playlistTrack = {uri: 'not the track'};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyPlaylists.fetchPlaylistTotal.mockReturnValue(total);
       mockSpotifyPlaylists.fetchTracks.mockResolvedValue(tracks[0]);
@@ -409,6 +417,7 @@ describe('Control Play', () => {
       const total = {total: 6};
       const playlistTrack = {uri: 'not the track'};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyPlaylists.fetchPlaylistTotal.mockReturnValue(total);
       mockSpotifyPlaylists.fetchTracks.mockResolvedValue(tracks[0]);
@@ -436,6 +445,7 @@ describe('Control Play', () => {
       const post = {inChannelPost: true};
       const total = {total: 0};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback
           .mockResolvedValueOnce(status[0])
@@ -469,6 +479,7 @@ describe('Control Play', () => {
       const post = {inChannelPost: true};
       const total = {total: 69};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback
           .mockResolvedValueOnce(status[0])
@@ -502,6 +513,7 @@ describe('Control Play', () => {
       const auth = {auth: true, getProfile: () => country};
       const post = {inChannelPost: true};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValueOnce('');
       mockSpotifyHelper.isPlaying.mockReturnValueOnce(false);
@@ -523,6 +535,7 @@ describe('Control Play', () => {
       const auth = {auth: true, getProfile: () => country};
       const post = {inChannelPost: true};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValueOnce(status[2]);
       mockSpotifyHelper.isPlaying.mockReturnValueOnce(true);

@@ -152,7 +152,7 @@ describe('Validate auth from Spotify callback', () => {
 
       expect.assertions(2);
       await expect(mod.handler(event)).resolves.toEqual(response.failed);
-      expect(mockLogger.error).toBeCalledWith(expect.objectContaining({message: 'Unexpected token u in JSON at position 0'}), 'Verify State failed');
+      expect(mockLogger.error).toBeCalledWith(expect.objectContaining({message: 'Unexpected token u in JSON at position 0'}), response.failed);
     });
 
     it('should fail to equal state', async () => {
@@ -162,7 +162,7 @@ describe('Validate auth from Spotify callback', () => {
       mockUtilObjects.isEqual.mockReturnValue(false);
       expect.assertions(2);
       await expect(mod.handler(event)).resolves.toEqual(response.failed);
-      expect(mockLogger.error).toBeCalledWith(expect.objectContaining({'message': 'State not equal'}), 'Verify State failed');
+      expect(mockLogger.error).toBeCalledWith(expect.objectContaining({'message': 'State not equal'}), response.failed);
     });
   });
 });

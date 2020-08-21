@@ -73,7 +73,7 @@ const main = async (teamId, channelId, settings, userId) => {
   if (!extraVotesNeeded) {
     // Skip!
     const message = inChannelPost(channelId, RESPONSE.confirmation(statusTrack.title, [userId]));
-    return Promise.all([
+    return await Promise.all([
       skipTrack(teamId, channelId, auth, settings, statusTrack),
       post(message),
     ]);

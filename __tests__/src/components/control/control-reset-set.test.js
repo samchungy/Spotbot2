@@ -191,6 +191,7 @@ describe('Control Reset Set', () => {
       const post = {inChannel: true};
       const reply = {delete: true};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSlackFormatReply.deleteReply.mockReturnValue(reply);
       mockSpotifyPlaylists.replaceTracks.mockResolvedValue();
@@ -303,6 +304,7 @@ describe('Control Reset Set', () => {
       const matched = {uri: 'uri1'};
       const total = {total: 103};
 
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyPlaylists.fetchPlaylistTotal.mockResolvedValueOnce(total);
       mockSpotifyPlaylists.fetchTracks

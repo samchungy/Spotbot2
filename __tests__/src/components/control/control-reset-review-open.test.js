@@ -138,6 +138,7 @@ describe('Control Reset Review Open', () => {
 
     it('should handle errors gracefully', async () => {
       const error = new Error();
+      mockSlackApi.reply.mockResolvedValue();
       mockAuthSession.authSession.mockRejectedValue(error);
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();

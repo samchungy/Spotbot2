@@ -86,7 +86,7 @@ const main = async (teamId, channelId, settings, userId, trackUris, jump, respon
   // Delete the review confirmation block
   if (responseUrl) {
     const message = deleteReply('', null);
-    reply(message, responseUrl);
+    reply(message, responseUrl).catch(logger.error);
   }
 
   // Reset all

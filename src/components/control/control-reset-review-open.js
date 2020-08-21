@@ -86,7 +86,7 @@ const getReviewBlocks = (playlistTracks) => {
 const main = async (teamId, channelId, settings, viewId, responseUrl) => {
   // Delete review confirmation block
   const message = deleteReply('', null);
-  reply(message, responseUrl);
+  reply(message, responseUrl).catch(logger.error);
 
   const auth = await authSession(teamId, channelId);
   const playlist = settings[PLAYLIST];
