@@ -96,7 +96,7 @@ const main = async (teamId, channelId, settings, afterSkip=false) => {
     await sleep(2000);
   }
 
-  const status = await fetchCurrentPlayback(auth);
+  const status = await fetchCurrentPlayback(auth, auth.getProfile().country);
   if (!isPlaying(status)) {
     const message = inChannelPost(channelId, RESPONSE.not_playing, null);
     return await post(message);

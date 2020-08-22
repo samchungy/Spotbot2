@@ -29,13 +29,12 @@ const TRACKS_CURRENT = process.env.SNS_PREFIX + 'tracks-current';
 const LIMIT = config.spotify_api.playlists.tracks.limit;
 const PLAYLIST = config.dynamodb.settings.playlist;
 
-const WHOM_RESPONSE = {
+const RESPONSE = {
   error: `:warning: An error occured. Please try again.`,
   failed: 'Finding whom failed',
   not_playing: ':information_source: Spotify is currently not playing. Use `/control` or `/play` to play Spotbot.',
   now_playing_direct: (title, user, time) => `:microphone: ${title} was added directly to the playlist from Spotify ${time} by ${user}.`,
   now_playing: (title, user, time) => `:microphone: ${title} was added was last added ${time} by ${user}.`,
-  returning: (playlist) => `:information_source: Spotbot is returning to the Spotbot playlist: ${playlist} or was recently deleted.`,
 };
 
 /**
@@ -67,24 +66,23 @@ const getTrack = async (auth, playlistId, country, trackId) => {
  * @param {string} teamId
  * @param {string} channelId
  * @param {object} settings
- * @param {string} userId
  */
-const getCurrentInfo = async (teamId, channelId, settings, userId) => {
+const getCurrentInfo = async (teamId, channelId, settings) => {
   const params = {
-    Message: JSON.stringify({teamId, channelId, settings, userId}),
+    Message: JSON.stringify({teamId, channelId, settings}),
     TopicArn: TRACKS_CURRENT,
   };
   return await sns.publish(params).promise();
 };
 
-const getWhom = async (teamId, channelId, settings) => {
+const main = async (teamId, channelId, settings) => {
   const playlist = settings[PLAYLIST];
   const auth = await authSession(teamId, channelId);
   const profile = auth.getProfile();
   const status = await fetchCurrentPlayback(auth, profile.country);
 
   if (!isPlaying(status)) {
-    const message = inChannelPost(channelId, WHOM_RESPONSE.not_playing, null);
+    const message = inChannelPost(channelId, RESPONSE.not_playing, null);
     return await post(message);
   }
   const statusTrack = new Track(status.item);
@@ -102,13 +100,13 @@ const getWhom = async (teamId, channelId, settings) => {
         // Check if it is our account which added it
         const history = await loadTrackHistory(teamId, channelId, statusTrack.id);
         if (history) {
-          const message = inChannelPost(channelId, WHOM_RESPONSE.now_playing(statusTrack.title, `<@${history.userId}>`, moment.unix(history.timeAdded).fromNow()), null);
+          const message = inChannelPost(channelId, RESPONSE.now_playing(statusTrack.title, `<@${history.userId}>`, moment.unix(history.timeAdded).fromNow()), null);
           return await post(message);
         }
       }
       // Was added direct
       const userProfile = await fetchUserProfile(auth, playlistTrack.addedBy.id);
-      const message = inChannelPost(channelId, WHOM_RESPONSE.now_playing_direct(statusTrack.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow()), null);
+      const message = inChannelPost(channelId, RESPONSE.now_playing_direct(statusTrack.title, `<${userProfile.external_urls.spotify}|${userProfile.display_name ? userProfile.display_name : userProfile.id}>`, moment(playlistTrack.addedAt).fromNow()), null);
       return await post(message);
     }
   }
@@ -117,9 +115,10 @@ const getWhom = async (teamId, channelId, settings) => {
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings} = JSON.parse(event.Records[0].Sns.Message);
-  await getWhom(teamId, channelId, settings)
+  await main(teamId, channelId, settings)
       .catch((error)=>{
-        logger.error(error, WHOM_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, null, WHOM_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, null, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;
