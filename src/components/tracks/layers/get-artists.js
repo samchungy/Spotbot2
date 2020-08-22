@@ -14,7 +14,7 @@ const ARTIST_ACTIONS = config.slack.actions.artists;
 const DISPLAY_LIMIT = config.slack.limits.max_options;
 const BUTTON = config.slack.buttons;
 
-const ARTISTS_RESPONSES = {
+const RESPONSE = {
   error: ':warning: An error occured.',
   expired: ':information_source: Search has expired.',
   found: ':mag: Are these the artists you were looking for?',
@@ -30,16 +30,16 @@ const getArtistBlock = (artist) => {
 };
 
 const showResults = async (teamId, channelId, userId, triggerId, responseUrl) => {
-  const artistSearch = await loadSearch(teamId, channelId, triggerId, responseUrl);
-  if (!artistSearch) {
-    const message = updateReply(ARTISTS_RESPONSES.expired, null);
+  const artistSearch = await loadSearch(teamId, channelId, triggerId);
+  if (!artistSearch || !artistSearch.searchItems.length) {
+    const message = updateReply(RESPONSE.expired, null);
     return await reply(message, responseUrl);
   }
 
   artistSearch.currentSearch += 1;
   const displayArtists = artistSearch.searchItems.splice(0, DISPLAY_LIMIT);
   const blocks = [
-    textSection(ARTISTS_RESPONSES.found),
+    textSection(RESPONSE.found),
     ...displayArtists.map(getArtistBlock).flat(),
     contextSection(null, `Page ${artistSearch.currentSearch}/${artistSearch.numSearches}`),
     actionSection(null, [
@@ -52,14 +52,16 @@ const showResults = async (teamId, channelId, userId, triggerId, responseUrl) =>
 
   // If this is an update
   if (responseUrl) {
-    const message = updateReply(ARTISTS_RESPONSES.found, blocks);
+    const message = updateReply(RESPONSE.found, blocks);
     return await reply(message, responseUrl);
   }
 
-  const message = ephemeralPost(channelId, userId, ARTISTS_RESPONSES.found, blocks);
+  const message = ephemeralPost(channelId, userId, RESPONSE.found, blocks);
   return await postEphemeral(message);
 };
 
 module.exports = {
   showResults,
+  artistPanel,
+  RESPONSE,
 };

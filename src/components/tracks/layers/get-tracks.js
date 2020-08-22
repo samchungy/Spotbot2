@@ -13,7 +13,7 @@ const TRACK_ACTIONS = config.slack.actions.tracks;
 const DISPLAY_LIMIT = config.slack.limits.max_options;
 const BUTTON = config.slack.buttons;
 
-const TRACK_RESPONSE = {
+const RESPONSE = {
   error: ':warning: An error occured.',
   expired: ':information_source: Search has expired.',
   found: ':mag: Are these the tracks you were looking for?',
@@ -29,16 +29,17 @@ const getTrackBlock = (track) => {
 };
 
 const showResults = async (teamId, channelId, userId, triggerId, responseUrl) => {
-  const trackSearch = await loadSearch(teamId, channelId, triggerId, responseUrl);
-  if (!trackSearch) {
-    const message = updateReply(TRACK_RESPONSE.expired, null);
+  const trackSearch = await loadSearch(teamId, channelId, triggerId);
+
+  if (!trackSearch || !trackSearch.searchItems.length) {
+    const message = updateReply(RESPONSE.expired, null);
     return await reply(message, responseUrl);
   }
 
   trackSearch.currentSearch += 1;
   const displayTracks = trackSearch.searchItems.splice(0, DISPLAY_LIMIT);
   const blocks = [
-    textSection(TRACK_RESPONSE.found),
+    textSection(RESPONSE.found),
     ...displayTracks.map(getTrackBlock).flat(),
     contextSection(null, `Page ${trackSearch.currentSearch}/${trackSearch.numSearches}`),
     actionSection(null, [
@@ -50,14 +51,16 @@ const showResults = async (teamId, channelId, userId, triggerId, responseUrl) =>
 
   // If this is an update
   if (responseUrl) {
-    const message = updateReply(TRACK_RESPONSE.found, blocks);
+    const message = updateReply(RESPONSE.found, blocks);
     return await reply(message, responseUrl);
   }
 
-  const message = ephemeralPost(channelId, userId, TRACK_RESPONSE.found, blocks);
+  const message = ephemeralPost(channelId, userId, RESPONSE.found, blocks);
   return await postEphemeral(message);
 };
 
 module.exports = {
   showResults,
+  trackPanel,
+  RESPONSE,
 };

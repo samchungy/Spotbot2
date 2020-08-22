@@ -20,7 +20,7 @@ const {showResults} = require('./layers/get-artists');
 
 // Constants
 const LIMIT = config.spotify_api.tracks.limit; // 24 Search results = 8 pages.
-const ARTIST_RESPONSE = {
+const RESPONSE = {
   failed: 'Finding artists failed',
   error: ':warning: Artist search failed. Please try again.',
   no_artists: ':information_source: No artists found for the query ',
@@ -38,22 +38,23 @@ const isInvalidQuery = (query) => {
   return ((query.match(/\*/g)||[]).length > 1 || query.match(/".*."/gs));
 };
 
-const search = async (teamId, channelId, userId, query, triggerId) => {
+const main = async (teamId, channelId, userId, query, triggerId) => {
   const auth = await authSession(teamId, channelId);
   if (query === '') {
-    const message = ephemeralPost(channelId, userId, ARTIST_RESPONSE.query_empty, null);
+    const message = ephemeralPost(channelId, userId, RESPONSE.query_empty, null);
     return await postEphemeral(message);
   }
   if (isInvalidQuery(query)) {
-    const message = ephemeralPost(channelId, userId, ARTIST_RESPONSE.query_error, null);
+    const message = ephemeralPost(channelId, userId, RESPONSE.query_error, null);
     return await postEphemeral(message);
   }
 
   const profile = auth.getProfile();
   const searchResults = await fetchArtists(auth, query, profile.country, LIMIT);
+  logger.info({searchResults});
   const numArtists = searchResults.artists.items.length;
   if (!numArtists) {
-    const message = ephemeralPost(channelId, userId, ARTIST_RESPONSE.no_artists + `"${query}".`, null);
+    const message = ephemeralPost(channelId, userId, RESPONSE.no_artists + `"${query}".`, null);
     return await postEphemeral(message);
   }
   const expiry = moment().add('1', 'day').unix();
@@ -64,9 +65,10 @@ const search = async (teamId, channelId, userId, query, triggerId) => {
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, query, triggerId} = JSON.parse(event.Records[0].Sns.Message);
-  await search(teamId, channelId, userId, query, triggerId)
+  await main(teamId, channelId, userId, query, triggerId)
       .catch((error)=>{
-        logger.error(error, ARTIST_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, ARTIST_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;

@@ -10,7 +10,7 @@ const removeThreeSearches = (teamId, channelId, triggerId) => {
   return updateSearch(teamId, channelId, triggerId, expressionNames, expressionValues, updateExpression);
 };
 
-const loadSearch = (teamId, channelId, triggerId, items) => getSearch(teamId, channelId, triggerId, items);
+const loadSearch = (teamId, channelId, triggerId) => getSearch(teamId, channelId, triggerId);
 const storeSearch = (teamId, channelId, triggerId, search, query, expiry) => putSearch(teamId, channelId, triggerId, modelSearch(search, query), expiry);
 
 const modelSearch = (items, query) => ({
