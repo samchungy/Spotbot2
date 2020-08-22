@@ -22,7 +22,7 @@ const LIMIT = config.spotify_api.playlists.tracks.limit;
 const BACK_TO_PLAYLIST = config.dynamodb.settings.back_to_playlist;
 const PLAYLIST = config.dynamodb.settings.playlist;
 
-const CURRENT_RESPONSES = {
+const RESPONSE = {
   failed: 'Getting current status failed',
   error: `:warning: An error occured. Please try again.`,
   currently_playing: (title) => `:sound: Currently playing ${title}.`,
@@ -34,13 +34,11 @@ const CURRENT_RESPONSES = {
 };
 /**
  * Get Track Positions
- * @param {string} teamId
- * @param {string} channelId
  * @param {Object} auth
  * @param {string} playlistId
  * @param {string} trackUri
  */
-const getAllTrackPositions = async (teamId, channelId, auth, playlistId, trackUri) => {
+const getAllTrackPositions = async (auth, playlistId, trackUri) => {
   const {total} = await fetchPlaylistTotal(auth, playlistId);
   const promises = [];
   const attempts = Math.ceil(total/LIMIT);
@@ -48,16 +46,16 @@ const getAllTrackPositions = async (teamId, channelId, auth, playlistId, trackUr
     promises.push(getTracks(auth, playlistId, offset));
   }
   const allTracksPromises = await Promise.all(promises);
-  const positions = [];
-  allTracksPromises.flat().forEach((track, index, array) => {
-    if (track.uri === trackUri) {
-      if (index+1 != array.length) {
-        positions.push({position: index, next: array[index+1]});
+  const positions = allTracksPromises.flat().reduce((pos, t, i, src) => {
+    if (t.uri === trackUri) {
+      if (i+1 !== src.length) {
+        return [...pos, {position: i, next: src[i+1]}];
       } else {
-        positions.push({position: index, next: null});
+        return [...pos, {position: i, next: null}];
       }
     }
-  });
+    return pos;
+  }, []);
   return {positions: positions, total};
 };
 
@@ -66,30 +64,30 @@ const getTracks = async (auth, playlistId, offset) => {
   return spotifyTracks.items.map((track) => new PlaylistTrack(track));
 };
 
-const getContextBlocks = async (teamId, channelId, auth, playlist, status, statusTrack, backToPlaylist) => {
+const getContextBlocks = async (auth, playlist, status, statusTrack, backToPlaylist) => {
   if (onPlaylist(status, playlist)) {
     // Find position in playlist
-    const {positions, total} = await getAllTrackPositions(teamId, channelId, auth, playlist.id, statusTrack.uri);
+    const {positions, total} = await getAllTrackPositions(auth, playlist.id, statusTrack.uri);
     switch (positions.length) {
       case 1: {
         return [
-          contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`, positions[0].position+1, total)),
-          ...positions[0].next ? [contextSection(null, CURRENT_RESPONSES.context_track(positions[0].next.title))] : [],
+          contextSection(null, RESPONSE.context_on(`<${playlist.url}|${playlist.name}>`, positions[0].position+1, total)),
+          ...positions[0].next ? [contextSection(null, RESPONSE.context_track(positions[0].next.title))] : [],
         ];
       }
       case 0: {
-        return [contextSection(null, CURRENT_RESPONSES.returning(`<${playlist.url}|${playlist.name}>`))];
+        return [contextSection(null, RESPONSE.returning(`<${playlist.url}|${playlist.name}>`))];
       }
       default: {
-        return [contextSection(null, CURRENT_RESPONSES.context_on(`<${playlist.url}|${playlist.name}>`))];
+        return [contextSection(null, RESPONSE.context_on(`<${playlist.url}|${playlist.name}>`))];
       }
     }
   } else {
-    return [contextSection(null, CURRENT_RESPONSES.context_off(`<${playlist.url}|${playlist.name}>`, backToPlaylist === 'true'))];
+    return [contextSection(null, RESPONSE.context_off(`<${playlist.url}|${playlist.name}>`, backToPlaylist === 'true'))];
   }
 };
 
-const getCurrent = async (teamId, channelId, settings, afterSkip=false) => {
+const main = async (teamId, channelId, settings, afterSkip=false) => {
   const auth = await authSession(teamId, channelId);
   const backToPlaylist = settings[BACK_TO_PLAYLIST];
   const playlist = settings[PLAYLIST];
@@ -100,7 +98,7 @@ const getCurrent = async (teamId, channelId, settings, afterSkip=false) => {
 
   const status = await fetchCurrentPlayback(auth);
   if (!isPlaying(status)) {
-    const message = inChannelPost(channelId, CURRENT_RESPONSES.not_playing, null);
+    const message = inChannelPost(channelId, RESPONSE.not_playing, null);
     return await post(message);
   }
   const statusTrack = new Track(status.item);
@@ -108,21 +106,22 @@ const getCurrent = async (teamId, channelId, settings, afterSkip=false) => {
   if (!afterSkip && await onBlacklist(teamId, channelId, auth, settings, playlist, status, statusTrack)) {
     return;
   }
-  const text = CURRENT_RESPONSES.currently_playing(statusTrack.title);
+  const text = RESPONSE.currently_playing(statusTrack.title);
   const blocks = [
     textSection(text),
-    ...await getContextBlocks(teamId, channelId, auth, playlist, status, statusTrack, backToPlaylist),
+    ...await getContextBlocks(auth, playlist, status, statusTrack, backToPlaylist),
   ];
 
-  const message = inChannelPost(channelId, text, blocks.length ? blocks : null);
+  const message = inChannelPost(channelId, text, blocks);
   await post(message);
 };
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, afterSkip} = JSON.parse(event.Records[0].Sns.Message);
-  await getCurrent(teamId, channelId, settings, afterSkip)
+  await main(teamId, channelId, settings, afterSkip)
       .catch((error)=>{
-        logger.error(error, CURRENT_RESPONSES.failed);
-        reportErrorToSlack(teamId, channelId, null, CURRENT_RESPONSES.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, null, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;
