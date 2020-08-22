@@ -44,7 +44,7 @@ const RESPONSE = {
   success: (title) => `:tada: ${title} was added to the playlist.`,
   success_back: (title) => `:tada: ${title} was added to the playlist. Spotify will return back to the playlist after this song.`,
   resume: (track) => `:information_source: Spotify is currently paused. Would you like to resume playback, start playing from ${track}, or jump to the start of the playlist?`,
-  back: (track) => `Spotify is currently not playing from the playlist, would you like to start playing from ${track}, or jump to the start of the playlist?`,
+  back: (track) => `:information_source: Spotify is currently not playing from the playlist, would you like to start playing from ${track}, or jump to the start of the playlist?`,
 };
 
 const BUTTON = {
@@ -129,10 +129,10 @@ const sendBackQuestion = async (channelId, userId, track) => {
     buttonActionElement(CONTROLS.jump_to_start_close, BUTTON.jump, CONTROLS.jump_to_start_close),
   ];
   const blocks = [
-    textSection(RESPONSE.resume(track.title)),
+    textSection(RESPONSE.back(track.title)),
     actionSection(null, elements),
   ];
-  const message = ephemeralPost(channelId, userId, RESPONSE.resume(track.title), blocks);
+  const message = ephemeralPost(channelId, userId, RESPONSE.back(track.title), blocks);
   await postEphemeral(message);
 };
 
@@ -142,7 +142,7 @@ const addTrack = async (teamId, channelId, settings, userId, trackId, responseUr
   const backToPlaylist = settings[BACK_TO_PLAYLIST];
 
   const msg = deleteReply('', null);
-  reply(msg, responseUrl);
+  reply(msg, responseUrl).catch(logger.error);
 
   const [blacklist, auth] = await Promise.all([loadBlacklist(teamId, channelId), authSession(teamId, channelId)]);
   const {country} = auth.getProfile();
