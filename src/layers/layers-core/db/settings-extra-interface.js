@@ -118,11 +118,11 @@ const changeBackToPlaylistState = (teamId, channelId, time, timeBefore) => {
   return updateSettings(teamId, channelId, BACK_TO_PLAYLIST_STATE, expressionNames, expressionValues, updateExpression, conditionExpression, null);
 };
 
-const changeBlacklistRemove = (teamId, channelId, trackIds) => {
+const changeBlacklistRemove = (teamId, channelId, trackIndex) => {
   const expressionNames = {
     '#Blacklist': 'blacklist',
   };
-  const updateExpression = 'remove ' + trackIds.map((id) => `#Blacklist[${id}]`).split(', ');
+  const updateExpression = 'remove ' + (trackIndex.map((i) => `#Blacklist[${i}]`).join(', '));
   return updateSettings(teamId, channelId, BLACKLIST, expressionNames, null, updateExpression, null, null);
 };
 

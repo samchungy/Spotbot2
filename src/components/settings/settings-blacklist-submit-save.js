@@ -20,15 +20,15 @@ const RESPONSE = {
 };
 
 const transformToBlacklistTrack = async (auth, country, trackIdsToAdd) => {
-  console.log(trackIdsToAdd);
   const allTrackInfoPromises = [];
   const attempts = Math.ceil(trackIdsToAdd.length/INFO_LIMIT);
   for (let attempt = 0; attempt < attempts; attempt++) {
-    allTrackInfoPromises.push(fetchTracksInfo(auth, country, trackIdsToAdd.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT)));
+    const tracks = trackIdsToAdd.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT);
+    allTrackInfoPromises.push(fetchTracksInfo(auth, country, tracks));
   }
   // Extract Promise Info
-  const allSpotifyTrackInfos = (await Promise.all(allTrackInfoPromises)).map((infoPromise) => infoPromise.tracks).flat();
-  return allSpotifyTrackInfos.map((track) => new TrackMin(track));
+  const allSpotifyTrackInfos = (await Promise.all(allTrackInfoPromises)).map((infoPromise) => infoPromise.tracks);
+  return allSpotifyTrackInfos.flat().map((track) => new TrackMin(track));
 };
 
 const main = async (teamId, channelId, userId, submissions) => {
@@ -41,9 +41,9 @@ const main = async (teamId, channelId, userId, submissions) => {
     return track ? [[...curr, track], adds] : [curr, [...adds, submission.value]];
   }, [[], []]);
 
-  const tracksToRemove = blacklistTracks.reduce((remove, track, index) => { // Highly efficient way to filter the tracks after finding the unique Uris
-    return currentList[index - remove.length] !== track.id ? [...remove, index] : remove;
-  }, []);
+  const tracksToRemove = currentList.length < blacklistTracks.length ? blacklistTracks.reduce((tracks, b, i) => {
+    return !currentList.find((c) => b.id === c.id) ? [...tracks, i] : tracks;
+  }, []) : [];
 
   if (tracksToRemove.length) {
     await changeBlacklistRemove(teamId, channelId, tracksToRemove);
@@ -68,3 +68,4 @@ module.exports.handler = async (event, context) => {
         reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;

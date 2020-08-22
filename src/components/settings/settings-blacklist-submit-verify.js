@@ -9,7 +9,7 @@ const SETTINGS_BLACKLIST_SUBMIT_SAVE = process.env.SNS_PREFIX + 'settings-blackl
 
 const BLACKLIST_LIMIT = config.dynamodb.blacklist.limit;
 const BLACKLIST_MODAL = config.slack.actions.blacklist_modal;
-const BLACKLIST_RESPONSE = {
+const RESPONSE = {
   failed: 'Submitting blacklist failed',
   error: ':warning: Blacklist failed to save.',
   too_many_tracks: 'You have tried to add too many tracks to the blacklist. Please remove some.',
@@ -17,26 +17,23 @@ const BLACKLIST_RESPONSE = {
 
 const extractSubmissions = (view) => {
   const values = view.state.values;
-  let submissions = [];
-  for (const setting in values) {
-    if ({}.hasOwnProperty.call(values, setting)) {
-      switch (setting) {
-        case BLACKLIST_MODAL:
-          submissions = values[setting][setting].selected_options;
-          break;
-      }
+  return Object.entries(values).reduce((subs, [key, value]) => {
+    switch (key) {
+      case BLACKLIST_MODAL:
+        subs = value[key].selected_options;
+        break;
     }
-  }
-  return submissions;
+    return subs;
+  }, []) || [];
 };
 
-const startVerification = async (teamId, channelId, settings, view, userId) => {
+const main = async (teamId, channelId, settings, view, userId) => {
   // LAMBDA
   const submissions = extractSubmissions(view);
   if (submissions && submissions.length > BLACKLIST_LIMIT) {
     return {
       response_action: 'errors',
-      errors: {[BLACKLIST_MODAL]: BLACKLIST_RESPONSE.too_many_tracks},
+      errors: {[BLACKLIST_MODAL]: RESPONSE.too_many_tracks},
     };
   }
 
@@ -51,9 +48,10 @@ const startVerification = async (teamId, channelId, settings, view, userId) => {
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, view, userId} = event;
-  return await startVerification(teamId, channelId, settings, view, userId)
+  return await main(teamId, channelId, settings, view, userId)
       .catch((error)=>{
-        logger.error(error, BLACKLIST_RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, BLACKLIST_RESPONSE.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;
