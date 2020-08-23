@@ -35,7 +35,7 @@ const RESPONSE = {
  */
 const isInvalidQuery = (query) => {
   // Query's are not allowed to contain more than 1 wildcard, as we append a wildcard at the end
-  return ((query.match(/\*/g)||[]).length > 1 || query.match(/".*."/gs));
+  return (query.match(new RegExp('\\*', 'g'))||[]).length > 1;
 };
 
 const main = async (teamId, channelId, userId, query, triggerId) => {
