@@ -175,7 +175,7 @@ const tracks = require('../../../data/spotify/tracks');
 const {teamId, channelId, userId, settings, settings2, responseUrl} = require('../../../data/request');
 const params = {
   0: {teamId, channelId, userId, settings, responseUrl, trackValue: `{"title":"song title","uri":"track uri","id":"some track id"}`},
-  1: {teamId, channelId, userId, settings: settings2, responseUrl, trackValue: `{"title":"song title","uri":"track uri","id":"some track id"}`}, 1: {teamId, channelId, userId, settings: settings2, responseUrl, trackValue: `{"title":"song title","uri":"track uri","id":"some track id"}`},
+  1: {teamId, channelId, userId, settings: settings2, responseUrl, trackValue: `{"title":"song title","uri":"track uri","id":"some track id"}`},
   2: {teamId, channelId, userId, settings, responseUrl, trackValue: `{"title":"song title","uri":"track uri","id":"blacklisted track"}`},
 };
 const event = (params) => ({
