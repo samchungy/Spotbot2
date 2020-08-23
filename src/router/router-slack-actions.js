@@ -486,13 +486,13 @@ const router = async (event, context) => {
           if (authRouterRun !== false) {
             return authRouterRun;
           }
-          const controlRouterRun = await controlActionsRouter(actionId, payload);
-          if (controlRouterRun !== false) {
-            return authRouterRun;
-          }
           const tracksActionsRouterRun = await tracksActionsRouter(actionId, payload);
           if (tracksActionsRouterRun !== false) {
             return tracksActionsRouterRun;
+          }
+          const controlRouterRun = await controlActionsRouter(actionId, payload);
+          if (controlRouterRun !== false) {
+            return authRouterRun;
           }
           const settingsActionRouterRun = await settingsActionRouter(actionId, payload);
           if (settingsActionRouterRun !== false) {
