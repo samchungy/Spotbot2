@@ -483,7 +483,7 @@ describe('Get Tracks', () => {
     displayTracks.forEach((t) => {
       const trackPanel = mod.trackPanel(t.name, t.url, t.artists, t.album, t.duration);
       expect(mockBlocks.imageSection).toHaveBeenCalledWith(trackPanel, t.art, 'Album Art');
-      expect(mockBlocks.buttonActionElement).toHaveBeenCalledWith(mockConfig.slack.actions.tracks.add_to_playlist, `+ Add to playlist`, t.id, false, mockConfig.slack.buttons.primary);
+      expect(mockBlocks.buttonActionElement).toHaveBeenCalledWith(mockConfig.slack.actions.tracks.add_to_playlist, `+ Add to playlist`, mod.trackValue(t.title, t.uri, t.id), false, mockConfig.slack.buttons.primary);
     });
     expect(mockBlocks.actionSection).toHaveBeenCalledWith(null, [buttonAction]);
     expect(mockBlocks.contextSection).toHaveBeenCalledWith(null, `Page ${stored[0].currentSearch}/${stored[0].numSearches}`);
@@ -514,7 +514,7 @@ describe('Get Tracks', () => {
     displayTracks.forEach((t) => {
       const trackPanel = mod.trackPanel(t.name, t.url, t.artists, t.album, t.duration);
       expect(mockBlocks.imageSection).toHaveBeenCalledWith(trackPanel, t.art, 'Album Art');
-      expect(mockBlocks.buttonActionElement).toHaveBeenCalledWith(mockConfig.slack.actions.tracks.add_to_playlist, `+ Add to playlist`, t.id, false, mockConfig.slack.buttons.primary);
+      expect(mockBlocks.buttonActionElement).toHaveBeenCalledWith(mockConfig.slack.actions.tracks.add_to_playlist, `+ Add to playlist`, mod.trackValue(t.title, t.uri, t.id), false, mockConfig.slack.buttons.primary);
     });
     expect(mockBlocks.actionSection).toHaveBeenCalledWith(null, [buttonAction]);
     expect(mockBlocks.contextSection).toHaveBeenCalledWith(null, `Page ${stored[0].currentSearch}/${stored[0].numSearches}`);
@@ -556,7 +556,7 @@ describe('Get Tracks', () => {
     displayTracks.forEach((t) => {
       const trackPanel = mod.trackPanel(t.name, t.url, t.artists, t.album, t.duration);
       expect(mockBlocks.imageSection).toHaveBeenCalledWith(trackPanel, t.art, 'Album Art');
-      expect(mockBlocks.buttonActionElement).toHaveBeenCalledWith(mockConfig.slack.actions.tracks.add_to_playlist, `+ Add to playlist`, t.id, false, mockConfig.slack.buttons.primary);
+      expect(mockBlocks.buttonActionElement).toHaveBeenCalledWith(mockConfig.slack.actions.tracks.add_to_playlist, `+ Add to playlist`, mod.trackValue(t.title, t.uri, t.id), false, mockConfig.slack.buttons.primary);
     });
     expect(mockBlocks.actionSection).toHaveBeenCalledWith(null, [buttonAction]);
     expect(mockBlocks.contextSection).toHaveBeenCalledWith(null, `Page ${stored[2].currentSearch}/${stored[0].numSearches}`);

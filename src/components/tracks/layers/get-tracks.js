@@ -20,11 +20,11 @@ const RESPONSE = {
 };
 
 const trackPanel = (title, url, artist, album, time) => `<${url}|*${title}*>\n:clock1: *Duration*: ${time}\n:studio_microphone: *Artists:* ${artist}\n:dvd: *Album*: ${album}\n`;
-
+const trackValue = (title, uri, id) => JSON.stringify({title, uri, id});
 const getTrackBlock = (track) => {
   return [
     imageSection(trackPanel(track.name, track.url, track.artists, track.album, track.duration), track.art, `Album Art`),
-    actionSection(null, [buttonActionElement(TRACK_ACTIONS.add_to_playlist, `+ Add to playlist`, track.id, false, BUTTON.primary)]),
+    actionSection(null, [buttonActionElement(TRACK_ACTIONS.add_to_playlist, `+ Add to playlist`, trackValue(track.title, track.uri, track.id), false, BUTTON.primary)]),
   ];
 };
 
@@ -62,5 +62,6 @@ const showResults = async (teamId, channelId, userId, triggerId, responseUrl) =>
 module.exports = {
   showResults,
   trackPanel,
+  trackValue,
   RESPONSE,
 };

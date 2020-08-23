@@ -410,7 +410,7 @@ const tracksActionsRouter = async (actionId, payload) => {
           channelId: payload.channel.id,
           settings: await checkIsSetup(payload.team.id, payload.channel.id),
           userId: payload.user.id,
-          trackId: payload.actions[0].value,
+          trackValue: payload.actions[0].value,
           responseUrl: payload.response_url,
         }),
         TopicArn: TRACKS_FIND_ADD,
