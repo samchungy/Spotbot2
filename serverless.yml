@@ -48,7 +48,6 @@ provider:
   versionFunctions: false
   logRetentionInDays: 14 # Set the default RetentionInDays for a CloudWatch LogGroup
   environment:
-    NODE_PATH: "./:/opt/nodejs/node_modules"
     ENV: ${self:custom.stage}
     SNS_PREFIX: ${self:custom.topic_arn}-
     LAMBDA_PREFIX: ${self:custom.prefix}-
@@ -116,7 +115,7 @@ layers:
   # Other Layers
   control-skip:
     name: ${self:custom.prefix}-control-skip
-    path: src/components/control/layers/layers-control-skip
+    path: src/layers/layers-control-skip
     compatibleRuntimes:
       - nodejs12.x
 functions:
@@ -439,6 +438,7 @@ functions:
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
   settings-blacklist-open:
     events:
       - sns: ${self:custom.prefix}-settings-blacklist-open
@@ -556,6 +556,7 @@ functions:
     handler: src/components/settings/settings-open.handler
     layers:
       - { Ref: CoreLambdaLayer }
+      - { Ref: SlackLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
   #     - { Ref: SlackLambdaLayer }
   # settings-sonos-open:
@@ -869,6 +870,7 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashskipLambdaLayer}
   tracks-find-add:
     events:
       - sns: ${self:custom.prefix}-tracks-find-add
@@ -997,6 +999,7 @@ functions:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashskipLambdaLayer}
 #Delete
   delete-channel:
     events:
