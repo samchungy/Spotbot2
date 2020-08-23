@@ -58,9 +58,11 @@ const mockSlackModal = {
 };
 const mockCheckSettings = {
   checkIsAdmin: jest.fn(),
-  checkIsInChannel: jest.fn(),
   checkIsSetup: jest.fn(),
   checkIsPreviouslySetup: jest.fn(),
+};
+const mockCheckChannel = {
+  checkIsInChannel: jest.fn(),
 };
 const {SetupError, SettingsError, ChannelAdminError} = require('../../../src/layers/layers-core/errors/errors-settings');
 const mockErrorsSettings = {
@@ -77,6 +79,8 @@ jest.mock('/opt/router/authorizer', () => mockAuthorizer, {virtual: true});
 jest.mock('/opt/router/slack-modal', () => mockSlackModal, {virtual: true});
 
 jest.mock('/opt/router/check-settings', () => mockCheckSettings, {virtual: true});
+jest.mock('/opt/router/check-channel', () => mockCheckChannel, {virtual: true});
+
 jest.mock('/opt/errors/errors-settings', () => mockErrorsSettings, {virtual: true});
 
 const {settings} = require('../../data/request');
@@ -274,14 +278,14 @@ describe('Router Settings', () => {
         };
 
         mockCheckSettings.checkIsPreviouslySetup.mockRejectedValue(setupError);
-        mockCheckSettings.checkIsInChannel.mockResolvedValue(true);
+        mockCheckChannel.checkIsInChannel.mockResolvedValue(true);
         mockCheckSettings.checkIsSetup.mockRejectedValue(settingsError);
         mockSlackModal.openModal.mockResolvedValue(modal[0]);
         mockSns.promise.mockResolvedValue();
 
         await expect(mod.handler(event[3])).resolves.toStrictEqual({statusCode: 200, body: ''});
         expect(mockCheckSettings.checkIsPreviouslySetup).toBeCalledWith(teamId, channelId);
-        expect(mockCheckSettings.checkIsInChannel).toBeCalledWith(channelId);
+        expect(mockCheckChannel.checkIsInChannel).toBeCalledWith(channelId);
         expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId, null);
         expect(mockSlackModal.openModal).toBeCalledWith(teamId, channelId, triggerId, mockConfig.slack.actions.empty_modal, 'Spotbot Settings', null, 'Cancel');
         expect(mockSns.publish).toBeCalledWith(params);

@@ -8,7 +8,8 @@ const slackAuthorized = require('/opt/router/authorizer');
 const {openModal} = require('/opt/router/slack-modal');
 
 // Middleware
-const {checkIsAdmin, checkIsInChannel, checkIsSetup, checkIsPreviouslySetup} = require('/opt/router/check-settings');
+const {checkIsAdmin, checkIsSetup, checkIsPreviouslySetup} = require('/opt/router/check-settings');
+const {checkIsInChannel} = require('/opt/router/check-channel');
 const {SettingsError, SetupError} = require('/opt/errors/errors-settings');
 
 const EMPTY_MODAL = config.slack.actions.empty_modal;
