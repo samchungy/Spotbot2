@@ -4,7 +4,7 @@ const config = require('./config');
 const client = (token) => {
   return axios.create({
     baseURL: config.baseUrl,
-    timeout: 1000,
+    timeout: 1500,
     headers: {'Authorization': `Bearer ${token}`},
   });
 };
