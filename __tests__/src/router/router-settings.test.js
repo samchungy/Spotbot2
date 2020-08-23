@@ -263,7 +263,6 @@ describe('Router Settings', () => {
     describe('settings', () => {
       it('should open an empty modal and trigger OpenSettings - not setup', async () => {
         const {team_id: teamId, channel_id: channelId, trigger_id: triggerId, user_id: userId} = querystring.parse(event[3].body);
-        const setupError = new mockErrorsSettings.SetupError();
         const settingsError = new mockErrorsSettings.SettingsError();
         const params = {
           Message: JSON.stringify({
@@ -277,7 +276,7 @@ describe('Router Settings', () => {
           TopicArn: settingsOpen,
         };
 
-        mockCheckSettings.checkIsPreviouslySetup.mockRejectedValue(setupError);
+        mockCheckSettings.checkIsPreviouslySetup.mockRejectedValue(settingsError);
         mockCheckChannel.checkIsInChannel.mockResolvedValue(true);
         mockCheckSettings.checkIsSetup.mockRejectedValue(settingsError);
         mockSlackModal.openModal.mockResolvedValue(modal[0]);
@@ -358,7 +357,7 @@ describe('Router Settings', () => {
     });
 
     describe('blacklist', () => {
-      it('should open an empty modal', async () => {
+      it('should open an empty blacklist modal', async () => {
         const {team_id: teamId, channel_id: channelId, trigger_id: triggerId, user_id: userId} = querystring.parse(event[4].body);
         const params = {
           Message: JSON.stringify({
@@ -383,16 +382,7 @@ describe('Router Settings', () => {
         expect(mockSns.publish).toBeCalledWith(params);
       });
 
-      it('should fail when checkIsSetup fails', async () => {
-        const {team_id: teamId, channel_id: channelId} = querystring.parse(event[4].body);
-        const setupError = new SetupError();
-        mockCheckSettings.checkIsSetup.mockRejectedValue(setupError);
-        await expect(mod.handler(event[4])).resolves.toStrictEqual({statusCode: 200, body: setupError.message});
-
-        expect(mockCheckSettings.checkIsSetup).toBeCalledWith(teamId, channelId);
-      });
-
-      it('should fail when check admin throws error', async () => {
+      it('should fail when blacklist blacklist check admin throws error', async () => {
         const {team_id: teamId, channel_id: channelId, user_id: userId} = querystring.parse(event[4].body);
         const channelError = new ChannelAdminError();
         mockCheckSettings.checkIsSetup.mockResolvedValue(settings);
