@@ -1,7 +1,7 @@
 const config = require('/opt/config/config');
 
 // Errors
-const {ChannelAdminError, SettingsError, SetupError} = require('/opt/errors/errors-settings');
+const {ChannelAdminError, SettingsError} = require('/opt/errors/errors-settings');
 
 // Settings
 const {loadSettings} = require('/opt/db/settings-interface');
@@ -39,7 +39,7 @@ const checkIsPreviouslySetup = async (teamId, channelId) => {
   if (settings) {
     return settings;
   }
-  return Promise.reject(new SetupError(ERROR_MESSAGES.settings_error));
+  return Promise.reject(new SettingsError(ERROR_MESSAGES.settings_error));
 };
 
 /**

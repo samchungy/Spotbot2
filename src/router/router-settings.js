@@ -40,7 +40,7 @@ const router = async (event, context) => {
       case 'settings': {
         const settings = await checkIsPreviouslySetup(payload.team_id, payload.channel_id)
             .catch(async (error) => {
-              if (error.constructor === SetupError) {
+              if (error.constructor === SettingsError) {
               // Check if Spotbot is installed in this channel:
                 await checkIsInChannel(payload.channel_id);
                 return null;

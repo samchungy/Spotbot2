@@ -21,7 +21,6 @@ const mockSettingsInterface = {
 const mockErrorsSettings = {
   ChannelAdminError: jest.fn(),
   SettingsError: jest.fn(),
-  SetupError: jest.fn(),
 };
 
 jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
@@ -78,8 +77,8 @@ describe('Check Settings', () => {
 
   it('checkIsPreviouslySetup should return settings Error', async () => {
     mockSettingsInterface.loadSettings.mockResolvedValue(null);
-    await expect(mod.checkIsPreviouslySetup(teamId, channelId)).rejects.toStrictEqual(expect.any(mockErrorsSettings.SetupError));
-    expect(mockErrorsSettings.SetupError).toHaveBeenCalledWith(errors.settings_error);
+    await expect(mod.checkIsPreviouslySetup(teamId, channelId)).rejects.toStrictEqual(expect.any(mockErrorsSettings.SettingsError));
+    expect(mockErrorsSettings.SettingsError).toHaveBeenCalledWith(errors.settings_error);
   });
 
   it('checkIsAdmin should return true', async () => {

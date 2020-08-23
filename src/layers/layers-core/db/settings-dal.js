@@ -90,11 +90,13 @@ const deleteSettings = (teamId, channelId, key) => {
 
 const batchDeleteSettings = async (teamId, channelId, keys) => {
   const item = {
-    [SETTINGS_TABLE]: keys.map((key) => ({
-      DeleteRequest: {
-        Key: settingsKey(teamId, channelId, key),
-      },
-    })),
+    RequestItems: {
+      [SETTINGS_TABLE]: keys.map((key) => ({
+        DeleteRequest: {
+          Key: settingsKey(teamId, channelId, key),
+        },
+      })),
+    },
   };
 
   // Delete with retries and exponential backoff enabled
@@ -102,7 +104,7 @@ const batchDeleteSettings = async (teamId, channelId, keys) => {
     return dynamoDb.batchWrite(item).promise()
         .then(async (data) => {
           if (!data) {
-            Promise.reject(data);
+            Promise.reject(new Error('Data is null'));
           } else if (attempt > MAX_ATTEMPTS) {
             Promise.reject(new Error(`Maximum retries ${MAX_ATTEMPTS} exceeded`));
           }

@@ -1,5 +1,5 @@
 const CONFIG = require('/opt/config/config');
-const {getSettings, putSettings, updateSettings, querySettings} = require('./settings-dal');
+const {batchDeleteSettings, getSettings, putSettings, updateSettings, querySettings} = require('./settings-dal');
 
 const MAIN_SETTINGS = CONFIG.dynamodb.main_settings;
 const DEVICES = CONFIG.dynamodb.settings_extra.spotify_devices;
@@ -29,7 +29,7 @@ const storeDevices = (teamId, channelId, value, expiry) => putSettings(teamId, c
 const storePlaylists = (teamId, channelId, value, expiry) => putSettings(teamId, channelId, PLAYLISTS, value, expiry);
 const storeSettings = (teamId, channelId, value) => putSettings(teamId, channelId, MAIN_SETTINGS, value);
 
-// const removeAllSettings = (teamId, channelId, keys) => batchDeleteSettings(teamId, channelId, keys);
+const removeAllSettings = (teamId, channelId, keys) => batchDeleteSettings(teamId, channelId, keys);
 
 const searchAllSettings = (teamId, channelId) => {
   const expressionNames = {'#TeamChannel': `team_channel`};
@@ -59,7 +59,7 @@ module.exports = {
   loadSettings,
   modelDevice,
   modelPlaylist,
-  // removeAllSettings,
+  removeAllSettings,
   storeDevices,
   storePlaylists,
   storeSettings,
