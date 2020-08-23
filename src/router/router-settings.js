@@ -75,12 +75,13 @@ const router = async (event, context) => {
         return;
       }
       case 'blacklist': {
+        const settings = await checkIsSetup(payload.team_id, payload.channel_id).then(async (data) => (await checkIsAdmin(data, payload.user_id), data));
         const modal = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, `Spotbot Blacklist`, null, 'Cancel');
         const params = {
           Message: JSON.stringify({
             teamId: payload.team_id,
             channelId: payload.channel_id,
-            settings: await checkIsSetup(payload.team_id, payload.channel_id).then(async (data) => (await checkIsAdmin(data, payload.user_id), data)),
+            settings,
             viewId: modal.view.id,
             userId: payload.user_id,
           }),
@@ -90,12 +91,13 @@ const router = async (event, context) => {
         return;
       }
       case 'device': {
+        const settings = await checkIsSetup(payload.team_id, payload.channel_id).then(async (data) => (await checkIsAdmin(data, payload.user_id), data));
         const modal = await openModal(payload.team_id, payload.channel_id, payload.trigger_id, EMPTY_MODAL, 'Spotify Devices', null, 'Cancel');
         const params = {
           Message: JSON.stringify({
             teamId: payload.team_id,
             channelId: payload.channel_id,
-            settings: await checkIsSetup(payload.team_id, payload.channel_id).then(async (data) => (await checkIsAdmin(data, payload.user_id), data)),
+            settings,
             viewId: modal.view.id,
             userId: payload.user_id,
           }),
