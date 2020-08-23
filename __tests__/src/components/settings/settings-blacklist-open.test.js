@@ -91,7 +91,7 @@ const mockAuthSession = {
 };
 const mockSettingsExtra = {
   loadBlacklist: jest.fn(),
-  loadSkip: jest.fn(),
+  loadSkipWithHistory: jest.fn(),
 };
 const mockSlackApi = {
   updateModal: jest.fn(),
@@ -165,7 +165,7 @@ describe('Settings Blacklist Open', () => {
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue(status[0]);
       mockSpotifyStatus.fetchRecent.mockResolvedValue(recent[0]);
-      mockSettingsExtra.loadSkip.mockResolvedValue(skip);
+      mockSettingsExtra.loadSkipWithHistory.mockResolvedValue(skip);
       mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
       mockSlackModal.option.mockReturnValue(option);
       mockTrack.mockReturnValue(track);
@@ -178,7 +178,7 @@ describe('Settings Blacklist Open', () => {
       expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
       expect(mockSpotifyStatus.fetchRecent).toHaveBeenCalledWith(auth, mockConfig.spotify_api.recent_limit);
-      expect(mockSettingsExtra.loadSkip).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSettingsExtra.loadSkipWithHistory).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsExtra.loadBlacklist).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSlackModal.option).toHaveBeenCalledTimes(8);
       recent[0].items.forEach((t) => expect(mockTrack).toHaveBeenCalledWith(t.track));
@@ -201,7 +201,7 @@ describe('Settings Blacklist Open', () => {
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue('');
       mockSpotifyStatus.fetchRecent.mockResolvedValue(recent[0]);
-      mockSettingsExtra.loadSkip.mockResolvedValue(skip);
+      mockSettingsExtra.loadSkipWithHistory.mockResolvedValue(skip);
       mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
       mockSlackModal.option.mockReturnValue(option);
       mockTrack.mockReturnValue(track);
@@ -214,7 +214,7 @@ describe('Settings Blacklist Open', () => {
       expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
       expect(mockSpotifyStatus.fetchRecent).toHaveBeenCalledWith(auth, mockConfig.spotify_api.recent_limit);
-      expect(mockSettingsExtra.loadSkip).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSettingsExtra.loadSkipWithHistory).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsExtra.loadBlacklist).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSlackModal.option).toHaveBeenCalledTimes(7);
       recent[0].items.forEach((t) => expect(mockTrack).toHaveBeenCalledWith(t.track));
@@ -236,7 +236,7 @@ describe('Settings Blacklist Open', () => {
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue(status[0]);
       mockSpotifyStatus.fetchRecent.mockResolvedValue(recent[0]);
-      mockSettingsExtra.loadSkip.mockResolvedValue(skip);
+      mockSettingsExtra.loadSkipWithHistory.mockResolvedValue(skip);
       mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
       mockSlackModal.option.mockReturnValue(option);
       mockTrack.mockReturnValue(track);
@@ -249,7 +249,7 @@ describe('Settings Blacklist Open', () => {
       expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
       expect(mockSpotifyStatus.fetchRecent).toHaveBeenCalledWith(auth, mockConfig.spotify_api.recent_limit);
-      expect(mockSettingsExtra.loadSkip).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSettingsExtra.loadSkipWithHistory).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsExtra.loadBlacklist).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSlackModal.option).toHaveBeenCalledTimes(7);
       recent[0].items.forEach((t) => expect(mockTrack).toHaveBeenCalledWith(t.track));
@@ -271,7 +271,7 @@ describe('Settings Blacklist Open', () => {
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue(status[0]);
       mockSpotifyStatus.fetchRecent.mockResolvedValue(recent[0]);
-      mockSettingsExtra.loadSkip.mockResolvedValue(skip);
+      mockSettingsExtra.loadSkipWithHistory.mockResolvedValue(skip);
       mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
       mockSlackModal.option.mockReturnValue(option);
       mockTrack.mockReturnValue(track);
@@ -284,7 +284,7 @@ describe('Settings Blacklist Open', () => {
       expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
       expect(mockSpotifyStatus.fetchRecent).toHaveBeenCalledWith(auth, mockConfig.spotify_api.recent_limit);
-      expect(mockSettingsExtra.loadSkip).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSettingsExtra.loadSkipWithHistory).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsExtra.loadBlacklist).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSlackModal.option).toHaveBeenCalledTimes(7);
       recent[0].items.forEach((t) => expect(mockTrack).toHaveBeenCalledWith(t.track));
@@ -306,7 +306,7 @@ describe('Settings Blacklist Open', () => {
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue(status[0]);
       mockSpotifyStatus.fetchRecent.mockResolvedValue('');
-      mockSettingsExtra.loadSkip.mockResolvedValue(skip);
+      mockSettingsExtra.loadSkipWithHistory.mockResolvedValue(skip);
       mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
       mockSlackModal.option.mockReturnValue(option);
       mockTrack.mockReturnValue(track);
@@ -319,7 +319,7 @@ describe('Settings Blacklist Open', () => {
       expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
       expect(mockSpotifyStatus.fetchRecent).toHaveBeenCalledWith(auth, mockConfig.spotify_api.recent_limit);
-      expect(mockSettingsExtra.loadSkip).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSettingsExtra.loadSkipWithHistory).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsExtra.loadBlacklist).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSlackModal.option).toHaveBeenCalledTimes(3);
       expect(mockSlackModal.optionGroup).toHaveBeenCalledWith(response.skipped, skip.history.map(() => option));

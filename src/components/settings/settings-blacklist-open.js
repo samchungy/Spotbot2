@@ -4,7 +4,7 @@ const logger = require('/opt/utils/util-logger');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {fetchCurrentPlayback, fetchRecent} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 
-const {loadBlacklist, loadSkip} = require('/opt/db/settings-extra-interface');
+const {loadBlacklist, loadSkipWithHistory} = require('/opt/db/settings-extra-interface');
 
 const {updateModal} = require('/opt/slack/slack-api');
 const {multiSelectStaticGroups, option, optionGroup, slackModal} = require('/opt/slack/format/slack-format-modal');
@@ -33,7 +33,7 @@ const main = async (teamId, channelId, viewId) => {
   const [spotifyRecent, status, skip, blacklist] = await Promise.all([
     fetchRecent(auth, LIMIT),
     fetchCurrentPlayback(auth),
-    loadSkip(teamId, channelId),
+    loadSkipWithHistory(teamId, channelId),
     loadBlacklist(teamId, channelId),
   ]);
   const blacklistTracks = blacklist && blacklist.blacklist || [];

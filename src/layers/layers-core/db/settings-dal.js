@@ -18,9 +18,11 @@ const settingsKey = (teamId, channelId, key) => ({
 // eslint-disable-next-line no-unused-vars, camelcase
 const settingsValue = ({team_channel, name, ...valuesToKeep}) => valuesToKeep;
 
-const getSettings = (teamId, channelId, key) => {
+const getSettings = (teamId, channelId, key, expressionAttributeNames, projectionExpression) => {
   const item = settingsTable({
     Key: settingsKey(teamId, channelId, key),
+    ...expressionAttributeNames ? {ExpressionAttributeNames: expressionAttributeNames} : {},
+    ...projectionExpression ? {ProjectionExpression: projectionExpression} : {},
   });
   return dynamoDb.get(item).promise()
       .then((data) => data && data.Item ? settingsValue(data.Item) : null)

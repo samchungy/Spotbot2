@@ -139,7 +139,15 @@ const changeBlacklist = (teamId, channelId, trackIds) => {
 };
 
 const loadBlacklist = (teamId, channelId) => getSettings(teamId, channelId, BLACKLIST);
-const loadSkip = (teamId, channelId) => getSettings(teamId, channelId, SKIP);
+const loadSkip = (teamId, channelId) => {
+  const expressionNames = {
+    '#Skip': 'skip',
+    '#Votes': 'votes',
+  };
+  const projectionExpression = '#Skip, #Votes';
+  return getSettings(teamId, channelId, SKIP, expressionNames, projectionExpression);
+};
+const loadSkipWithHistory = (teamId, channelId) => getSettings(teamId, channelId, SKIP);
 
 module.exports = {
   createNewSkip,
@@ -151,4 +159,5 @@ module.exports = {
   changeSkipTrimHistory,
   loadBlacklist,
   loadSkip,
+  loadSkipWithHistory,
 };
