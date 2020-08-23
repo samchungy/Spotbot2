@@ -233,7 +233,7 @@ describe('Router Settings', () => {
         const error = new Error();
 
         mockAuthorizer.mockReturnValue(true);
-        mockSlackModal.openModal.mockRejectedValue(error);
+        mockCheckSettings.checkIsSetup.mockRejectedValue(error);
 
         expect.assertions(2);
         await expect(mod.handler(event[5])).resolves.toStrictEqual({statusCode: 200, body: response.error});
