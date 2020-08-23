@@ -28,8 +28,8 @@ const getTrackBlock = (track) => {
   ];
 };
 
-const showResults = async (teamId, channelId, userId, triggerId, responseUrl) => {
-  const trackSearch = await loadSearch(teamId, channelId, triggerId);
+const showResults = async (teamId, channelId, userId, triggerId, responseUrl, tracks) => {
+  const trackSearch = tracks ? tracks : await loadSearch(teamId, channelId, triggerId);
 
   if (!trackSearch || !trackSearch.searchItems.length) {
     const message = updateReply(RESPONSE.expired, null);
@@ -47,8 +47,9 @@ const showResults = async (teamId, channelId, userId, triggerId, responseUrl) =>
       buttonActionElement(TRACK_ACTIONS.cancel_search, `Cancel Search`, triggerId, false, BUTTON.danger),
     ]),
   ];
-  await removeThreeSearches(teamId, channelId, triggerId);
-
+  if (!tracks) {
+    await removeThreeSearches(teamId, channelId, triggerId);
+  }
   // If this is an update
   if (responseUrl) {
     const message = updateReply(RESPONSE.found, blocks);

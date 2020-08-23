@@ -2,7 +2,7 @@ const logger = require('/opt/utils/util-logger');
 const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
 
 // Search
-const {storeSearch} = require('/opt/db/search-interface');
+const {modelSearch, storeSearch} = require('/opt/db/search-interface');
 
 // Spotify
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
@@ -25,8 +25,12 @@ const main = async (teamId, channelId, userId, artistId, triggerId, responseUrl)
   const spotifyTracks = await fetchArtistTracks(auth, profile.country, artistId);
   const tracks = spotifyTracks.tracks.map((track) => new Track(track));
   const expiry = moment().add('1', 'day').unix();
-  await storeSearch(teamId, channelId, triggerId, tracks, artistId, expiry);
-  return showResults(teamId, channelId, userId, triggerId, responseUrl);
+  const storeTracks = tracks.slice(3);
+  if (storeTracks.length) {
+    await storeSearch(teamId, channelId, triggerId, modelSearch(storeTracks, artistId, 1), expiry);
+  }
+  const showTracks = modelSearch(tracks, artistId, 0);
+  return showResults(teamId, channelId, userId, triggerId, responseUrl, showTracks);
 };
 
 module.exports.handler = async (event, context) => {

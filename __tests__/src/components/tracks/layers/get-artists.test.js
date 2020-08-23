@@ -346,17 +346,14 @@ describe('Get Artists', () => {
     const post = {ephemeral: true};
     const displayArtists = stored[0].searchItems.slice(0, mockConfig.slack.limits.max_options);
 
-    mockSearchInterface.loadSearch.mockResolvedValue(stored[0]);
     mockBlocks.textSection.mockReturnValue(text);
     mockBlocks.imageSection.mockReturnValue(image);
     mockBlocks.buttonActionElement.mockReturnValue(buttonAction);
     mockBlocks.actionSection.mockReturnValue(actionSection);
     mockBlocks.contextSection.mockReturnValue(contextSection);
-    mockSearchInterface.removeThreeSearches.mockResolvedValue();
     mockSlackReply.ephemeralPost.mockReturnValue(post);
 
-    await expect(mod.showResults(teamId, channelId, userId, triggerId)).resolves.toBe();
-    expect(mockSearchInterface.loadSearch).toHaveBeenCalledWith(teamId, channelId, triggerId);
+    await expect(mod.showResults(teamId, channelId, userId, triggerId, null, stored[0])).resolves.toBe();
     expect(mockBlocks.textSection).toHaveBeenCalledWith(response.found);
     displayArtists.forEach((t) => {
       const artistPanel = mod.artistPanel(t.name, t.url, t.genres, t.followers);
@@ -368,7 +365,6 @@ describe('Get Artists', () => {
     expect(mockBlocks.actionSection).toHaveBeenCalledWith(null, [buttonAction, buttonAction]);
     expect(mockBlocks.buttonActionElement).toHaveBeenCalledWith(mockConfig.slack.actions.artists.see_more_artists, `Next 3 Artists`, triggerId, false);
     expect(mockBlocks.buttonActionElement).toHaveBeenCalledWith(mockConfig.slack.actions.tracks.cancel_search, `Cancel Search`, triggerId, false, mockConfig.slack.buttons.danger);
-    expect(mockSearchInterface.removeThreeSearches).toHaveBeenCalledWith(teamId, channelId, triggerId);
     expect(mockSlackReply.ephemeralPost).toHaveBeenCalledWith(channelId, userId, response.found, [text, image, actionSection, image, actionSection, image, actionSection, contextSection, actionSection]);
     expect(mockSlackApi.postEphemeral).toHaveBeenCalledWith(post);
   });

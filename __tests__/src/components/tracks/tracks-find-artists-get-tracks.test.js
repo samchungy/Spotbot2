@@ -16,6 +16,7 @@ const mockLogger = {
 };
 const mockSearchInterface = {
   storeSearch: jest.fn(),
+  modelSearch: jest.fn(),
 };
 const mockAuthSession = {
   authSession: jest.fn(),
@@ -78,19 +79,39 @@ describe('Artists Get Tracks', () => {
     });
     const unix = '123456789';
     const track = {track: true};
+    const search = {model: true};
     it('should return call showResults with artist tracks', async () => {
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockMoment.add.mockReturnThis();
       mockMoment.unix.mockReturnValue(unix);
       mockSpotifyTracks.fetchArtistTracks.mockResolvedValue(artistTracks[0]);
       mockTrack.mockReturnValue(track);
+      mockSearchInterface.modelSearch.mockReturnValue(search);
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSpotifyTracks.fetchArtistTracks).toHaveBeenCalledWith(auth, profile.country, params[0].artistId);
       expect(mockMoment.add).toHaveBeenCalledWith('1', 'day');
-      expect(mockSearchInterface.storeSearch).toHaveBeenCalledWith(teamId, channelId, triggerId, artistTracks[0].tracks.map(() => track), params[0].artistId, unix);
-      expect(mockGetTracks.showResults).toHaveBeenCalledWith(teamId, channelId, userId, triggerId, responseUrl);
+      expect(mockSearchInterface.modelSearch).toHaveBeenCalledWith(artistTracks[0].tracks.slice(3).map(() => track), params[0].artistId, 1);
+      expect(mockSearchInterface.storeSearch).toHaveBeenCalledWith(teamId, channelId, triggerId, search, unix);
+      expect(mockSearchInterface.modelSearch).toHaveBeenCalledWith(artistTracks[0].tracks.map(() => track), params[0].artistId, 0);
+      expect(mockGetTracks.showResults).toHaveBeenCalledWith(teamId, channelId, userId, triggerId, responseUrl, search);
+    });
+
+    it('should return call showResults with artist tracks but not store', async () => {
+      mockAuthSession.authSession.mockResolvedValue(auth);
+      mockMoment.add.mockReturnThis();
+      mockMoment.unix.mockReturnValue(unix);
+      mockSpotifyTracks.fetchArtistTracks.mockResolvedValue(artistTracks[1]);
+      mockTrack.mockReturnValue(track);
+      mockSearchInterface.modelSearch.mockReturnValue(search);
+
+      await expect(mod.handler(event(params[0]))).resolves.toBe();
+      expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSpotifyTracks.fetchArtistTracks).toHaveBeenCalledWith(auth, profile.country, params[0].artistId);
+      expect(mockMoment.add).toHaveBeenCalledWith('1', 'day');
+      expect(mockSearchInterface.modelSearch).toHaveBeenCalledWith(artistTracks[1].tracks.map(() => track), params[0].artistId, 0);
+      expect(mockGetTracks.showResults).toHaveBeenCalledWith(teamId, channelId, userId, triggerId, responseUrl, search);
     });
   });
 });

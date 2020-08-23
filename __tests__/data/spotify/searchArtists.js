@@ -827,4 +827,124 @@ module.exports = {
       'total': 0,
     },
   },
+  2: {
+    'artists': {
+      'href': 'https://api.spotify.com/v1/search?query=lime&type=artist&market=AU&offset=0&limit=24',
+      'items': [
+        {
+          'external_urls': {
+            'spotify': 'https://open.spotify.com/artist/6yrtCy4XJHXM6tczo4RlTs',
+          },
+          'followers': {
+            'href': null,
+            'total': 135097,
+          },
+          'genres': [
+            'australian hip hop',
+            'australian indie',
+            'australian pop',
+          ],
+          'href': 'https://api.spotify.com/v1/artists/6yrtCy4XJHXM6tczo4RlTs',
+          'id': '6yrtCy4XJHXM6tczo4RlTs',
+          'images': [
+            {
+              'height': 640,
+              'url': 'https://i.scdn.co/image/0f97ef26110d3c991b45cc979677c5f623beb1ac',
+              'width': 640,
+            },
+            {
+              'height': 320,
+              'url': 'https://i.scdn.co/image/94c8c66f106c03dbbf0a423e2385cb6252900182',
+              'width': 320,
+            },
+            {
+              'height': 160,
+              'url': 'https://i.scdn.co/image/05af8cb17d351e252fb76904238948275f9032f0',
+              'width': 160,
+            },
+          ],
+          'name': 'Lime Cordiale',
+          'popularity': 66,
+          'type': 'artist',
+          'uri': 'spotify:artist:6yrtCy4XJHXM6tczo4RlTs',
+        },
+        {
+          'external_urls': {
+            'spotify': 'https://open.spotify.com/artist/5o4dgimn1R07w1d2ZzpzpP',
+          },
+          'followers': {
+            'href': null,
+            'total': 31854,
+          },
+          'genres': [
+            'chillhop',
+            'lo-fi beats',
+          ],
+          'href': 'https://api.spotify.com/v1/artists/5o4dgimn1R07w1d2ZzpzpP',
+          'id': '5o4dgimn1R07w1d2ZzpzpP',
+          'images': [
+            {
+              'height': 640,
+              'url': 'https://i.scdn.co/image/1c4debb781393925d06ab30ed60bf619a0593641',
+              'width': 640,
+            },
+            {
+              'height': 320,
+              'url': 'https://i.scdn.co/image/b19f72d57dd6c7051699e11a7ad3fed1949d2a74',
+              'width': 320,
+            },
+            {
+              'height': 160,
+              'url': 'https://i.scdn.co/image/bf3bfe053a0ae28e9698268f150681732f5b61ef',
+              'width': 160,
+            },
+          ],
+          'name': 'Limes',
+          'popularity': 55,
+          'type': 'artist',
+          'uri': 'spotify:artist:5o4dgimn1R07w1d2ZzpzpP',
+        },
+        {
+          'external_urls': {
+            'spotify': 'https://open.spotify.com/artist/4VhlhOe3FHkPzW4BsYR9EC',
+          },
+          'followers': {
+            'href': null,
+            'total': 324,
+          },
+          'genres': [
+            'background piano',
+          ],
+          'href': 'https://api.spotify.com/v1/artists/4VhlhOe3FHkPzW4BsYR9EC',
+          'id': '4VhlhOe3FHkPzW4BsYR9EC',
+          'images': [
+            {
+              'height': 640,
+              'url': 'https://i.scdn.co/image/ab67616d0000b273de63f8b59fe304917b0b53f3',
+              'width': 640,
+            },
+            {
+              'height': 300,
+              'url': 'https://i.scdn.co/image/ab67616d00001e02de63f8b59fe304917b0b53f3',
+              'width': 300,
+            },
+            {
+              'height': 64,
+              'url': 'https://i.scdn.co/image/ab67616d00004851de63f8b59fe304917b0b53f3',
+              'width': 64,
+            },
+          ],
+          'name': 'Limestone Quarry',
+          'popularity': 50,
+          'type': 'artist',
+          'uri': 'spotify:artist:4VhlhOe3FHkPzW4BsYR9EC',
+        },
+      ],
+      'limit': 24,
+      'next': 'https://api.spotify.com/v1/search?query=lime&type=artist&market=AU&offset=24&limit=24',
+      'offset': 0,
+      'previous': null,
+      'total': 3,
+    },
+  },
 };

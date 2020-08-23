@@ -29,8 +29,9 @@ const getArtistBlock = (artist) => {
   ];
 };
 
-const showResults = async (teamId, channelId, userId, triggerId, responseUrl) => {
-  const artistSearch = await loadSearch(teamId, channelId, triggerId);
+const showResults = async (teamId, channelId, userId, triggerId, responseUrl, artists) => {
+  const artistSearch = artists ? artists : await loadSearch(teamId, channelId, triggerId);
+
   if (!artistSearch || !artistSearch.searchItems.length) {
     const message = updateReply(RESPONSE.expired, null);
     return await reply(message, responseUrl);
@@ -48,7 +49,10 @@ const showResults = async (teamId, channelId, userId, triggerId, responseUrl) =>
     ],
     ),
   ];
-  await removeThreeSearches(teamId, channelId, triggerId);
+  if (!artists) {
+    await removeThreeSearches(teamId, channelId, triggerId);
+  }
+
 
   // If this is an update
   if (responseUrl) {

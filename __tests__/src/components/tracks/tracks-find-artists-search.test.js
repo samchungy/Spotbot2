@@ -67,6 +67,7 @@ const mockSlackErrorReporter = {
 
 const mockSearchInterface = {
   storeSearch: jest.fn(),
+  modelSearch: jest.fn(),
 };
 const mockGetTracks = {
   showResults: jest.fn(),
@@ -121,6 +122,7 @@ describe('Artists Find Search', () => {
   });
 
   describe('Main', () => {
+    const search = {model: true};
     beforeEach(() => {
       mockMom.mockImplementation(() => mockMoment);
     });
@@ -133,13 +135,32 @@ describe('Artists Find Search', () => {
       mockMoment.add.mockReturnThis();
       mockMoment.unix.mockReturnValue(expiryTime);
       mockArtist.mockReturnValue(artist);
+      mockSearchInterface.modelSearch.mockReturnValue(search);
       await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSearch.fetchArtists).toHaveBeenCalledWith(auth, params[0].query, profile.country, mockConfig.spotify_api.tracks.limit);
       expect(mockMoment.add).toHaveBeenCalledWith('1', 'day');
       searchResults[0].artists.items.forEach((t) => expect(mockArtist).toHaveBeenCalledWith(t));
-      expect(mockSearchInterface.storeSearch).toHaveBeenCalledWith(teamId, channelId, triggerId, searchResults[0].artists.items.map(mockArtist), params[0].query, expiryTime);
-      expect(mockGetTracks.showResults).toHaveBeenCalledWith(teamId, channelId, userId, triggerId);
+      expect(mockSearchInterface.modelSearch).toHaveBeenCalledWith(searchResults[0].artists.items.slice(3).map(mockArtist), params[0].query, 1);
+      expect(mockSearchInterface.modelSearch).toHaveBeenCalledWith(searchResults[0].artists.items.map(mockArtist), params[0].query, 0);
+      expect(mockSearchInterface.storeSearch).toHaveBeenCalledWith(teamId, channelId, triggerId, search, expiryTime);
+      expect(mockGetTracks.showResults).toHaveBeenCalledWith(teamId, channelId, userId, triggerId, null, search);
+    });
+
+    it('should return search results but not store any', async () => {
+      mockAuthSession.authSession.mockResolvedValue(auth);
+      mockSearch.fetchArtists.mockResolvedValue(searchResults[2]);
+      mockMoment.add.mockReturnThis();
+      mockMoment.unix.mockReturnValue(expiryTime);
+      mockArtist.mockReturnValue(artist);
+      mockSearchInterface.modelSearch.mockReturnValue(search);
+      await expect(mod.handler(event(params[0]))).resolves.toBe();
+      expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSearch.fetchArtists).toHaveBeenCalledWith(auth, params[0].query, profile.country, mockConfig.spotify_api.tracks.limit);
+      expect(mockMoment.add).toHaveBeenCalledWith('1', 'day');
+      searchResults[2].artists.items.forEach((t) => expect(mockArtist).toHaveBeenCalledWith(t));
+      expect(mockSearchInterface.modelSearch).toHaveBeenCalledWith(searchResults[2].artists.items.map(mockArtist), params[0].query, 0);
+      expect(mockGetTracks.showResults).toHaveBeenCalledWith(teamId, channelId, userId, triggerId, null, search);
     });
 
     it('should report no results', async () => {

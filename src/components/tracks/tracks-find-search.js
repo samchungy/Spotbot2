@@ -13,7 +13,7 @@ const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Search
-const {storeSearch} = require('/opt/db/search-interface');
+const {modelSearch, storeSearch} = require('/opt/db/search-interface');
 
 // Tracks
 const {showResults} = require('./layers/get-tracks');
@@ -58,8 +58,12 @@ const main = async (teamId, channelId, userId, query, triggerId) => {
   }
   const expiry = moment().add('1', 'day').unix();
   const tracks = searchResults.tracks.items.map((track) => new Track(track));
-  await storeSearch(teamId, channelId, triggerId, tracks, query, expiry);
-  return showResults(teamId, channelId, userId, triggerId);
+  const storeTracks = tracks.slice(3);
+  if (storeTracks.length) {
+    await storeSearch(teamId, channelId, triggerId, modelSearch(storeTracks, query, 1), expiry);
+  }
+  const showTracks = modelSearch(tracks, query, 0);
+  return showResults(teamId, channelId, userId, triggerId, null, showTracks);
 };
 
 module.exports.handler = async (event, context) => {

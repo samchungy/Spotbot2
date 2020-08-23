@@ -13,7 +13,7 @@ const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Search
-const {storeSearch} = require('/opt/db/search-interface');
+const {modelSearch, storeSearch} = require('/opt/db/search-interface');
 
 // Artists
 const {showResults} = require('./layers/get-artists');
@@ -51,7 +51,6 @@ const main = async (teamId, channelId, userId, query, triggerId) => {
 
   const profile = auth.getProfile();
   const searchResults = await fetchArtists(auth, query, profile.country, LIMIT);
-  logger.info({searchResults});
   const numArtists = searchResults.artists.items.length;
   if (!numArtists) {
     const message = ephemeralPost(channelId, userId, RESPONSE.no_artists + `"${query}".`, null);
@@ -59,8 +58,12 @@ const main = async (teamId, channelId, userId, query, triggerId) => {
   }
   const expiry = moment().add('1', 'day').unix();
   const artists = searchResults.artists.items.map((artist) => new Artist(artist));
-  await storeSearch(teamId, channelId, triggerId, artists, query, expiry);
-  return showResults(teamId, channelId, userId, triggerId);
+  const storeArtists = artists.slice(3);
+  if (storeArtists.length) {
+    await storeSearch(teamId, channelId, triggerId, modelSearch(storeArtists, query, 1), expiry);
+  }
+  const showArtists = modelSearch(artists, query, 0);
+  return showResults(teamId, channelId, userId, triggerId, null, showArtists);
 };
 
 module.exports.handler = async (event, context) => {

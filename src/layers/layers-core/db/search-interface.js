@@ -19,16 +19,17 @@ const loadSearch = (teamId, channelId, triggerId) => {
   const projectionExpression = '#SearchItems[0], #SearchItems[1], #SearchItems[2], #NumSearches, #CurrentSearch';
   return getSearch(teamId, channelId, triggerId, expressionNames, projectionExpression);
 };
-const storeSearch = (teamId, channelId, triggerId, search, query, expiry) => putSearch(teamId, channelId, triggerId, modelSearch(search, query), expiry);
+const storeSearch = (teamId, channelId, triggerId, search, expiry) => putSearch(teamId, channelId, triggerId, search, expiry);
 
-const modelSearch = (items, query) => ({
-  numSearches: items && items.length ? Math.ceil(items.length/3) : 0,
-  currentSearch: 0,
+const modelSearch = (items, query, current) => ({
+  numSearches: Math.ceil(items.length/3) + current,
+  currentSearch: current,
   searchItems: items,
   searchQuery: query,
 });
 
 module.exports = {
+  modelSearch,
   removeThreeSearches,
   loadSearch,
   storeSearch,
