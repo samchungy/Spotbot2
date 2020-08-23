@@ -44,7 +44,7 @@ module.exports.handler = async (event, context) => {
     return {statusCode: 401, body: 'Unauathorized'};
   }
   return await router(event, context)
-      .then((data) => ({statusCode: 200, body: data ? data: ''}))
+      .then((data) => ({statusCode: 200, body: data}))
       .catch((error) => {
         if (error instanceof SetupError) {
           return {statusCode: 200, body: error.message};

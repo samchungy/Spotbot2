@@ -39,7 +39,7 @@ module.exports = {
     'channel_admins': [
       'URVUTD7UP',
     ],
-    'ghost_mode': 'true',
+    'ghost_mode': 'false',
     'back_to_playlist': 'true',
     'disable_repeats_duration': '0',
   },
