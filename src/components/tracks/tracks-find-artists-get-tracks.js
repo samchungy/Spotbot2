@@ -15,11 +15,11 @@ const {showResults} = require('./layers/get-tracks');
 // Slack
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
-const ARTISTS_RESPONSES = {
+const RESPONSE = {
   failed: 'Finding artist tracks failed',
 };
 
-const getArtistTracks = async (teamId, channelId, userId, artistId, triggerId, responseUrl) => {
+const main = async (teamId, channelId, userId, artistId, triggerId, responseUrl) => {
   const auth = await authSession(teamId, channelId);
   const profile = auth.getProfile();
   const spotifyTracks = await fetchArtistTracks(auth, profile.country, artistId);
@@ -31,9 +31,10 @@ const getArtistTracks = async (teamId, channelId, userId, artistId, triggerId, r
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, artistId, triggerId, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
-  await getArtistTracks(teamId, channelId, userId, artistId, triggerId, responseUrl)
+  await main(teamId, channelId, userId, artistId, triggerId, responseUrl)
       .catch((error)=>{
-        logger.error(error, ARTISTS_RESPONSES.failed);
-        reportErrorToSlack(teamId, channelId, userId, ARTISTS_RESPONSES.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;
