@@ -15,9 +15,11 @@ const searchKey = (teamId, channelId, key) => ({
 // eslint-disable-next-line no-unused-vars, camelcase
 const searchValue = ({team_channel, triggerId, ...valuesToKeep}) => valuesToKeep;
 
-const getSearch = (teamId, channelId, key) => {
+const getSearch = (teamId, channelId, key, expressionAttributeNames, projectionExpression) => {
   const item = searchTable({
     Key: searchKey(teamId, channelId, key),
+    ...expressionAttributeNames ? {ExpressionAttributeNames: expressionAttributeNames} : {},
+    ...projectionExpression ? {ProjectionExpression: projectionExpression} : {},
   });
   return dynamoDb.get(item).promise()
       .then((data) => data && data.Item ? searchValue(data.Item) : null)
