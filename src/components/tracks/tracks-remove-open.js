@@ -20,7 +20,7 @@ const PLAYLIST = config.dynamodb.settings.playlist;
 const LIMIT = config.spotify_api.playlists.tracks.limit;
 const REMOVE_MODAL = config.slack.actions.remove_modal;
 
-const REMOVE_RESPONSES = {
+const RESPONSE = {
   failed: 'Opening track remove modal failed',
   error: `:warning: An error occured. Please try again.`,
   no_songs: `:information_source: You can only remove tracks which you have added. You have not added any songs to the playlist.`,
@@ -44,9 +44,9 @@ const getAllTracks = async (auth, playlistId, country, profileId, total) => {
 };
 
 const queryAllTracks = async (teamId, channelId, userId, trackIds, offset=0, total=0) => {
-  const maxTracks = 99;
+  const maxTracks = 99; // due to dynamodb values
   const attempts = Math.ceil(trackIds.length/maxTracks);
-  const i = offset*99;
+  const i = offset*maxTracks;
   const tracks = await searchUserTrackHistory(teamId, channelId, userId, trackIds.slice(i, i+maxTracks));
   if (tracks.length + total >= 100 || offset+1 >= attempts) {
     return tracks;
@@ -54,16 +54,21 @@ const queryAllTracks = async (teamId, channelId, userId, trackIds, offset=0, tot
   return tracks.concat(await queryAllTracks(teamId, channelId, userId, trackIds, offset+1, tracks.length));
 };
 
-const openRemove = async (teamId, channelId, settings, userId, viewId ) => {
+const main = async (teamId, channelId, settings, userId, viewId ) => {
   const auth = await authSession(teamId, channelId);
   const {country, id: profileId} = auth.getProfile();
   const playlist = settings[PLAYLIST];
   const {total} = await fetchPlaylistTotal(auth, playlist.id);
+  if (!total) {
+    const blocks = [textSection(RESPONSE.no_tracks)];
+    const view = slackModal(REMOVE_MODAL, `Remove Tracks`, null, `Close`, blocks, false, channelId);
+    return await updateModal(viewId, view);
+  }
   const allTracks = await getAllTracks(auth, playlist.id, country, profileId, total);
-
+  console.log(allTracks);
   // No Tracks
   if (!allTracks.length) {
-    const blocks = [textSection(REMOVE_RESPONSES.no_tracks)];
+    const blocks = [textSection(RESPONSE.no_tracks)];
     const view = slackModal(REMOVE_MODAL, `Remove Tracks`, null, `Close`, blocks, false, channelId);
     return await updateModal(viewId, view);
   }
@@ -81,7 +86,7 @@ const openRemove = async (teamId, channelId, settings, userId, viewId ) => {
   // Check our db for songs only the User added
   const query = await queryAllTracks(teamId, channelId, userId, uniqueIds);
   if (!query.length) {
-    const blocks = [textSection(REMOVE_RESPONSES.no_songs)];
+    const blocks = [textSection(RESPONSE.no_songs)];
     const view = slackModal(REMOVE_MODAL, `Remove Tracks`, null, `Close`, blocks, false, channelId);
     return await updateModal(viewId, view);
   }
@@ -100,9 +105,10 @@ const openRemove = async (teamId, channelId, settings, userId, viewId ) => {
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, viewId, userId} = JSON.parse(event.Records[0].Sns.Message);
-  await openRemove(teamId, channelId, settings, userId, viewId)
+  await main(teamId, channelId, settings, userId, viewId)
       .catch((error)=>{
-        logger.error(error, REMOVE_RESPONSES.failed);
-        reportErrorToSlack(teamId, channelId, null, REMOVE_RESPONSES.failed);
+        logger.error(error, RESPONSE.failed);
+        reportErrorToSlack(teamId, channelId, null, RESPONSE.failed);
       });
 };
+module.exports.RESPONSE = RESPONSE;
