@@ -160,7 +160,7 @@ describe('Tracks Remove Open', () => {
   describe('Main', () => {
     const profile = {id: 'profile-id', country: 'AU'};
     const auth = {auth: true, getProfile: () => profile};
-    const playlistTrack = {id: 'test', title: 'a title', addedBy: {id: 'profile-id'}};
+    const playlistTrack = {uri: 'test', id: 'test', title: 'a title', addedBy: {id: 'profile-id'}};
     const queryTrack = {id: 'test'};
     const option = {option: true};
     const selectStatic = {groups: true};
@@ -183,7 +183,7 @@ describe('Tracks Remove Open', () => {
       expect(mockSpotifyPlaylists.fetchTracks).toHaveBeenCalledWith(auth, settings.playlist.id, profile.country, 0);
       tracks[0].items.forEach((t) => expect(mockPlaylistTrack).toHaveBeenCalledWith(t));
       expect(mockHistoryInterface.searchUserTrackHistory).toHaveBeenCalledWith(teamId, channelId, userId, ['test']);
-      expect(mockSlackModal.option).toHaveBeenCalledWith(playlistTrack.title, playlistTrack.id);
+      expect(mockSlackModal.option).toHaveBeenCalledWith(playlistTrack.title, playlistTrack.uri);
       expect(mockSlackModal.multiSelectStatic).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, [option]);
       expect(mockSlackModal.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Remove Tracks`, `Confirm`, `Close`, [selectStatic], false, channelId);
       expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, modal);
@@ -213,7 +213,7 @@ describe('Tracks Remove Open', () => {
       expect(mockSpotifyPlaylists.fetchTracks).toHaveBeenCalledWith(auth, settings.playlist.id, profile.country, 0);
       tracks[0].items.forEach((t) => expect(mockPlaylistTrack).toHaveBeenCalledWith(t));
       expect(mockHistoryInterface.searchUserTrackHistory).toHaveBeenCalledWith(teamId, channelId, userId, ['test', 'test2']);
-      expect(mockSlackModal.option).toHaveBeenCalledWith(playlistTrack.title, playlistTrack.id);
+      expect(mockSlackModal.option).toHaveBeenCalledWith(playlistTrack.title, playlistTrack.uri);
       expect(mockSlackModal.multiSelectStatic).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, [option]);
       expect(mockSlackModal.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Remove Tracks`, `Confirm`, `Close`, [selectStatic], false, channelId);
       expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, modal);
@@ -225,7 +225,7 @@ describe('Tracks Remove Open', () => {
       mockAuthSession.authSession.mockResolvedValue(auth);
       mockSpotifyPlaylists.fetchPlaylistTotal.mockResolvedValue(total);
       mockSpotifyPlaylists.fetchTracks.mockResolvedValue(manyTracks);
-      manyTracks.items.forEach((t, i) => mockPlaylistTrack.mockReturnValueOnce({id: 'test' + i, title: 'a title', addedBy: {id: 'profile-id'}}));
+      manyTracks.items.forEach((t, i) => mockPlaylistTrack.mockReturnValueOnce({id: 'test' + i, uri: 'test' + i, title: 'a title', addedBy: {id: 'profile-id'}}));
       mockHistoryInterface.searchUserTrackHistory
           .mockResolvedValueOnce(manyTracks.items.reduce((acc, t, i) => i <= 98 ? acc.concat({id: 'test'+i}) : acc, []))
           .mockResolvedValueOnce([{id: 'test99'}]);

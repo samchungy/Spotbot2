@@ -230,7 +230,11 @@ describe('Tracks Remove Submit', () => {
   });
 
   describe('Main', () => {
+    const profile = {country: 'AU'};
+    const auth = {auth: true, getProfile: () => profile};
     it('should successfully remove tracks', async () => {
+      mockAuthSession.authSession.mockResolvedValue(auth);
+
       await expect(mod.handler(event(params[0]))).resolves.toBe();
     });
   });

@@ -1,33 +1,4 @@
 const mockConfig = {
-  'spotify_api': {
-    'maximum_request_attempts': 3,
-    'scopes': [
-      'user-read-private',
-      'user-read-email',
-      'user-read-recently-played',
-      'user-read-playback-state',
-      'user-modify-playback-state',
-      'playlist-read-collaborative',
-      'playlist-read-private',
-      'playlist-modify-public',
-      'playlist-modify-private',
-      'streaming',
-    ],
-    'playlists': {
-      'limit': 50,
-      'collaborative': true,
-      'public': false,
-      'tracks': {
-        'limit': 100,
-      },
-    },
-    'africa': 'spotify:track:2374M0fQpWi3dLnB54qaLX',
-    'tracks': {
-      'limit': 24,
-      'info_limit': 50,
-    },
-    'recent_limit': 5,
-  },
   'dynamodb': {
     'blacklist': {
       'limit': 80,
@@ -82,12 +53,6 @@ const mockLogger = {
   info: jest.fn(),
   error: jest.fn(),
 };
-const mockTracks = {
-  fetchTracksInfo: jest.fn(),
-};
-const mockAuthSession = {
-  authSession: jest.fn(),
-};
 const mockSettingsExtra = {
   loadBlacklist: jest.fn(),
   changeBlacklist: jest.fn(),
@@ -102,14 +67,9 @@ const mockSlackReply = {
 const mockSlackErrorReporter = {
   reportErrorToSlack: jest.fn(),
 };
-const mockTrackMin = jest.fn();
 
 jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
 jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
-
-jest.mock('/opt/spotify/spotify-api-v2/spotify-api-tracks', () => mockTracks, {virtual: true});
-jest.mock('/opt/spotify/spotify-objects/util-spotify-track-min', () => mockTrackMin, {virtual: true});
-jest.mock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
 
 jest.mock('/opt/db/settings-extra-interface', () => mockSettingsExtra, {virtual: true});
 
@@ -140,7 +100,6 @@ const submissions = {
     },
   ],
 };
-const tracksInfo = require('../../../data/spotify/tracksInfo');
 const params = {
   0: {teamId, channelId, userId, submissions: submissions[0]},
 };
@@ -156,7 +115,7 @@ describe('Settings Blacklist Submit Save', () => {
 
     it('should handle errors gracefully', async () => {
       const error = new Error();
-      mockAuthSession.authSession.mockRejectedValue(error);
+      mockSettingsExtra.loadBlacklist.mockRejectedValue(error);
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
@@ -165,27 +124,21 @@ describe('Settings Blacklist Submit Save', () => {
   });
 
   describe('Main', () => {
-    const profile = {country: 'AU'};
-    const auth = {auth: true, getProfile: () => profile};
-    const minTrack = {title: 'title', uri: 'uri', id: 'id'};
     const post = {ephemeral: true};
 
     it('should return successfully when blacklist is empty', async () => {
       const blacklist = null;
-      mockAuthSession.authSession.mockResolvedValue(auth);
       mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
-      mockTracks.fetchTracksInfo.mockResolvedValue(tracksInfo[0]);
       mockSettingsExtra.changeBlacklist.mockResolvedValue();
-      mockTrackMin.mockReturnValue(minTrack);
       mockSlackReply.ephemeralPost.mockReturnValue(post);
       mockSlackApi.postEphemeral.mockResolvedValue();
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
-      expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsExtra.loadBlacklist).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockTracks.fetchTracksInfo).toHaveBeenCalledWith(auth, profile.country, submissions[0].map((t) => t.value));
-      tracksInfo[0].tracks.forEach((t) => expect(mockTrackMin).toHaveBeenCalledWith(t));
-      expect(mockSettingsExtra.changeBlacklist).toHaveBeenCalledWith(teamId, channelId, tracksInfo[0].tracks.map(() => minTrack));
+      expect(mockSettingsExtra.changeBlacklist).toHaveBeenCalledWith(teamId, channelId, [
+        {title: 'Ed Sheeran - Thinking out Loud', id: '34gCuhDGsG4bRPIf9bb02f'},
+        {title: 'San Cisco - When I Dream', id: '579j0QRchEajNo11kaaAUx'},
+      ] );
       expect(mockSlackReply.ephemeralPost).toHaveBeenCalledWith(channelId, userId, response.success);
       expect(mockSlackApi.postEphemeral).toHaveBeenCalledWith(post);
     });
@@ -205,21 +158,17 @@ describe('Settings Blacklist Submit Save', () => {
           },
         ],
       };
-      mockAuthSession.authSession.mockResolvedValue(auth);
       mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
-      mockTracks.fetchTracksInfo.mockResolvedValue(tracksInfo[0]);
       mockSettingsExtra.changeBlacklist.mockResolvedValue();
-      mockTrackMin.mockReturnValue(minTrack);
       mockSlackReply.ephemeralPost.mockReturnValue(post);
       mockSlackApi.postEphemeral.mockResolvedValue();
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
-      expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsExtra.loadBlacklist).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsExtra.changeBlacklistRemove).toHaveBeenCalledWith(teamId, channelId, [1]);
-      expect(mockTracks.fetchTracksInfo).toHaveBeenCalledWith(auth, profile.country, ['34gCuhDGsG4bRPIf9bb02f']);
-      tracksInfo[0].tracks.forEach((t) => expect(mockTrackMin).toHaveBeenCalledWith(t));
-      expect(mockSettingsExtra.changeBlacklist).toHaveBeenCalledWith(teamId, channelId, tracksInfo[0].tracks.map(() => minTrack));
+      expect(mockSettingsExtra.changeBlacklist).toHaveBeenCalledWith(teamId, channelId, [
+        {title: 'Ed Sheeran - Thinking out Loud', id: '34gCuhDGsG4bRPIf9bb02f'},
+      ]);
       expect(mockSlackReply.ephemeralPost).toHaveBeenCalledWith(channelId, userId, response.success);
       expect(mockSlackApi.postEphemeral).toHaveBeenCalledWith(post);
     });
@@ -240,16 +189,12 @@ describe('Settings Blacklist Submit Save', () => {
           },
         ],
       };
-      mockAuthSession.authSession.mockResolvedValue(auth);
       mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
-      mockTracks.fetchTracksInfo.mockResolvedValue(tracksInfo[0]);
       mockSettingsExtra.changeBlacklist.mockResolvedValue();
-      mockTrackMin.mockReturnValue(minTrack);
       mockSlackReply.ephemeralPost.mockReturnValue(post);
       mockSlackApi.postEphemeral.mockResolvedValue();
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
-      expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSettingsExtra.loadBlacklist).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSlackReply.ephemeralPost).toHaveBeenCalledWith(channelId, userId, response.success);
       expect(mockSlackApi.postEphemeral).toHaveBeenCalledWith(post);
