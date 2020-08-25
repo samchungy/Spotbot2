@@ -164,8 +164,8 @@ describe('onBlacklist', () => {
 
   it('should detect that current track playing is on Blacklist, not on playlist', async () => {
     const auth = {auth: true};
-    const statusTrack = {uri: status[0].item.uri, title: 'status track title'};
-    const blacklist = {blacklist: [{uri: status[0].item.uri}, {uri: 'otherUri'}]};
+    const statusTrack = {id: status[0].item.id, title: 'status track title'};
+    const blacklist = {blacklist: [{id: status[0].item.id}, {id: 'otherId'}]};
     const post = {inChannel: true};
 
     mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
@@ -182,8 +182,8 @@ describe('onBlacklist', () => {
 
   it('should detect that current track is not on blacklist and return false', async () => {
     const auth = {auth: true};
-    const statusTrack = {uri: status[0].item.uri, title: 'status track title'};
-    const blacklist = {blacklist: [{uri: 'otherUri'}]};
+    const statusTrack = {id: status[0].item.id, title: 'status track title'};
+    const blacklist = {blacklist: [{id: 'otherUri'}]};
     const post = {inChannel: true};
 
     mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
@@ -202,7 +202,7 @@ describe('skipTrack', () => {
   });
   it('should skip track, add to history and then trim history', async () => {
     const auth = {auth: true};
-    const statusTrack = {uri: status[0].item.uri, title: 'status track title'};
+    const statusTrack = {id: status[0].item.id, title: 'status track title'};
     const post = {inChannel: true};
     const data = {
       'Attributes': {
@@ -210,145 +210,44 @@ describe('skipTrack', () => {
         'votes': null,
         'history': [
           {
-            'duration': '5:04',
-            'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-            'artists': 'Sam Allen',
-            'artistsIds': [
-              '4jqRNy8Ywl2E4Sycvbo5WZ',
-            ],
-            'album': 'Barricade',
-            'name': 'Barricade',
             'id': '6jVy9OEtu7VJyPrrHG25jb',
             'title': 'Sam Allen - Barricade',
-            'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-            'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
           },
           {
-            'duration': '4:42',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-            'artists': 'Ed Sheeran',
-            'artistsIds': [
-              '6eUKZXaKkcviH0Ku9w2n3V',
-            ],
-            'album': 'x (Deluxe Edition)',
-            'name': 'Thinking out Loud',
             'id': '34gCuhDGsG4bRPIf9bb02f',
             'title': 'Ed Sheeran - Thinking out Loud',
-            'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-            'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
           },
           {
-            'duration': '3:10',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'When I Dream',
-            'name': 'When I Dream',
             'id': '579j0QRchEajNo11kaaAUx',
             'title': 'San Cisco - When I Dream',
-            'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-            'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
           },
           {
-            'duration': '5:01',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'On The Line',
-            'name': 'On The Line',
             'id': '4ztnd2IahPRr3wk9FPwiGV',
             'title': 'San Cisco - On The Line',
-            'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-            'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
           },
           {
-            'duration': '3:30',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-            'artists': 'E^ST',
-            'artistsIds': [
-              '7ASucWaI33cepJbo74Hlo0',
-            ],
-            'album': 'TALK DEEP',
-            'name': 'TALK DEEP',
             'id': '6RMvf7OCYYSw4x2K8UakDt',
             'title': 'E^ST - TALK DEEP',
-            'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-            'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
           },
           {
-            'duration': '3:34',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02e5cf23546555cbf85d5420c6',
-            'artists': 'Thundamentals',
-            'artistsIds': [
-              '7ymhGfvQPQLHU20RovzLMJ',
-            ],
-            'album': 'I Love Songs',
-            'name': 'Everybody But You',
             'id': '4Yf4s4P1vfJb8hDvnxCbMx',
             'title': 'Thundamentals - Everybody But You (Explicit)',
-            'uri': 'spotify:track:4Yf4s4P1vfJb8hDvnxCbMx',
-            'url': 'https://open.spotify.com/track/4Yf4s4P1vfJb8hDvnxCbMx',
           },
           {
-            'duration': '4:17',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02b6dafc689c3d5fc6342c08d5',
-            'artists': 'The Jungle Giants',
-            'artistsIds': [
-              '6wFwvxJkurQPU2UdeD4qVt',
-            ],
-            'album': 'Heavy Hearted',
-            'name': 'Heavy Hearted',
             'id': '3yXgttblOo006gd4eGOvw1',
             'title': 'The Jungle Giants - Heavy Hearted',
-            'uri': 'spotify:track:3yXgttblOo006gd4eGOvw1',
-            'url': 'https://open.spotify.com/track/3yXgttblOo006gd4eGOvw1',
           },
           {
-            'duration': '3:16',
-            'art': 'https://i.scdn.co/image/ab67616d00001e029d5ad8ac25bee56d219111c8',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': '4EVER (triple j Like A Version)',
-            'name': '4EVER - triple j Like A Version',
             'id': '1gV1kl0v2aUGHz1qNJGOQJ',
             'title': 'San Cisco - 4EVER - triple j Like A Version',
-            'uri': 'spotify:track:1gV1kl0v2aUGHz1qNJGOQJ',
-            'url': 'https://open.spotify.com/track/1gV1kl0v2aUGHz1qNJGOQJ',
           },
           {
-            'duration': '3:57',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02c84683a0086c3b2d358c857f',
-            'artists': 'Lime Cordiale',
-            'artistsIds': [
-              '6yrtCy4XJHXM6tczo4RlTs',
-            ],
-            'album': 'Waking Up Easy',
-            'name': 'Waking Up Easy',
             'id': '1mupwOlwPPnX76edNnu2H1',
             'title': 'Lime Cordiale - Waking Up Easy',
-            'uri': 'spotify:track:1mupwOlwPPnX76edNnu2H1',
-            'url': 'https://open.spotify.com/track/1mupwOlwPPnX76edNnu2H1',
           },
           {
-            'duration': '3:02',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02a480e2425ec6124990c2eae1',
-            'artists': 'Tia Gostelow, LANKS',
-            'artistsIds': [
-              '4blt4zG5qMjWCPymNjDNP5',
-              '6f5yObGSpFj9eJL55GBzrb',
-            ],
-            'album': 'Thick Skin',
-            'name': 'Strangers',
             'id': '102xchwCIiVXTmky0OriKp',
             'title': 'Tia Gostelow, LANKS - Strangers',
-            'uri': 'spotify:track:102xchwCIiVXTmky0OriKp',
-            'url': 'https://open.spotify.com/track/102xchwCIiVXTmky0OriKp',
           },
         ],
       },
@@ -375,7 +274,7 @@ describe('skipTrack', () => {
 
   it('should skip track, add to history and then not trim history', async () => {
     const auth = {auth: true};
-    const statusTrack = {uri: status[0].item.uri, title: 'status track title'};
+    const statusTrack = {id: status[0].item.id, title: 'status track title'};
     const post = {inChannel: true};
     const data = {
       'Attributes': {
@@ -383,131 +282,40 @@ describe('skipTrack', () => {
         'votes': null,
         'history': [
           {
-            'duration': '5:04',
-            'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-            'artists': 'Sam Allen',
-            'artistsIds': [
-              '4jqRNy8Ywl2E4Sycvbo5WZ',
-            ],
-            'album': 'Barricade',
-            'name': 'Barricade',
             'id': '6jVy9OEtu7VJyPrrHG25jb',
             'title': 'Sam Allen - Barricade',
-            'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-            'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
           },
           {
-            'duration': '4:42',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-            'artists': 'Ed Sheeran',
-            'artistsIds': [
-              '6eUKZXaKkcviH0Ku9w2n3V',
-            ],
-            'album': 'x (Deluxe Edition)',
-            'name': 'Thinking out Loud',
             'id': '34gCuhDGsG4bRPIf9bb02f',
             'title': 'Ed Sheeran - Thinking out Loud',
-            'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-            'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
           },
           {
-            'duration': '3:10',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'When I Dream',
-            'name': 'When I Dream',
             'id': '579j0QRchEajNo11kaaAUx',
             'title': 'San Cisco - When I Dream',
-            'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-            'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
           },
           {
-            'duration': '5:01',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'On The Line',
-            'name': 'On The Line',
             'id': '4ztnd2IahPRr3wk9FPwiGV',
             'title': 'San Cisco - On The Line',
-            'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-            'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
           },
           {
-            'duration': '3:30',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-            'artists': 'E^ST',
-            'artistsIds': [
-              '7ASucWaI33cepJbo74Hlo0',
-            ],
-            'album': 'TALK DEEP',
-            'name': 'TALK DEEP',
             'id': '6RMvf7OCYYSw4x2K8UakDt',
             'title': 'E^ST - TALK DEEP',
-            'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-            'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
           },
           {
-            'duration': '3:34',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02e5cf23546555cbf85d5420c6',
-            'artists': 'Thundamentals',
-            'artistsIds': [
-              '7ymhGfvQPQLHU20RovzLMJ',
-            ],
-            'album': 'I Love Songs',
-            'name': 'Everybody But You',
             'id': '4Yf4s4P1vfJb8hDvnxCbMx',
             'title': 'Thundamentals - Everybody But You (Explicit)',
-            'uri': 'spotify:track:4Yf4s4P1vfJb8hDvnxCbMx',
-            'url': 'https://open.spotify.com/track/4Yf4s4P1vfJb8hDvnxCbMx',
           },
           {
-            'duration': '4:17',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02b6dafc689c3d5fc6342c08d5',
-            'artists': 'The Jungle Giants',
-            'artistsIds': [
-              '6wFwvxJkurQPU2UdeD4qVt',
-            ],
-            'album': 'Heavy Hearted',
-            'name': 'Heavy Hearted',
             'id': '3yXgttblOo006gd4eGOvw1',
             'title': 'The Jungle Giants - Heavy Hearted',
-            'uri': 'spotify:track:3yXgttblOo006gd4eGOvw1',
-            'url': 'https://open.spotify.com/track/3yXgttblOo006gd4eGOvw1',
           },
           {
-            'duration': '3:16',
-            'art': 'https://i.scdn.co/image/ab67616d00001e029d5ad8ac25bee56d219111c8',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': '4EVER (triple j Like A Version)',
-            'name': '4EVER - triple j Like A Version',
             'id': '1gV1kl0v2aUGHz1qNJGOQJ',
             'title': 'San Cisco - 4EVER - triple j Like A Version',
-            'uri': 'spotify:track:1gV1kl0v2aUGHz1qNJGOQJ',
-            'url': 'https://open.spotify.com/track/1gV1kl0v2aUGHz1qNJGOQJ',
           },
           {
-            'duration': '3:02',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02a480e2425ec6124990c2eae1',
-            'artists': 'Tia Gostelow, LANKS',
-            'artistsIds': [
-              '4blt4zG5qMjWCPymNjDNP5',
-              '6f5yObGSpFj9eJL55GBzrb',
-            ],
-            'album': 'Thick Skin',
-            'name': 'Strangers',
             'id': '102xchwCIiVXTmky0OriKp',
             'title': 'Tia Gostelow, LANKS - Strangers',
-            'uri': 'spotify:track:102xchwCIiVXTmky0OriKp',
-            'url': 'https://open.spotify.com/track/102xchwCIiVXTmky0OriKp',
           },
         ],
       },
@@ -534,7 +342,7 @@ describe('skipTrack', () => {
 
   it('should skip track, add to history fails (race condition)', async () => {
     const auth = {auth: true};
-    const statusTrack = {uri: status[0].item.uri, title: 'status track title'};
+    const statusTrack = {id: status[0].item.id, title: 'status track title'};
     const post = {inChannel: true};
     const error = new Error('dynamo error');
     error.code = 'ConditionalCheckFailedException';
@@ -544,7 +352,7 @@ describe('skipTrack', () => {
     mockSpotifyHelper.onPlaylist.mockReturnValue(true);
 
     await expect(mod.skipTrack(teamId, channelId, auth, settings, statusTrack)).resolves.toBe();
-    expect(mockSettingsExtra.changeSkipAddHistory).toHaveBeenCalledWith(teamId, channelId, statusTrack);
+    expect(mockSettingsExtra.changeSkipAddHistory).toHaveBeenCalledWith(teamId, channelId, {id: statusTrack.id, title: statusTrack.title});
     expect(mockSettingsExtra.changeSkipTrimHistory).not.toHaveBeenCalled();
     expect(mockSpotifyPlayback.skip).toHaveBeenCalledWith(auth);
     expect(mockSns.publish).toHaveBeenCalledWith({
@@ -560,7 +368,7 @@ describe('skipTrack', () => {
 
   it('should skip track, add to history fails (unknown error)', async () => {
     const auth = {auth: true};
-    const statusTrack = {uri: status[0].item.uri, title: 'status track title'};
+    const statusTrack = {id: status[0].item.id, title: 'status track title'};
     const post = {inChannel: true};
     const error = new Error('dynamo error');
 
@@ -569,7 +377,7 @@ describe('skipTrack', () => {
     mockSpotifyHelper.onPlaylist.mockReturnValue(true);
 
     await expect(mod.skipTrack(teamId, channelId, auth, settings, statusTrack)).rejects.toBe(error);
-    expect(mockSettingsExtra.changeSkipAddHistory).toHaveBeenCalledWith(teamId, channelId, statusTrack);
+    expect(mockSettingsExtra.changeSkipAddHistory).toHaveBeenCalledWith(teamId, channelId, {id: statusTrack.id, title: statusTrack.title});
     expect(mockSettingsExtra.changeSkipTrimHistory).not.toHaveBeenCalled();
     expect(mockSpotifyPlayback.skip).toHaveBeenCalledWith(auth);
   });
@@ -581,7 +389,7 @@ describe('addVote', () => {
   });
   it('should add a vote to the skip', async () => {
     const auth = {auth: true};
-    const statusTrack = {uri: status[0].item.uri, title: 'status track title'};
+    const statusTrack = {id: status[0].item.id, title: 'status track title'};
     const currentSkip = {
       'skip': {
         'track': {
@@ -608,74 +416,24 @@ describe('addVote', () => {
       },
       'history': [
         {
-          'duration': '5:04',
-          'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-          'artists': 'Sam Allen',
-          'artistsIds': [
-            '4jqRNy8Ywl2E4Sycvbo5WZ',
-          ],
-          'album': 'Barricade',
-          'name': 'Barricade',
           'id': '6jVy9OEtu7VJyPrrHG25jb',
           'title': 'Sam Allen - Barricade',
-          'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-          'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
         },
         {
-          'duration': '4:42',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-          'artists': 'Ed Sheeran',
-          'artistsIds': [
-            '6eUKZXaKkcviH0Ku9w2n3V',
-          ],
-          'album': 'x (Deluxe Edition)',
-          'name': 'Thinking out Loud',
           'id': '34gCuhDGsG4bRPIf9bb02f',
           'title': 'Ed Sheeran - Thinking out Loud',
-          'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-          'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
         },
         {
-          'duration': '3:10',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'When I Dream',
-          'name': 'When I Dream',
           'id': '579j0QRchEajNo11kaaAUx',
           'title': 'San Cisco - When I Dream',
-          'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-          'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
         },
         {
-          'duration': '5:01',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'On The Line',
-          'name': 'On The Line',
           'id': '4ztnd2IahPRr3wk9FPwiGV',
           'title': 'San Cisco - On The Line',
-          'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-          'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
         },
         {
-          'duration': '3:30',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-          'artists': 'E^ST',
-          'artistsIds': [
-            '7ASucWaI33cepJbo74Hlo0',
-          ],
-          'album': 'TALK DEEP',
-          'name': 'TALK DEEP',
           'id': '6RMvf7OCYYSw4x2K8UakDt',
           'title': 'E^ST - TALK DEEP',
-          'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-          'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
         },
       ],
     };
@@ -734,74 +492,24 @@ describe('addVote', () => {
       },
       'history': [
         {
-          'duration': '5:04',
-          'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-          'artists': 'Sam Allen',
-          'artistsIds': [
-            '4jqRNy8Ywl2E4Sycvbo5WZ',
-          ],
-          'album': 'Barricade',
-          'name': 'Barricade',
           'id': '6jVy9OEtu7VJyPrrHG25jb',
           'title': 'Sam Allen - Barricade',
-          'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-          'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
         },
         {
-          'duration': '4:42',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-          'artists': 'Ed Sheeran',
-          'artistsIds': [
-            '6eUKZXaKkcviH0Ku9w2n3V',
-          ],
-          'album': 'x (Deluxe Edition)',
-          'name': 'Thinking out Loud',
           'id': '34gCuhDGsG4bRPIf9bb02f',
           'title': 'Ed Sheeran - Thinking out Loud',
-          'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-          'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
         },
         {
-          'duration': '3:10',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'When I Dream',
-          'name': 'When I Dream',
           'id': '579j0QRchEajNo11kaaAUx',
           'title': 'San Cisco - When I Dream',
-          'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-          'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
         },
         {
-          'duration': '5:01',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'On The Line',
-          'name': 'On The Line',
           'id': '4ztnd2IahPRr3wk9FPwiGV',
           'title': 'San Cisco - On The Line',
-          'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-          'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
         },
         {
-          'duration': '3:30',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-          'artists': 'E^ST',
-          'artistsIds': [
-            '7ASucWaI33cepJbo74Hlo0',
-          ],
-          'album': 'TALK DEEP',
-          'name': 'TALK DEEP',
           'id': '6RMvf7OCYYSw4x2K8UakDt',
           'title': 'E^ST - TALK DEEP',
-          'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-          'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
         },
       ],
     };
@@ -833,74 +541,24 @@ describe('addVote', () => {
       },
       'history': [
         {
-          'duration': '5:04',
-          'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-          'artists': 'Sam Allen',
-          'artistsIds': [
-            '4jqRNy8Ywl2E4Sycvbo5WZ',
-          ],
-          'album': 'Barricade',
-          'name': 'Barricade',
           'id': '6jVy9OEtu7VJyPrrHG25jb',
           'title': 'Sam Allen - Barricade',
-          'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-          'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
         },
         {
-          'duration': '4:42',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-          'artists': 'Ed Sheeran',
-          'artistsIds': [
-            '6eUKZXaKkcviH0Ku9w2n3V',
-          ],
-          'album': 'x (Deluxe Edition)',
-          'name': 'Thinking out Loud',
           'id': '34gCuhDGsG4bRPIf9bb02f',
           'title': 'Ed Sheeran - Thinking out Loud',
-          'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-          'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
         },
         {
-          'duration': '3:10',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'When I Dream',
-          'name': 'When I Dream',
           'id': '579j0QRchEajNo11kaaAUx',
           'title': 'San Cisco - When I Dream',
-          'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-          'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
         },
         {
-          'duration': '5:01',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'On The Line',
-          'name': 'On The Line',
           'id': '4ztnd2IahPRr3wk9FPwiGV',
           'title': 'San Cisco - On The Line',
-          'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-          'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
         },
         {
-          'duration': '3:30',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-          'artists': 'E^ST',
-          'artistsIds': [
-            '7ASucWaI33cepJbo74Hlo0',
-          ],
-          'album': 'TALK DEEP',
-          'name': 'TALK DEEP',
           'id': '6RMvf7OCYYSw4x2K8UakDt',
           'title': 'E^ST - TALK DEEP',
-          'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-          'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
         },
       ],
     };
@@ -944,74 +602,24 @@ describe('addVote', () => {
       },
       'history': [
         {
-          'duration': '5:04',
-          'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-          'artists': 'Sam Allen',
-          'artistsIds': [
-            '4jqRNy8Ywl2E4Sycvbo5WZ',
-          ],
-          'album': 'Barricade',
-          'name': 'Barricade',
           'id': '6jVy9OEtu7VJyPrrHG25jb',
           'title': 'Sam Allen - Barricade',
-          'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-          'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
         },
         {
-          'duration': '4:42',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-          'artists': 'Ed Sheeran',
-          'artistsIds': [
-            '6eUKZXaKkcviH0Ku9w2n3V',
-          ],
-          'album': 'x (Deluxe Edition)',
-          'name': 'Thinking out Loud',
           'id': '34gCuhDGsG4bRPIf9bb02f',
           'title': 'Ed Sheeran - Thinking out Loud',
-          'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-          'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
         },
         {
-          'duration': '3:10',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'When I Dream',
-          'name': 'When I Dream',
           'id': '579j0QRchEajNo11kaaAUx',
           'title': 'San Cisco - When I Dream',
-          'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-          'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
         },
         {
-          'duration': '5:01',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'On The Line',
-          'name': 'On The Line',
           'id': '4ztnd2IahPRr3wk9FPwiGV',
           'title': 'San Cisco - On The Line',
-          'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-          'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
         },
         {
-          'duration': '3:30',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-          'artists': 'E^ST',
-          'artistsIds': [
-            '7ASucWaI33cepJbo74Hlo0',
-          ],
-          'album': 'TALK DEEP',
-          'name': 'TALK DEEP',
           'id': '6RMvf7OCYYSw4x2K8UakDt',
           'title': 'E^ST - TALK DEEP',
-          'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-          'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
         },
       ],
     };
@@ -1052,74 +660,24 @@ describe('addVote', () => {
       },
       'history': [
         {
-          'duration': '5:04',
-          'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-          'artists': 'Sam Allen',
-          'artistsIds': [
-            '4jqRNy8Ywl2E4Sycvbo5WZ',
-          ],
-          'album': 'Barricade',
-          'name': 'Barricade',
           'id': '6jVy9OEtu7VJyPrrHG25jb',
           'title': 'Sam Allen - Barricade',
-          'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-          'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
         },
         {
-          'duration': '4:42',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-          'artists': 'Ed Sheeran',
-          'artistsIds': [
-            '6eUKZXaKkcviH0Ku9w2n3V',
-          ],
-          'album': 'x (Deluxe Edition)',
-          'name': 'Thinking out Loud',
           'id': '34gCuhDGsG4bRPIf9bb02f',
           'title': 'Ed Sheeran - Thinking out Loud',
-          'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-          'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
         },
         {
-          'duration': '3:10',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'When I Dream',
-          'name': 'When I Dream',
           'id': '579j0QRchEajNo11kaaAUx',
           'title': 'San Cisco - When I Dream',
-          'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-          'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
         },
         {
-          'duration': '5:01',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'On The Line',
-          'name': 'On The Line',
           'id': '4ztnd2IahPRr3wk9FPwiGV',
           'title': 'San Cisco - On The Line',
-          'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-          'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
         },
         {
-          'duration': '3:30',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-          'artists': 'E^ST',
-          'artistsIds': [
-            '7ASucWaI33cepJbo74Hlo0',
-          ],
-          'album': 'TALK DEEP',
-          'name': 'TALK DEEP',
           'id': '6RMvf7OCYYSw4x2K8UakDt',
           'title': 'E^ST - TALK DEEP',
-          'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-          'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
         },
       ],
     };
@@ -1161,74 +719,24 @@ describe('addVote', () => {
       },
       'history': [
         {
-          'duration': '5:04',
-          'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-          'artists': 'Sam Allen',
-          'artistsIds': [
-            '4jqRNy8Ywl2E4Sycvbo5WZ',
-          ],
-          'album': 'Barricade',
-          'name': 'Barricade',
           'id': '6jVy9OEtu7VJyPrrHG25jb',
           'title': 'Sam Allen - Barricade',
-          'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-          'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
         },
         {
-          'duration': '4:42',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-          'artists': 'Ed Sheeran',
-          'artistsIds': [
-            '6eUKZXaKkcviH0Ku9w2n3V',
-          ],
-          'album': 'x (Deluxe Edition)',
-          'name': 'Thinking out Loud',
           'id': '34gCuhDGsG4bRPIf9bb02f',
           'title': 'Ed Sheeran - Thinking out Loud',
-          'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-          'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
         },
         {
-          'duration': '3:10',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'When I Dream',
-          'name': 'When I Dream',
           'id': '579j0QRchEajNo11kaaAUx',
           'title': 'San Cisco - When I Dream',
-          'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-          'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
         },
         {
-          'duration': '5:01',
-          'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-          'artists': 'San Cisco',
-          'artistsIds': [
-            '0Ou0138wEd8XWebhc4j7O0',
-          ],
-          'album': 'On The Line',
-          'name': 'On The Line',
           'id': '4ztnd2IahPRr3wk9FPwiGV',
           'title': 'San Cisco - On The Line',
-          'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-          'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
         },
         {
-          'duration': '3:30',
-          'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-          'artists': 'E^ST',
-          'artistsIds': [
-            '7ASucWaI33cepJbo74Hlo0',
-          ],
-          'album': 'TALK DEEP',
-          'name': 'TALK DEEP',
           'id': '6RMvf7OCYYSw4x2K8UakDt',
           'title': 'E^ST - TALK DEEP',
-          'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-          'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
         },
       ],
     };
@@ -1272,74 +780,24 @@ describe('addVote', () => {
         },
         'history': [
           {
-            'duration': '5:04',
-            'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-            'artists': 'Sam Allen',
-            'artistsIds': [
-              '4jqRNy8Ywl2E4Sycvbo5WZ',
-            ],
-            'album': 'Barricade',
-            'name': 'Barricade',
             'id': '6jVy9OEtu7VJyPrrHG25jb',
             'title': 'Sam Allen - Barricade',
-            'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-            'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
           },
           {
-            'duration': '4:42',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-            'artists': 'Ed Sheeran',
-            'artistsIds': [
-              '6eUKZXaKkcviH0Ku9w2n3V',
-            ],
-            'album': 'x (Deluxe Edition)',
-            'name': 'Thinking out Loud',
             'id': '34gCuhDGsG4bRPIf9bb02f',
             'title': 'Ed Sheeran - Thinking out Loud',
-            'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-            'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
           },
           {
-            'duration': '3:10',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'When I Dream',
-            'name': 'When I Dream',
             'id': '579j0QRchEajNo11kaaAUx',
             'title': 'San Cisco - When I Dream',
-            'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-            'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
           },
           {
-            'duration': '5:01',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'On The Line',
-            'name': 'On The Line',
             'id': '4ztnd2IahPRr3wk9FPwiGV',
             'title': 'San Cisco - On The Line',
-            'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-            'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
           },
           {
-            'duration': '3:30',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-            'artists': 'E^ST',
-            'artistsIds': [
-              '7ASucWaI33cepJbo74Hlo0',
-            ],
-            'album': 'TALK DEEP',
-            'name': 'TALK DEEP',
             'id': '6RMvf7OCYYSw4x2K8UakDt',
             'title': 'E^ST - TALK DEEP',
-            'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-            'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
           },
         ],
       };
@@ -1383,74 +841,24 @@ describe('addVote', () => {
         },
         'history': [
           {
-            'duration': '5:04',
-            'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-            'artists': 'Sam Allen',
-            'artistsIds': [
-              '4jqRNy8Ywl2E4Sycvbo5WZ',
-            ],
-            'album': 'Barricade',
-            'name': 'Barricade',
             'id': '6jVy9OEtu7VJyPrrHG25jb',
             'title': 'Sam Allen - Barricade',
-            'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-            'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
           },
           {
-            'duration': '4:42',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-            'artists': 'Ed Sheeran',
-            'artistsIds': [
-              '6eUKZXaKkcviH0Ku9w2n3V',
-            ],
-            'album': 'x (Deluxe Edition)',
-            'name': 'Thinking out Loud',
             'id': '34gCuhDGsG4bRPIf9bb02f',
             'title': 'Ed Sheeran - Thinking out Loud',
-            'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-            'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
           },
           {
-            'duration': '3:10',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'When I Dream',
-            'name': 'When I Dream',
             'id': '579j0QRchEajNo11kaaAUx',
             'title': 'San Cisco - When I Dream',
-            'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-            'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
           },
           {
-            'duration': '5:01',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'On The Line',
-            'name': 'On The Line',
             'id': '4ztnd2IahPRr3wk9FPwiGV',
             'title': 'San Cisco - On The Line',
-            'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-            'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
           },
           {
-            'duration': '3:30',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-            'artists': 'E^ST',
-            'artistsIds': [
-              '7ASucWaI33cepJbo74Hlo0',
-            ],
-            'album': 'TALK DEEP',
-            'name': 'TALK DEEP',
             'id': '6RMvf7OCYYSw4x2K8UakDt',
             'title': 'E^ST - TALK DEEP',
-            'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-            'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
           },
         ],
       };
@@ -1495,74 +903,24 @@ describe('addVote', () => {
         },
         'history': [
           {
-            'duration': '5:04',
-            'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-            'artists': 'Sam Allen',
-            'artistsIds': [
-              '4jqRNy8Ywl2E4Sycvbo5WZ',
-            ],
-            'album': 'Barricade',
-            'name': 'Barricade',
             'id': '6jVy9OEtu7VJyPrrHG25jb',
             'title': 'Sam Allen - Barricade',
-            'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-            'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
           },
           {
-            'duration': '4:42',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-            'artists': 'Ed Sheeran',
-            'artistsIds': [
-              '6eUKZXaKkcviH0Ku9w2n3V',
-            ],
-            'album': 'x (Deluxe Edition)',
-            'name': 'Thinking out Loud',
             'id': '34gCuhDGsG4bRPIf9bb02f',
             'title': 'Ed Sheeran - Thinking out Loud',
-            'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-            'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
           },
           {
-            'duration': '3:10',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'When I Dream',
-            'name': 'When I Dream',
             'id': '579j0QRchEajNo11kaaAUx',
             'title': 'San Cisco - When I Dream',
-            'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-            'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
           },
           {
-            'duration': '5:01',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'On The Line',
-            'name': 'On The Line',
             'id': '4ztnd2IahPRr3wk9FPwiGV',
             'title': 'San Cisco - On The Line',
-            'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-            'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
           },
           {
-            'duration': '3:30',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-            'artists': 'E^ST',
-            'artistsIds': [
-              '7ASucWaI33cepJbo74Hlo0',
-            ],
-            'album': 'TALK DEEP',
-            'name': 'TALK DEEP',
             'id': '6RMvf7OCYYSw4x2K8UakDt',
             'title': 'E^ST - TALK DEEP',
-            'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-            'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
           },
         ],
       };
@@ -1594,74 +952,24 @@ describe('addVote', () => {
         },
         'history': [
           {
-            'duration': '5:04',
-            'art': 'https://i.scdn.co/image/ab67616d00001e023e66d1350ed653626d0a7d0c',
-            'artists': 'Sam Allen',
-            'artistsIds': [
-              '4jqRNy8Ywl2E4Sycvbo5WZ',
-            ],
-            'album': 'Barricade',
-            'name': 'Barricade',
             'id': '6jVy9OEtu7VJyPrrHG25jb',
             'title': 'Sam Allen - Barricade',
-            'uri': 'spotify:track:6jVy9OEtu7VJyPrrHG25jb',
-            'url': 'https://open.spotify.com/track/6jVy9OEtu7VJyPrrHG25jb',
           },
           {
-            'duration': '4:42',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0213b3e37318a0c247b550bccd',
-            'artists': 'Ed Sheeran',
-            'artistsIds': [
-              '6eUKZXaKkcviH0Ku9w2n3V',
-            ],
-            'album': 'x (Deluxe Edition)',
-            'name': 'Thinking out Loud',
             'id': '34gCuhDGsG4bRPIf9bb02f',
             'title': 'Ed Sheeran - Thinking out Loud',
-            'uri': 'spotify:track:34gCuhDGsG4bRPIf9bb02f',
-            'url': 'https://open.spotify.com/track/34gCuhDGsG4bRPIf9bb02f',
           },
           {
-            'duration': '3:10',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02c986b354b39294bad3705476',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'When I Dream',
-            'name': 'When I Dream',
             'id': '579j0QRchEajNo11kaaAUx',
             'title': 'San Cisco - When I Dream',
-            'uri': 'spotify:track:579j0QRchEajNo11kaaAUx',
-            'url': 'https://open.spotify.com/track/579j0QRchEajNo11kaaAUx',
           },
           {
-            'duration': '5:01',
-            'art': 'https://i.scdn.co/image/ab67616d00001e0255ada59451db50ddabf48b54',
-            'artists': 'San Cisco',
-            'artistsIds': [
-              '0Ou0138wEd8XWebhc4j7O0',
-            ],
-            'album': 'On The Line',
-            'name': 'On The Line',
             'id': '4ztnd2IahPRr3wk9FPwiGV',
             'title': 'San Cisco - On The Line',
-            'uri': 'spotify:track:4ztnd2IahPRr3wk9FPwiGV',
-            'url': 'https://open.spotify.com/track/4ztnd2IahPRr3wk9FPwiGV',
           },
           {
-            'duration': '3:30',
-            'art': 'https://i.scdn.co/image/ab67616d00001e02746244d399c20df51695bdfe',
-            'artists': 'E^ST',
-            'artistsIds': [
-              '7ASucWaI33cepJbo74Hlo0',
-            ],
-            'album': 'TALK DEEP',
-            'name': 'TALK DEEP',
             'id': '6RMvf7OCYYSw4x2K8UakDt',
             'title': 'E^ST - TALK DEEP',
-            'uri': 'spotify:track:6RMvf7OCYYSw4x2K8UakDt',
-            'url': 'https://open.spotify.com/track/6RMvf7OCYYSw4x2K8UakDt',
           },
         ],
       };
