@@ -1,10 +1,4 @@
-const config = require('/opt/config/config');
 const logger = require('/opt/utils/util-logger');
-
-// Spotify
-const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchTracksInfo} = require('/opt/spotify/spotify-api-v2/spotify-api-tracks');
-const TrackMin = require('/opt/spotify/spotify-objects/util-spotify-track-min');
 
 // Slack
 const {postEphemeral} = require('/opt/slack/slack-api');
@@ -13,7 +7,6 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Settings
 const {changeBlacklistRemove, loadBlacklist, changeBlacklist} = require('/opt/db/settings-extra-interface');
-const INFO_LIMIT = config.spotify_api.tracks.info_limit;
 const RESPONSE = {
   failed: 'Blacklist failed to save',
   success: `:white_check_mark: Blacklisted successfully updated.`,
