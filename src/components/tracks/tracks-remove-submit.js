@@ -4,8 +4,6 @@ const logger = require('/opt/utils/util-logger');
 // Spotify
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {deleteTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
-const {fetchTracksInfo} = require('/opt/spotify/spotify-api-v2/spotify-api-tracks');
-const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
 // Slack
 const {inChannelPost} = require('/opt/slack/format/slack-format-reply');
@@ -15,7 +13,6 @@ const {post} = require('/opt/slack/slack-api');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 const REMOVE_MODAL = config.slack.actions.remove_modal;
-const INFO_LIMIT = config.spotify_api.tracks.info_limit;
 const PLAYLIST = config.dynamodb.settings.playlist;
 
 const RESPONSE = {
@@ -39,34 +36,14 @@ const extractSubmissions = (view) => {
 const main = async (teamId, channelId, settings, view) => {
   const playlist = settings[PLAYLIST];
   const auth = await authSession(teamId, channelId);
-  const {country} = auth.getProfile();
 
-  const submissions = extractSubmissions(view).map((track) => track.value);
+  const submissions = extractSubmissions(view);
   if (!submissions.length) {
     return;
   }
 
-  // We grab it's info in case there is a re-linked URI.
-  const allTrackInfoPromises = [];
-  const attempts = Math.ceil(submissions.length/INFO_LIMIT);
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    allTrackInfoPromises.push(fetchTracksInfo(auth, country, submissions.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT)));
-  }
-
-  // Extract Promise Info
-  const allSpotifyTrackInfos = (await Promise.all(allTrackInfoPromises)).map((infoPromise) => infoPromise.tracks).flat();
-  const trackInfos = allSpotifyTrackInfos.map((track) => {
-    const trackObj = new Track(track);
-    trackObj.uri = track.linked_from ? track.linked_from.uri : trackObj.uri; // Sometimes tracks are re-linked.
-    return trackObj;
-  });
-
-  await deleteTracks(auth, playlist.id, trackInfos.map((track) => {
-    return {
-      uri: track.uri,
-    };
-  }));
-  const message = inChannelPost(channelId, RESPONSE.removed(trackInfos.map((track) => track.title)), null);
+  await deleteTracks(auth, playlist.id, submissions.map((track) => ({uri: track.value})));
+  const message = inChannelPost(channelId, RESPONSE.removed(submissions.map((track) => track.text.text)), null);
   await post(message);
 };
 

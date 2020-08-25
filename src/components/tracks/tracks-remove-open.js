@@ -93,7 +93,7 @@ const main = async (teamId, channelId, settings, userId, viewId ) => {
 
   const allOptions = query.map((search) => {
     const track = uniqueTracks.find((track) => track.id == search.id); // map them back to our tracks
-    return option(track.title, track.id);
+    return option(track.title, track.uri);
   });
 
   const blocks = [

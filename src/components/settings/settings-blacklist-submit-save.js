@@ -19,26 +19,13 @@ const RESPONSE = {
   success: `:white_check_mark: Blacklisted successfully updated.`,
 };
 
-const transformToBlacklistTrack = async (auth, country, trackIdsToAdd) => {
-  const allTrackInfoPromises = [];
-  const attempts = Math.ceil(trackIdsToAdd.length/INFO_LIMIT);
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    const tracks = trackIdsToAdd.slice(attempt*INFO_LIMIT, (attempt+1)*INFO_LIMIT);
-    allTrackInfoPromises.push(fetchTracksInfo(auth, country, tracks));
-  }
-  // Extract Promise Info
-  const allSpotifyTrackInfos = (await Promise.all(allTrackInfoPromises)).map((infoPromise) => infoPromise.tracks);
-  return allSpotifyTrackInfos.flat().map((track) => new TrackMin(track));
-};
-
 const main = async (teamId, channelId, userId, submissions) => {
-  const [auth, blacklist] = await Promise.all([authSession(teamId, channelId), loadBlacklist(teamId, channelId)]);
+  const blacklist = await loadBlacklist(teamId, channelId);
   const blacklistTracks = blacklist ? blacklist.blacklist : [];
-  const {country} = auth.getProfile();
 
-  const [currentList, trackIdsToAdd] = submissions.reduce(([curr, adds], submission) => {
+  const [currentList, newSubmissions] = submissions.reduce(([curr, newSubs], submission) => {
     const track = blacklistTracks.find((track) => track.id === submission.value);
-    return track ? [[...curr, track], adds] : [curr, [...adds, submission.value]];
+    return track ? [[...curr, track], newSubs] : [curr, [...newSubs, submission]];
   }, [[], []]);
 
   const tracksToRemove = currentList.length < blacklistTracks.length ? blacklistTracks.reduce((tracks, b, i) => {
@@ -49,9 +36,8 @@ const main = async (teamId, channelId, userId, submissions) => {
     await changeBlacklistRemove(teamId, channelId, tracksToRemove);
   }
 
-  const tracksToAdd = trackIdsToAdd.length ? await transformToBlacklistTrack(auth, country, trackIdsToAdd) : [];
-
-  if (trackIdsToAdd.length) {
+  if (newSubmissions.length) {
+    const tracksToAdd = newSubmissions.map((track) => ({title: track.text.text, id: track.value}));
     await changeBlacklist(teamId, channelId, tracksToAdd);
   }
 

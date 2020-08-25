@@ -110,7 +110,7 @@ const resolveSkip = async (teamId, channelId, auth, settings, currentSkip, statu
 
 const skipTrack = async (teamId, channelId, auth, settings, track) => {
   await Promise.all([
-    changeSkipAddHistory(teamId, channelId, track)
+    changeSkipAddHistory(teamId, channelId, {id: track.id, title: track.title})
         .then(async (data) => {
           if (data && data.Attributes && data.Attributes.history && data.Attributes.history.length >= SKIP_MAX_HISTORY) {
             await changeSkipTrimHistory(teamId, channelId);
@@ -145,7 +145,7 @@ const skipTrack = async (teamId, channelId, auth, settings, track) => {
  */
 const onBlacklist = async (teamId, channelId, auth, settings, playlist, status, statusTrack) => {
   const blacklist = await loadBlacklist(teamId, channelId);
-  if (blacklist && blacklist.blacklist && blacklist.blacklist.find((track) => statusTrack.uri === track.uri)) {
+  if (blacklist && blacklist.blacklist && blacklist.blacklist.find((track) => statusTrack.id === track.id)) {
     const message = inChannelPost(channelId, RESPONSE.blacklist(statusTrack.title, onPlaylist(status, playlist)));
     await Promise.all([
       skipTrack(teamId, channelId, auth, settings, statusTrack),
