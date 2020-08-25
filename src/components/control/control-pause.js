@@ -12,6 +12,8 @@ const {post} = require('/opt/slack/slack-api');
 const {inChannelPost} = require('/opt/slack/format/slack-format-reply');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
+const {sleep} = require('/opt/utils/util-timeout');
+
 const RESPONSE = {
   success: (userId) => `:double_vertical_bar: Spotify was paused by <@${userId}>.`,
   no_devices: ':warning: Spotify is not open on any device.',
@@ -37,6 +39,7 @@ const main = async (teamId, channelId, userId) => {
   }
 
   await pause(auth, status.device.id);
+  await sleep(1000);
 
   // Check if actually paused
   const newStatus = await fetchCurrentPlayback(auth);

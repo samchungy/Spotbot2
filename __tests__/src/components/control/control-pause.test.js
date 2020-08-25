@@ -26,6 +26,9 @@ const mockSlackFormatReply = {
 const mockSlackErrorReporter = {
   reportErrorToSlack: jest.fn(),
 };
+const mockUtilTimeout = {
+  sleep: jest.fn(),
+};
 
 jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
 
@@ -38,6 +41,8 @@ jest.mock('/opt/spotify/spotify-helper', () => mockSpotifyHelper, {virtual: true
 jest.mock('/opt/slack/slack-api', () => mockSlackApi, {virtual: true});
 jest.mock('/opt/slack/format/slack-format-reply', () => mockSlackFormatReply, {virtual: true});
 jest.mock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
+
+jest.mock('/opt/utils/util-timeout', () => mockUtilTimeout, {virtual: true});
 
 const mod = require('../../../../src/components/control/control-pause');
 const response = mod.RESPONSE;
