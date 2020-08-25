@@ -87,9 +87,9 @@ module.exports.handler = async (event, context) => {
   // LAMBDA FUNCTION
   const {teamId, channelId, userId, settings, query} = event;
   return await main(teamId, channelId, settings, query)
-      .catch((error)=>{
+      .catch(async (error)=>{
         logger.error(error, RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
+        await reportErrorToSlack(channelId, userId, RESPONSE.failed);
       });
 };
 

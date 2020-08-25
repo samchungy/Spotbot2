@@ -143,7 +143,7 @@ describe('Control Reset Review Open', () => {
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
-      expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, null, response.failed);
+      expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(channelId, null, response.failed);
     });
   });
   describe('main', () => {

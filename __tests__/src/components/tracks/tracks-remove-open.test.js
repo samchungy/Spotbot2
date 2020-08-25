@@ -94,10 +94,6 @@ const mockSpotifyPlaylists = {
   fetchPlaylistTotal: jest.fn(),
   fetchTracks: jest.fn(),
 };
-const mockSpotifyStatus = {
-  fetchCurrentPlayback: jest.fn(),
-  fetchRecent: jest.fn(),
-};
 const mockAuthSession = {
   authSession: jest.fn(),
 };
@@ -124,7 +120,6 @@ jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
 jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
 
 jest.mock('/opt/spotify/spotify-api-v2/spotify-api-playlists', () => mockSpotifyPlaylists, {virtual: true});
-jest.mock('/opt/spotify/spotify-api-v2/spotify-api-playback-status', () => mockSpotifyStatus, {virtual: true});
 jest.mock('/opt/spotify/spotify-objects/util-spotify-playlist-track', () => mockPlaylistTrack, {virtual: true});
 
 jest.mock('/opt/spotify/spotify-auth/spotify-auth-session', () => mockAuthSession, {virtual: true});
@@ -158,7 +153,7 @@ describe('Tracks Remove Open', () => {
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
-      expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, null, response.failed);
+      expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(channelId, null, response.failed);
     });
   });
 
@@ -190,7 +185,7 @@ describe('Tracks Remove Open', () => {
       expect(mockHistoryInterface.searchUserTrackHistory).toHaveBeenCalledWith(teamId, channelId, userId, ['test']);
       expect(mockSlackModal.option).toHaveBeenCalledWith(playlistTrack.title, playlistTrack.id);
       expect(mockSlackModal.multiSelectStatic).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, [option]);
-      expect(mockSlackModal.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Remove Tracks`, `Confirm`, `Close`, [selectStatic], true, channelId);
+      expect(mockSlackModal.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Remove Tracks`, `Confirm`, `Close`, [selectStatic], false, channelId);
       expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, modal);
     });
 
@@ -220,7 +215,7 @@ describe('Tracks Remove Open', () => {
       expect(mockHistoryInterface.searchUserTrackHistory).toHaveBeenCalledWith(teamId, channelId, userId, ['test', 'test2']);
       expect(mockSlackModal.option).toHaveBeenCalledWith(playlistTrack.title, playlistTrack.id);
       expect(mockSlackModal.multiSelectStatic).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, [option]);
-      expect(mockSlackModal.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Remove Tracks`, `Confirm`, `Close`, [selectStatic], true, channelId);
+      expect(mockSlackModal.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Remove Tracks`, `Confirm`, `Close`, [selectStatic], false, channelId);
       expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, modal);
     });
 
@@ -247,7 +242,7 @@ describe('Tracks Remove Open', () => {
       expect(mockHistoryInterface.searchUserTrackHistory).toHaveBeenCalledWith(teamId, channelId, userId, ['test99']);
       manyTracks.items.forEach((t, i) => expect(mockSlackModal.option).toHaveBeenCalledWith('a title', 'test' + i));
       expect(mockSlackModal.multiSelectStatic).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, manyTracks.items.map(() => option));
-      expect(mockSlackModal.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Remove Tracks`, `Confirm`, `Close`, [selectStatic], true, channelId);
+      expect(mockSlackModal.slackModal).toHaveBeenCalledWith(mockConfig.slack.actions.remove_modal, `Remove Tracks`, `Confirm`, `Close`, [selectStatic], false, channelId);
       expect(mockSlackApi.updateModal).toHaveBeenCalledWith(viewId, modal);
     });
 

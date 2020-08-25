@@ -119,7 +119,7 @@ describe('Control Play', () => {
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
-      expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, null, response.failed);
+      expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(channelId, null, response.failed);
     });
   });
 
@@ -506,7 +506,7 @@ describe('Control Play', () => {
       expect(mockSpotifyPlaylists.fetchPlaylistTotal).toHaveBeenCalledWith(auth, settings.playlist.id);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id, settings.playlist.uri);
       expect(mockLogger.error).toHaveBeenCalledWith(expect.any(Error), response.failed);
-      expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, null, response.failed);
+      expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(channelId, null, response.failed);
     });
     it('should report that there are no devices open', async () => {
       const country = {country: 'AU'};

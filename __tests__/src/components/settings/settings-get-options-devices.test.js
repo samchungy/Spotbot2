@@ -92,7 +92,7 @@ describe('Get Device Options', () => {
         expect.assertions(3);
         await expect(mod.handler(event)).resolves.toBe();
         expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
-        expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, userId, response.failed);
+        expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(channelId, userId, response.failed);
       });
     });
   });

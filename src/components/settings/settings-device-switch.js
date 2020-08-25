@@ -63,9 +63,9 @@ const extractSubmission = (view) => {
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, view} = JSON.parse(event.Records[0].Sns.Message);
   await main(teamId, channelId, userId, view)
-      .catch((error)=>{
+      .catch(async (error)=>{
         logger.error(error, RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
+        await reportErrorToSlack(channelId, userId, RESPONSE.failed);
       });
 };
 module.exports.RESPONSE = RESPONSE;

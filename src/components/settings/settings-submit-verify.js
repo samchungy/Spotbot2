@@ -91,9 +91,9 @@ const main = async (teamId, channelId, view, userId) => {
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, view, userId} = event;
   return await main(teamId, channelId, view, userId)
-      .catch((error)=>{
+      .catch(async (error)=>{
         logger.error(error, RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
+        await reportErrorToSlack(channelId, userId, RESPONSE.failed);
       });
 };
 module.exports.RESPONSE = RESPONSE;

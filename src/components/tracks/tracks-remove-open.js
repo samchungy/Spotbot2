@@ -99,16 +99,16 @@ const main = async (teamId, channelId, settings, userId, viewId ) => {
   const blocks = [
     multiSelectStatic(REMOVE_MODAL, `Select Tracks to Remove`, 'Selected tracks will be removed when you click Confirm', null, allOptions.slice(0, LIMIT)),
   ];
-  const view = slackModal(REMOVE_MODAL, `Remove Tracks`, `Confirm`, `Close`, blocks, true, channelId);
+  const view = slackModal(REMOVE_MODAL, `Remove Tracks`, `Confirm`, `Close`, blocks, false, channelId);
   await updateModal(viewId, view);
 };
 
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, viewId, userId} = JSON.parse(event.Records[0].Sns.Message);
   await main(teamId, channelId, settings, userId, viewId)
-      .catch((error)=>{
+      .catch(async (error)=>{
         logger.error(error, RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, null, RESPONSE.failed);
+        await reportErrorToSlack(channelId, null, RESPONSE.failed);
       });
 };
 module.exports.RESPONSE = RESPONSE;

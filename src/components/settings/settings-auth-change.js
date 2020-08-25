@@ -26,9 +26,9 @@ const main = async (teamId, channelId, viewId, url) => {
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, userId, viewId, url} = JSON.parse(event.Records[0].Sns.Message);
   await main(teamId, channelId, viewId, url)
-      .catch((error)=>{
+      .catch(async (error)=>{
         logger.error(error, RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
+        await reportErrorToSlack(channelId, userId, RESPONSE.failed);
       });
 };
 

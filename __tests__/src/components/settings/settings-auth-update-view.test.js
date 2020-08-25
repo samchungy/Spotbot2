@@ -68,7 +68,7 @@ describe('Update View with Auth', () => {
         expect.assertions(3);
         await expect(mod.handler(event)).resolves.toBe();
         expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
-        expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(teamId, channelId, null, response.failed);
+        expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(channelId, null, response.failed);
       });
     });
   });

@@ -207,9 +207,9 @@ const main = async (teamId, channelId, settings, userId, trackValue, responseUrl
 module.exports.handler = async (event, context) => {
   const {teamId, channelId, settings, userId, trackValue, responseUrl} = JSON.parse(event.Records[0].Sns.Message);
   await main(teamId, channelId, settings, userId, trackValue, responseUrl)
-      .catch((error)=>{
+      .catch(async (error)=>{
         logger.error(error, RESPONSE.failed);
-        reportErrorToSlack(teamId, channelId, userId, RESPONSE.failed);
+        await reportErrorToSlack(channelId, userId, RESPONSE.failed);
       });
 };
 module.exports.RESPONSE = RESPONSE;
