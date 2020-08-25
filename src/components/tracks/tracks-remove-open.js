@@ -65,7 +65,6 @@ const main = async (teamId, channelId, settings, userId, viewId ) => {
     return await updateModal(viewId, view);
   }
   const allTracks = await getAllTracks(auth, playlist.id, country, profileId, total);
-  console.log(allTracks);
   // No Tracks
   if (!allTracks.length) {
     const blocks = [textSection(RESPONSE.no_tracks)];
