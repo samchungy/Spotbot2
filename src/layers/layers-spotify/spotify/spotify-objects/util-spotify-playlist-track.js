@@ -9,10 +9,10 @@ class PlaylistTrack {
   constructor(playlistTrackObject) {
     const track = playlistTrackObject.track;
     this.name = track.name;
-    this.id = track.id;
-    this.uri = track.uri;
+    this.id = (track.linked_from && track.linked_from.id) || track.id;
+    this.uri = (track.linked_from && track.linked_from.uri) || track.uri;
     this.artists = track.artists.map((artist) => artist.name).join(', ');
-    this.title = track.explicit ? `${this.artists} - ${this.name} (Explicit)` : `${this.artists} - ${this.name}`;
+    this.title = `${this.artists} - ${this.name}${track.explicit ? ' (Explicit)' : ''}`;
     this.addedAt = playlistTrackObject.added_at;
     this.addedBy = playlistTrackObject.added_by;
     this.is_playable = track.is_playable;

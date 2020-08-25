@@ -9,9 +9,9 @@ class TrackMin {
   constructor(trackObject) {
     const artists = trackObject.artists.map((artist) => artist.name).join(', ');
     const name = trackObject.name;
-    this.id = trackObject.id;
-    this.uri = trackObject.uri;
-    this.title = trackObject.explicit ? `${artists} - ${name} (Explicit)` : `${artists} - ${name}`;
+    this.id = (trackObject.linked_from && trackObject.linked_from.id) || trackObject.id;
+    this.uri = (trackObject.linked_from && trackObject.linked_from.uri) || trackObject.uri;
+    this.title = `${artists} - ${name}${trackObject.explicit ? ' (Explicit)' : ''}`;
   }
 }
 
