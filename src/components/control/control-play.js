@@ -7,9 +7,8 @@ const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {play} = require('/opt/spotify/spotify-api-v2/spotify-api-playback');
 const {fetchDevices} = require('/opt/spotify/spotify-api-v2/spotify-api-devices');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
-const {fetchPlaylistTotal, fetchTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
+const {fetchPlaylistTotal} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const {isPlaying} = require('/opt/spotify/spotify-helper');
-const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 
 // Slack
@@ -19,10 +18,12 @@ const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 const {sleep} = require('/opt/utils/util-timeout');
 
+// Tracks
+const {findTrackIndex} = require('../tracks/layers/find-index');
+
 const NO_DEVICES = config.dynamodb.settings_helper.no_devices;
 const DEFAULT_DEVICE = config.dynamodb.settings.default_device;
 const PLAYLIST = config.dynamodb.settings.playlist;
-const LIMIT = config.spotify_api.playlists.tracks.limit;
 const TRACKS_CURRENT = process.env.SNS_PREFIX + 'tracks-current';
 
 const RESPONSE = {
@@ -73,7 +74,7 @@ const playWithDevice = async (teamId, channelId, auth, deviceId, status, playlis
   }
   // Unique Spotify edge case where it gets stuck
   if (trackUri) {
-    const index = await findTrackIndex(auth, playlist.id, auth.getProfile().country, trackUri);
+    const index = await findTrackIndex(auth, playlist.id, auth.getProfile().country, trackUri).catch(() => false);
     if (index === false) {
       const message = inChannelPost(channelId, RESPONSE.no_track);
       return await post(message);
@@ -125,24 +126,6 @@ const main = async (teamId, channelId, settings, userId, responseUrl, trackUri) 
     post(message).catch(logger.error);
   }
   return await playWithDevice(teamId, channelId, auth, spotifyDevices.devices[0].id, status, playlist, 0, userId, settings, trackUri);
-};
-
-const findTrackIndex = async (auth, playlistId, country, trackUri) => {
-  // Find what track number we just added
-  const {total} = await fetchPlaylistTotal(auth, playlistId);
-  if (!total) {
-    return false;
-  }
-  const offset = Math.max(0, total-LIMIT);
-  const playlistTracks = await fetchTracks(auth, playlistId, country, offset, LIMIT);
-  const index = playlistTracks.items.reverse().findIndex((ptrack) => {
-    const playlistTrack = new PlaylistTrack(ptrack);
-    return trackUri === playlistTrack.uri;
-  });
-  if (index === -1) {
-    return false;
-  }
-  return (playlistTracks.items.length-1) - index;
 };
 
 module.exports.handler = async (event, context) => {

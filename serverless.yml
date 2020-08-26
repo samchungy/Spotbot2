@@ -717,6 +717,8 @@ functions:
     package:
       include:
         - ./src/components/control/control-play.js
+        - ./src/components/tracks/layers/find-index.js
+        - ./src/components/tracks/layers/remove-unplayable.js
       exclude:
         - ./**
     handler: src/components/control/control-play.handler
@@ -879,6 +881,8 @@ functions:
     package:
       include:
         - ./src/components/tracks/tracks-find-add.js
+        - ./src/components/tracks/layers/find-index.js
+        - ./src/components/tracks/layers/remove-unplayable.js
       exclude:
         - ./**
     handler: src/components/tracks/tracks-find-add.handler

@@ -108,12 +108,9 @@ const mockSpotifyHelper = {
   isPlaying: jest.fn(),
 };
 const mockSpotifyPlaylists = {
-  fetchPlaylistTotal: jest.fn(),
-  fetchTracks: jest.fn(),
   addTracksToPlaylist: jest.fn(),
   deleteTracks: jest.fn(),
 };
-const mockPlaylistTrack = jest.fn();
 const mockTrack = jest.fn();
 const mockSlackApi = {
   post: jest.fn(),
@@ -144,6 +141,12 @@ const mockHistoryInterface = {
 const mockUtilTimeout = {
   sleep: jest.fn(),
 };
+const mockFind = {
+  findTrackIndex: jest.fn(),
+};
+const mockUnplayable = {
+  removeUnplayable: jest.fn(),
+};
 
 jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
 jest.mock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', () => mockMom, {virtual: true});
@@ -156,7 +159,6 @@ jest.mock('/opt/spotify/spotify-api-v2/spotify-api-playback', () => mockSpotifyP
 jest.mock('/opt/spotify/spotify-api-v2/spotify-api-playlists', () => mockSpotifyPlaylists, {virtual: true});
 
 jest.mock('/opt/spotify/spotify-helper', () => mockSpotifyHelper, {virtual: true});
-jest.mock('/opt/spotify/spotify-objects/util-spotify-playlist-track', () => mockPlaylistTrack, {virtual: true});
 jest.mock('/opt/spotify/spotify-objects/util-spotify-track', () => mockTrack, {virtual: true});
 
 jest.mock('/opt/slack/format/slack-format-blocks', () => mockSlackFormatBlocks, {virtual: true});
@@ -168,10 +170,12 @@ jest.mock('/opt/db/settings-extra-interface', () => mockSettingsExtra, {virtual:
 jest.mock('/opt/db/history-interface', () => mockHistoryInterface, {virtual: true});
 jest.mock('/opt/utils/util-timeout', () => mockUtilTimeout, {virtual: true});
 
+jest.mock('../../../../src/components/tracks/layers/find-index', () => mockFind, {virtual: true});
+jest.mock('../../../../src/components/tracks/layers/remove-unplayable', () => mockUnplayable, {virtual: true});
+
 const mod = require('../../../../src/components/tracks/tracks-find-add');
 const response = mod.RESPONSE;
 const status = require('../../../data/spotify/status');
-const tracks = require('../../../data/spotify/tracks');
 const {teamId, channelId, userId, settings, settings2, responseUrl} = require('../../../data/request');
 const params = {
   0: {teamId, channelId, userId, settings, responseUrl, trackValue: `{"title":"song title","uri":"track uri","id":"some track id"}`},
@@ -204,7 +208,6 @@ describe('Tracks Current', () => {
       mockMom.mockImplementation(() => mockMoment);
       mockMom.unix.mockImplementation(() => mockMoment);
     });
-    const total = {total: 8};
     const post = {inChannel: true};
     const profile = {country: 'AU'};
     const auth = {auth: true, getProfile: () => profile};
@@ -463,9 +466,7 @@ describe('Tracks Current', () => {
           mockTrack.mockReturnValue(noMatch);
           mockSettingsExtra.changeBackToPlaylistState.mockResolvedValue();
           mockMoment.subtract.mockReturnThis();
-          mockSpotifyPlaylists.fetchPlaylistTotal.mockResolvedValue(total);
-          mockSpotifyPlaylists.fetchTracks.mockResolvedValue(tracks[0]);
-          mockPlaylistTrack.mockReturnValueOnce(noMatch);
+          mockFind.findTrackIndex.mockResolvedValue(1);
 
           await expect(mod.handler(event(params[1]))).resolves.toBe();
           expect(mockSlackFormatReply.deleteReply).toHaveBeenCalledWith('', null);
@@ -482,13 +483,10 @@ describe('Tracks Current', () => {
           expect(mockMoment.unix).toHaveBeenCalledWith();
           expect(mockHistoryInterface.changeTrackHistory).toHaveBeenCalledWith(teamId, channelId, 'some track id', userId, unix, unix);
           expect(mockSpotifyPlaylists.addTracksToPlaylist).toHaveBeenCalledWith(auth, settings.playlist.id, ['non matching uri', 'track uri']);
-          expect(mockSpotifyPlaylists.fetchPlaylistTotal).toHaveBeenCalledWith(auth, settings.playlist.id);
-          expect(mockSpotifyPlaylists.fetchTracks).toHaveBeenCalledWith(auth, settings.playlist.id, profile.country, 0, mockConfig.spotify_api.playlists.tracks.limit);
-          expect(mockPlaylistTrack).toHaveBeenCalledWith(tracks[0].items[0]);
-          expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id, settings.playlist.uri, {position: tracks[0].items.length-1}, status[0].progress_ms);
+          expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id, settings.playlist.uri, {position: 1}, status[0].progress_ms);
           expect(mockSpotifyPlaylists.deleteTracks).toHaveBeenCalledWith(auth, settings.playlist.id, [{
             uri: noMatch.uri,
-            positions: [tracks[0].items.length-1],
+            positions: [1],
           }]);
         });
 
@@ -507,11 +505,7 @@ describe('Tracks Current', () => {
           mockTrack.mockReturnValue(match);
           mockSettingsExtra.changeBackToPlaylistState.mockResolvedValue();
           mockMoment.subtract.mockReturnThis();
-          mockSpotifyPlaylists.fetchPlaylistTotal.mockResolvedValue(total);
-          mockSpotifyPlaylists.fetchTracks.mockResolvedValue(tracks[0]);
-          mockPlaylistTrack
-              .mockReturnValueOnce(noMatch)
-              .mockReturnValueOnce(match);
+          mockFind.findTrackIndex.mockResolvedValue(2);
 
           await expect(mod.handler(event(params[1]))).resolves.toBe();
           expect(mockSlackFormatReply.deleteReply).toHaveBeenCalledWith('', null);
@@ -528,10 +522,7 @@ describe('Tracks Current', () => {
           expect(mockMoment.unix).toHaveBeenCalledWith();
           expect(mockHistoryInterface.changeTrackHistory).toHaveBeenCalledWith(teamId, channelId, 'some track id', userId, unix, unix);
           expect(mockSpotifyPlaylists.addTracksToPlaylist).toHaveBeenCalledWith(auth, settings.playlist.id, ['track uri']);
-          expect(mockSpotifyPlaylists.fetchPlaylistTotal).toHaveBeenCalledWith(auth, settings.playlist.id);
-          expect(mockSpotifyPlaylists.fetchTracks).toHaveBeenCalledWith(auth, settings.playlist.id, profile.country, 0, mockConfig.spotify_api.playlists.tracks.limit);
-          expect(mockPlaylistTrack).toHaveBeenCalledWith(tracks[0].items[0]);
-          expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id, settings.playlist.uri, {position: tracks[0].items.length-2});
+          expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id, settings.playlist.uri, {position: 2});
         });
 
         it('should try to go back to playlist, run into ConditionalCheckFailedException and then add a track regularly', async () => {
@@ -607,7 +598,7 @@ describe('Tracks Current', () => {
         });
 
         it('should fail due to playlist being empty after add', async () => {
-          const noTotal = {total: 0};
+          const error = new Error();
           mockSlackFormatReply.deleteReply.mockReturnValue(deleteReply);
           mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
           mockAuthSession.authSession.mockResolvedValue(auth);
@@ -622,7 +613,7 @@ describe('Tracks Current', () => {
           mockTrack.mockReturnValue(noMatch);
           mockSettingsExtra.changeBackToPlaylistState.mockResolvedValue();
           mockMoment.subtract.mockReturnThis();
-          mockSpotifyPlaylists.fetchPlaylistTotal.mockResolvedValue(noTotal);
+          mockFind.findTrackIndex.mockRejectedValue(error);
 
           await expect(mod.handler(event(params[1]))).resolves.toBe();
           expect(mockSlackFormatReply.deleteReply).toHaveBeenCalledWith('', null);
@@ -639,47 +630,6 @@ describe('Tracks Current', () => {
           expect(mockMoment.unix).toHaveBeenCalledWith();
           expect(mockHistoryInterface.changeTrackHistory).toHaveBeenCalledWith(teamId, channelId, 'some track id', userId, unix, unix);
           expect(mockSpotifyPlaylists.addTracksToPlaylist).toHaveBeenCalledWith(auth, settings.playlist.id, ['non matching uri', 'track uri']);
-          expect(mockSpotifyPlaylists.fetchPlaylistTotal).toHaveBeenCalledWith(auth, settings.playlist.id);
-          expect(mockLogger.error).toHaveBeenCalledWith(expect.any(Error), response.failed);
-        });
-
-        it('should fail when we cannot find the track we added', async () => {
-          mockSlackFormatReply.deleteReply.mockReturnValue(deleteReply);
-          mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
-          mockAuthSession.authSession.mockResolvedValue(auth);
-          mockHistoryInterface.loadTrackHistory.mockResolvedValue(history);
-          mockMoment.add.mockReturnThis();
-          mockMoment.isAfter.mockReturnValue(false);
-          mockMoment.unix.mockReturnValue(unix);
-          mockSlackFormatReply.inChannelPost.mockReturnValue(post);
-          mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue(status[0]);
-          mockSpotifyHelper.isPlaying.mockReturnValue(true);
-          mockSpotifyHelper.onPlaylist.mockReturnValue(false);
-          mockTrack.mockReturnValue(noMatch);
-          mockSettingsExtra.changeBackToPlaylistState.mockResolvedValue();
-          mockMoment.subtract.mockReturnThis();
-          mockSpotifyPlaylists.fetchPlaylistTotal.mockResolvedValue(total);
-          mockSpotifyPlaylists.fetchTracks.mockResolvedValue(tracks[0]);
-          mockPlaylistTrack.mockReturnValue(match);
-
-          await expect(mod.handler(event(params[1]))).resolves.toBe();
-          expect(mockSlackFormatReply.deleteReply).toHaveBeenCalledWith('', null);
-          expect(mockSettingsExtra.loadBlacklist).toHaveBeenCalledWith(teamId, channelId);
-          expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
-          expect(mockHistoryInterface.loadTrackHistory).toHaveBeenCalledWith(teamId, channelId, 'some track id');
-          expect(mockMom.unix).toHaveBeenCalledWith(history.timeAdded);
-          expect(mockMoment.add).toHaveBeenCalledWith(settings.disable_repeats_duration, 'hours');
-          expect(mockMoment.isAfter).toHaveBeenCalledWith(mockMoment);
-          expect(mockTrack).toHaveBeenCalledWith(status[0].item);
-          expect(mockMoment.subtract).toHaveBeenCalledWith('2', 's');
-          expect(mockSettingsExtra.changeBackToPlaylistState).toHaveBeenCalledWith(teamId, channelId, unix, unix);
-          expect(mockMoment.add).toHaveBeenCalledWith('1', 'month');
-          expect(mockMoment.unix).toHaveBeenCalledWith();
-          expect(mockHistoryInterface.changeTrackHistory).toHaveBeenCalledWith(teamId, channelId, 'some track id', userId, unix, unix);
-          expect(mockSpotifyPlaylists.addTracksToPlaylist).toHaveBeenCalledWith(auth, settings.playlist.id, ['non matching uri', 'track uri']);
-          expect(mockSpotifyPlaylists.fetchPlaylistTotal).toHaveBeenCalledWith(auth, settings.playlist.id);
-          expect(mockSpotifyPlaylists.fetchTracks).toHaveBeenCalledWith(auth, settings.playlist.id, profile.country, 0, mockConfig.spotify_api.playlists.tracks.limit);
-          expect(mockPlaylistTrack).toHaveBeenCalledWith(tracks[0].items[0]);
           expect(mockLogger.error).toHaveBeenCalledWith(expect.any(Error), response.failed);
         });
       });

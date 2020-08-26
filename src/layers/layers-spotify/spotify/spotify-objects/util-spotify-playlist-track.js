@@ -15,7 +15,7 @@ class PlaylistTrack {
     this.title = `${this.artists} - ${this.name}${track.explicit ? ' (Explicit)' : ''}`;
     this.addedAt = playlistTrackObject.added_at;
     this.addedBy = playlistTrackObject.added_by;
-    this.is_playable = track.is_playable;
+    this.isPlayable = track.is_playable;
   }
 }
 

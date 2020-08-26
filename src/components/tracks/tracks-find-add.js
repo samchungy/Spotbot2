@@ -4,12 +4,11 @@ const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-19
 
 // Spotify
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
-const {fetchPlaylistTotal, addTracksToPlaylist, deleteTracks, fetchTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
+const {addTracksToPlaylist, deleteTracks} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const {fetchCurrentPlayback} = require('/opt/spotify/spotify-api-v2/spotify-api-playback-status');
 const {play} = require('/opt/spotify/spotify-api-v2/spotify-api-playback');
 const Track = require('/opt/spotify/spotify-objects/util-spotify-track');
 const {isPlaying, onPlaylist} = require('/opt/spotify/spotify-helper');
-const PlaylistTrack = require('/opt/spotify/spotify-objects/util-spotify-playlist-track');
 
 // Slack
 const {post, reply, postEphemeral} = require('/opt/slack/slack-api');
@@ -23,13 +22,15 @@ const {changeBackToPlaylistState, loadBlacklist} = require('/opt/db/settings-ext
 // History
 const {changeTrackHistory, loadTrackHistory} = require('/opt/db/history-interface');
 
+const {findTrackIndex} = require('./layers/find-index');
+const {removeUnplayable} = require('./layers/remove-unplayable');
+
 // Util
 const {sleep} = require('/opt/utils/util-timeout');
 
 const REPEAT_DURATION = config.dynamodb.settings.disable_repeats_duration;
 const BACK_TO_PLAYLIST = config.dynamodb.settings.back_to_playlist;
 const PLAYLIST = config.dynamodb.settings.playlist;
-const LIMIT = config.spotify_api.playlists.tracks.limit;
 const CONTROLS = config.slack.actions.controls;
 
 const RESPONSE = {
@@ -62,24 +63,6 @@ const setHistory = async (teamId, channelId, track, userId) => {
   await changeTrackHistory(teamId, channelId, track.id, userId, moment().unix(), expiry);
 };
 
-const findTrackIndex = async (auth, playlistId, country, trackUri) => {
-  // Find what track number we just added
-  const {total} = await fetchPlaylistTotal(auth, playlistId);
-  if (!total) {
-    throw new Error('Playlist is somehow empty');
-  }
-  const offset = Math.max(0, total-LIMIT);
-  const playlistTracks = await fetchTracks(auth, playlistId, country, offset, LIMIT);
-  const index = playlistTracks.items.reverse().findIndex((ptrack) => {
-    const playlistTrack = new PlaylistTrack(ptrack);
-    return trackUri === playlistTrack.uri;
-  });
-  if (index === -1) {
-    throw new Error('Could not find added tracks somehow');
-  }
-  return (playlistTracks.items.length-1) - index;
-};
-
 const handleBackToPlaylist = async (teamId, channelId, userId, auth, playlist, status, track) => {
   const statusTrack = new Track(status.item);
   await changeBackToPlaylistState(teamId, channelId, moment().unix(), moment().subtract('2', 's').unix())
@@ -95,6 +78,7 @@ const handleBackToPlaylist = async (teamId, channelId, userId, auth, playlist, s
       addTracksToPlaylist(auth, playlist.id, [statusTrack.uri, track.uri]) : // if track being added is the same as the one being added
       addTracksToPlaylist(auth, playlist.id, [track.uri]),
   ]);
+  await removeUnplayable(auth, playlist.id);
   const index = await findTrackIndex(auth, playlist.id, auth.getProfile().country, statusTrack.uri);
 
   // Reduce the lag
