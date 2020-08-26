@@ -35,13 +35,12 @@ const extractSubmissions = (view) => {
 
 const main = async (teamId, channelId, settings, view) => {
   const playlist = settings[PLAYLIST];
-  const auth = await authSession(teamId, channelId);
 
   const submissions = extractSubmissions(view);
   if (!submissions.length) {
     return;
   }
-
+  const auth = await authSession(teamId, channelId);
   await deleteTracks(auth, playlist.id, submissions.map((track) => ({uri: track.value})));
   const message = inChannelPost(channelId, RESPONSE.removed(submissions.map((track) => track.text.text)), null);
   await post(message);
