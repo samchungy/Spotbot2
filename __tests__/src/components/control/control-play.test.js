@@ -339,17 +339,19 @@ describe('Control Play', () => {
       mockSlackFormatReply.inChannelPost.mockReturnValue(post);
       mockSlackApi.post.mockResolvedValue();
       mockFind.findTrackIndex.mockResolvedValue(4);
+      mockUnplayable.removeUnplayable.mockResolvedValue();
 
       await expect(mod.handler(event(params[2]))).resolves.toBe();
       expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
       expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
+      expect(mockUnplayable.removeUnplayable).toHaveBeenCalledWith(auth, settings.playlist.id);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id, settings.playlist.uri, {position: 4});
       expect(mockUtilTimeout.sleep).toHaveBeenCalledWith(1000);
       expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[2]);
       expect(mockSlackFormatReply.inChannelPost).toHaveBeenCalledWith(channelId, response.success_track(playingTrack.title, userId));
       expect(mockSlackApi.post).toHaveBeenCalledWith(post);
     });
-    it('should try to play Spotify from a particular track but track status is not track', async () => {
+    it('should try to play Spotify from a particular track but cannot find the track added', async () => {
       const error = new Error();
       const country = {country: 'AU'};
       const auth = {auth: true, getProfile: () => country};
@@ -383,6 +385,44 @@ describe('Control Play', () => {
       expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
       expect(mockSlackFormatReply.inChannelPost).toHaveBeenCalledWith(channelId, response.no_track);
       expect(mockSlackApi.post).toHaveBeenCalledWith(post);
+    });
+    it('should try to play Spotify from a particular track but the status track is not our trackUri', async () => {
+      const country = {country: 'AU'};
+      const auth = {auth: true, getProfile: () => country};
+      const post = {inChannelPost: true};
+      const total = {total: 6};
+      const matchedUri = {uri: params[2].trackUri};
+      const playlistTrack = {uri: 'not the track'};
+      const playingTrack = {uri: 'not', title: 'The Song'};
+
+      mockSlackApi.reply.mockResolvedValue();
+      mockAuthSession.authSession.mockResolvedValue(auth);
+      mockSpotifyPlaylists.fetchPlaylistTotal.mockReturnValue(total);
+      mockSpotifyPlaylists.fetchTracks.mockResolvedValue(tracks[0]);
+      mockPlaylistTrack
+          .mockReturnValueOnce(playlistTrack)
+          .mockReturnValueOnce(matchedUri);
+      mockTrack.mockReturnValue(playingTrack);
+      mockSpotifyStatus.fetchCurrentPlayback
+          .mockResolvedValueOnce(status[0])
+          .mockResolvedValueOnce(status[2])
+          .mockResolvedValueOnce(status[1]);
+
+      mockSpotifyHelper.isPlaying
+          .mockReturnValueOnce(true)
+          .mockReturnValueOnce(false)
+          .mockReturnValueOnce(false);
+
+      mockSpotifyPlayback.play.mockResolvedValue();
+      mockSlackFormatReply.inChannelPost.mockReturnValue(post);
+      mockSlackApi.post.mockResolvedValue();
+      mockFind.findTrackIndex.mockResolvedValue(4);
+
+      await expect(mod.handler(event(params[2]))).resolves.toBe();
+      expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
+      expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id, settings.playlist.uri, {position: 4});
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.any(Error), response.failed);
     });
     it('should report that the playlist is empty', async () => {
       const country = {country: 'AU'};

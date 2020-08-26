@@ -20,6 +20,7 @@ const {sleep} = require('/opt/utils/util-timeout');
 
 // Tracks
 const {findTrackIndex} = require('../tracks/layers/find-index');
+const {removeUnplayable} = require('../tracks/layers/remove-unplayable');
 
 const NO_DEVICES = config.dynamodb.settings_helper.no_devices;
 const DEFAULT_DEVICE = config.dynamodb.settings.default_device;
@@ -74,6 +75,7 @@ const playWithDevice = async (teamId, channelId, auth, deviceId, status, playlis
   }
   // Unique Spotify edge case where it gets stuck
   if (trackUri) {
+    await removeUnplayable(auth, playlist.id);
     const index = await findTrackIndex(auth, playlist.id, auth.getProfile().country, trackUri).catch(() => false);
     if (index === false) {
       const message = inChannelPost(channelId, RESPONSE.no_track);
