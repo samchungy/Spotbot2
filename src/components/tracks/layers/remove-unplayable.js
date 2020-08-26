@@ -22,8 +22,6 @@ const removeUnplayable = async (auth, playlistId) => {
   const country = auth.getProfile().country;
   const allTracks = await getAllTracks(auth, playlistId, country);
   const tracksToDelete = allTracks.filter((t) => !t.isPlayable);
-  console.log(tracksToDelete);
-  console.log(allTracks);
   await deleteTracks(auth, playlistId, tracksToDelete.map((t) => ({uri: t.uri})));
 };
 
