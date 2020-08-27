@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "pino": "^6.4.1"
+    "pino": "^6.5.1"
   }
 }
