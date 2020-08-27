@@ -147,8 +147,7 @@ describe('Control Play', () => {
           .mockResolvedValueOnce(status[0])
           .mockResolvedValueOnce(status[2]);
       mockSpotifyHelper.isPlaying
-          .mockReturnValueOnce(false)
-          .mockReturnValueOnce(true);
+          .mockReturnValueOnce(false);
       mockSpotifyPlayback.play.mockResolvedValue();
       mockSlackFormatReply.inChannelPost.mockReturnValue(post);
       mockSlackApi.post.mockResolvedValue();
@@ -160,7 +159,6 @@ describe('Control Play', () => {
       expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[0]);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id);
       expect(mockUtilTimeout.sleep).toHaveBeenCalledWith(1000);
-      expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[2]);
       expect(mockSlackFormatReply.inChannelPost).toHaveBeenCalledWith(channelId, response.success(userId));
       expect(mockSlackApi.post).toHaveBeenCalledWith(post);
       expect(mockSns.publish).toHaveBeenCalledWith({
@@ -179,9 +177,7 @@ describe('Control Play', () => {
       mockSpotifyStatus.fetchCurrentPlayback
           .mockResolvedValueOnce('')
           .mockResolvedValueOnce(status[2]);
-      mockSpotifyHelper.isPlaying
-          .mockReturnValueOnce(false)
-          .mockReturnValueOnce(true);
+      mockSpotifyHelper.isPlaying.mockReturnValueOnce(false);
       mockSpotifyDevices.fetchDevices.mockResolvedValue(devices[0]);
       mockSpotifyPlayback.play.mockResolvedValue();
       mockSlackFormatReply.inChannelPost
@@ -199,7 +195,6 @@ describe('Control Play', () => {
       expect(mockSlackApi.post).toHaveBeenCalledWith(warning);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, devices[0].devices[0].id);
       expect(mockUtilTimeout.sleep).toHaveBeenCalledWith(1000);
-      expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[2]);
       expect(mockSlackFormatReply.inChannelPost).toHaveBeenCalledWith(channelId, response.success(userId));
       expect(mockSlackApi.post).toHaveBeenCalledWith(post);
       expect(mockSns.publish).toHaveBeenCalledWith({
@@ -217,9 +212,7 @@ describe('Control Play', () => {
       mockSpotifyStatus.fetchCurrentPlayback
           .mockResolvedValueOnce('')
           .mockResolvedValueOnce(status[2]);
-      mockSpotifyHelper.isPlaying
-          .mockReturnValueOnce(false)
-          .mockReturnValueOnce(true);
+      mockSpotifyHelper.isPlaying.mockReturnValueOnce(false);
       mockSpotifyDevices.fetchDevices.mockResolvedValue(devices[2]);
       mockSpotifyPlayback.play.mockResolvedValue();
       mockSlackFormatReply.inChannelPost.mockReturnValue(post);
@@ -233,7 +226,6 @@ describe('Control Play', () => {
       expect(mockSpotifyDevices.fetchDevices).toHaveBeenCalledWith(auth);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, devices[2].devices[0].id);
       expect(mockUtilTimeout.sleep).toHaveBeenCalledWith(1000);
-      expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[2]);
       expect(mockSlackFormatReply.inChannelPost).toHaveBeenCalledWith(channelId, response.success(userId));
       expect(mockSlackApi.post).toHaveBeenCalledWith(post);
       expect(mockSns.publish).toHaveBeenCalledWith({
@@ -250,9 +242,7 @@ describe('Control Play', () => {
       mockSpotifyStatus.fetchCurrentPlayback
           .mockResolvedValueOnce('')
           .mockResolvedValueOnce(status[2]);
-      mockSpotifyHelper.isPlaying
-          .mockReturnValueOnce(false)
-          .mockReturnValueOnce(true);
+      mockSpotifyHelper.isPlaying.mockReturnValueOnce(false);
       mockSpotifyDevices.fetchDevices.mockResolvedValue(devices[2]);
       mockSpotifyPlayback.play.mockResolvedValue();
       mockSlackFormatReply.inChannelPost.mockReturnValue(post);
@@ -266,7 +256,6 @@ describe('Control Play', () => {
       expect(mockSpotifyDevices.fetchDevices).toHaveBeenCalledWith(auth);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, devices[2].devices[0].id);
       expect(mockUtilTimeout.sleep).toHaveBeenCalledWith(1000);
-      expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[2]);
       expect(mockSlackFormatReply.inChannelPost).toHaveBeenCalledWith(channelId, response.success(userId));
       expect(mockSlackApi.post).toHaveBeenCalledWith(post);
       expect(mockSns.publish).toHaveBeenCalledWith({
@@ -287,10 +276,7 @@ describe('Control Play', () => {
           .mockResolvedValueOnce(status[4])
           .mockResolvedValueOnce(status[2]);
 
-      mockSpotifyHelper.isPlaying
-          .mockReturnValueOnce(false)
-          .mockReturnValueOnce(true)
-          .mockReturnValueOnce(true);
+      mockSpotifyHelper.isPlaying.mockReturnValueOnce(false);
       mockSpotifyPlaylists.fetchPlaylistTotal.mockResolvedValue(total);
       mockSpotifyPlayback.play.mockResolvedValue();
       mockSlackFormatReply.inChannelPost.mockReturnValue(post);
@@ -303,7 +289,6 @@ describe('Control Play', () => {
       expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[0]);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id);
       expect(mockUtilTimeout.sleep).toHaveBeenCalledWith(1000);
-      expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[4]);
       expect(mockSpotifyPlaylists.fetchPlaylistTotal).toHaveBeenCalledWith(auth, settings.playlist.id);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id, settings.playlist.uri);
       expect(mockSlackFormatReply.inChannelPost).toHaveBeenCalledWith(channelId, response.success(userId));
@@ -347,7 +332,6 @@ describe('Control Play', () => {
       expect(mockUnplayable.removeUnplayable).toHaveBeenCalledWith(auth, settings.playlist.id);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id, settings.playlist.uri, {position: 4});
       expect(mockUtilTimeout.sleep).toHaveBeenCalledWith(1000);
-      expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[2]);
       expect(mockSlackFormatReply.inChannelPost).toHaveBeenCalledWith(channelId, response.success_track(playingTrack.title, userId));
       expect(mockSlackApi.post).toHaveBeenCalledWith(post);
     });
@@ -438,9 +422,7 @@ describe('Control Play', () => {
           .mockResolvedValueOnce(status[2]);
 
       mockSpotifyHelper.isPlaying
-          .mockReturnValueOnce(false)
-          .mockReturnValueOnce(true)
-          .mockReturnValueOnce(true);
+          .mockReturnValueOnce(false);
       mockSpotifyPlaylists.fetchPlaylistTotal.mockResolvedValue(total);
       mockSpotifyPlayback.play.mockResolvedValue();
       mockSlackFormatReply.inChannelPost.mockReturnValue(post);
@@ -453,7 +435,6 @@ describe('Control Play', () => {
       expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[0]);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id);
       expect(mockUtilTimeout.sleep).toHaveBeenCalledWith(1000);
-      expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[4]);
       expect(mockSpotifyPlaylists.fetchPlaylistTotal).toHaveBeenCalledWith(auth, settings.playlist.id);
       expect(mockSlackFormatReply.inChannelPost).toHaveBeenCalledWith(channelId, response.empty);
       expect(mockSlackApi.post).toHaveBeenCalledWith(post);
@@ -469,11 +450,9 @@ describe('Control Play', () => {
       mockSpotifyStatus.fetchCurrentPlayback
           .mockResolvedValueOnce(status[0])
           .mockResolvedValueOnce(status[4])
-          .mockResolvedValueOnce(status[2]);
+          .mockResolvedValueOnce(status[0]);
 
       mockSpotifyHelper.isPlaying
-          .mockReturnValueOnce(false)
-          .mockReturnValueOnce(true)
           .mockReturnValueOnce(false);
       mockSpotifyPlaylists.fetchPlaylistTotal.mockResolvedValue(total);
       mockSpotifyPlayback.play.mockResolvedValue();
@@ -487,7 +466,6 @@ describe('Control Play', () => {
       expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[0]);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id);
       expect(mockUtilTimeout.sleep).toHaveBeenCalledWith(1000);
-      expect(mockSpotifyHelper.isPlaying).toHaveBeenCalledWith(status[4]);
       expect(mockSpotifyPlaylists.fetchPlaylistTotal).toHaveBeenCalledWith(auth, settings.playlist.id);
       expect(mockSpotifyPlayback.play).toHaveBeenCalledWith(auth, status[0].device.id, settings.playlist.uri);
       expect(mockLogger.error).toHaveBeenCalledWith(expect.any(Error), response.failed);

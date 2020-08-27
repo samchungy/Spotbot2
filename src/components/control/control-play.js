@@ -48,7 +48,7 @@ const getCurrent = async (teamId, channelId, settings) => {
 
 const playWithDevice = async (teamId, channelId, auth, deviceId, status, playlist, attempt, userId, settings, trackUri) => {
   if (attempt) {
-    if (isPlaying(status)) {
+    if (status && status.is_playing) {
       if (trackUri) {
         const statusTrack = new Track(status.item);
         if (statusTrack.uri === trackUri) {
