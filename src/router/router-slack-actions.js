@@ -5,7 +5,7 @@ const logger = require('/opt/utils/util-logger');
 const config = require('/opt/config/config');
 
 // Slack
-const {updateReply} = require('/opt/slack/format/slack-format-reply');
+const {deleteReply} = require('/opt/slack/format/slack-format-reply');
 const {reply} = require('/opt/slack/slack-api');
 const {openModal, pushView} = require('/opt/router/slack-modal');
 const slackAuthorized = require('/opt/router/authorizer');
@@ -383,7 +383,7 @@ const tracksActionsRouter = async (actionId, payload) => {
     // TRACKS
     case TRACKS.cancel_search: { // Artist Search also uses this
       await reply(
-          updateReply(`:information_source: Search cancelled.`, null),
+          deleteReply('', null),
           payload.response_url,
       );
       return;
