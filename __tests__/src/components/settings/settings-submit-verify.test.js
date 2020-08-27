@@ -1013,7 +1013,14 @@ describe('Settings submission verfification', () => {
           'URVUTD7UP',
         ],
         'playlist': '0IEMBuGAQ3vyNa4aiT3mD8',
-        'default_device': '49433c0b9868f755ee05b5a58908f31c8d28faaf',
+        'default_device': {
+          'text': {
+            'type': 'plain_text',
+            'text': 'DESKTOP-I7U2161 - Computer',
+            'emoji': true,
+          },
+          'value': '49433c0b9868f755ee05b5a58908f31c8d28faaf',
+        },
         'disable_repeats_duration': '3',
         'back_to_playlist': 'true',
         'ghost_mode': 'false',

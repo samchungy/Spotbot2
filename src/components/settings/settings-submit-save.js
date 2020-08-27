@@ -2,7 +2,7 @@ const config = require('/opt/config/config');
 const logger = require('/opt/utils/util-logger');
 
 // Settings
-const {changeSettings, modelDevice, modelPlaylist, loadDevices, loadPlaylists, loadSettings} = require('/opt/db/settings-interface');
+const {changeSettings, modelDevice, modelPlaylist, loadSettings} = require('/opt/db/settings-interface');
 
 // Slack
 const {ephemeralPost} = require('/opt/slack/format/slack-format-reply');
@@ -10,7 +10,7 @@ const {postEphemeral} = require('/opt/slack/slack-api');
 const {reportErrorToSlack} = require('/opt/slack/slack-error-reporter');
 
 // Spotify
-const {createPlaylist} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
+const {createPlaylist, getPlaylist} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const {removeState} = require('/opt/db/spotify-auth-interface');
 
@@ -43,7 +43,7 @@ const transformValue = async (teamId, channelId, attribute, newValue, oldValue) 
       newValue = await getPlaylistValue(teamId, channelId, newValue, oldValue);
       break;
     case SETTINGS.default_device:
-      newValue = await getDeviceValue(teamId, channelId, newValue, oldValue);
+      newValue = modelDevice(newValue.text.text, newValue.value);
       break;
   }
   return newValue;
@@ -68,48 +68,9 @@ const getPlaylistValue = async (teamId, channelId, newValue, oldValue) => {
     const newPlaylist = await createPlaylist(auth, profile.id, newValue, COLLABORATIVE, PUBLIC);
     return modelPlaylist(newPlaylist);
   } else {
-    // Grab the playlist object from our earlier Database playlist fetch
-    const {value: playlists} = await loadPlaylists(teamId, channelId).then((data) => {
-      if (!data) {
-        throw new Error('No playlist data was captured for Settings');
-      }
-      return data;
-    });
-    const playlist = playlists.find((playlist) => playlist.id === newValue);
-    if (!playlist) {
-      throw new Error('Selected Spotify playlist is invalid');
-    }
-    return playlist;
-  }
-};
-
-/**
- * Get the device value from devices fetch
- * @param {string} teamId
- * @param {string} channelId
- * @param {string} newValue
- * @param {string} oldValue
- */
-const getDeviceValue = async (teamId, channelId, newValue, oldValue) => {
-  if (oldValue && oldValue.id === newValue) {
-    return oldValue;
-  }
-  switch (newValue) {
-    case SETTINGS_HELPER.no_devices:
-      return modelDevice(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices);
-    default: {
-      const {value: spotifyDevices} = await loadDevices(teamId, channelId).then((data) => {
-        if (!data) {
-          throw new Error('No Spotify device data was captured for Settings');
-        }
-        return data;
-      });
-      const device = spotifyDevices.find((device) => device.id === newValue);
-      if (!device) {
-        throw new Error('Selected Spotify device is invalid');
-      }
-      return device;
-    }
+    const auth = await authSession(teamId, channelId);
+    const playlist = await getPlaylist(auth, newValue);
+    return modelPlaylist(playlist);
   }
 };
 

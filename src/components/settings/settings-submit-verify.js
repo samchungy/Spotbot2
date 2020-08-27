@@ -28,11 +28,13 @@ const extractSubmissions = (view) => {
         acc[setting] = values[setting][setting].selected_users;
         break;
       case DB.playlist:
-      case DB.default_device:
       case DB.back_to_playlist:
       case DB.ghost_mode:
       case DB.timezone:
         acc[setting] = values[setting][setting].selected_option.value;
+        break;
+      case DB.default_device:
+        acc[setting] = values[setting][setting].selected_option;
         break;
       case DB.disable_repeats_duration:
       case DB.skip_votes:

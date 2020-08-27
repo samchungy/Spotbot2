@@ -18,7 +18,7 @@ const OPTION = {
 const main = async (query) => {
   const timezones = moment.tz.names();
   const options = timezones
-      .filter((timezone) => timezone.toLowerCase().includes(query.toLowerCase().replace(' ', '_')))
+      .filter((timezone) => timezone.toLowerCase().includes(query.trim().toLowerCase().replace(' ', '_')))
       .map((timezone) => option(OPTION.timezone(timezone, moment().tz(timezone).format('Z')), timezone));
 
   if (options.length > 100) {
@@ -33,7 +33,7 @@ const main = async (query) => {
 };
 
 module.exports.handler = async (event, context) => {
-  const {teamId, channelId, userId, query} = event;
+  const {channelId, userId, query} = event;
   return await main(query)
       .catch(async (error)=>{
         logger.error(error, RESPONSE.failed);

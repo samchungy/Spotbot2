@@ -49,7 +49,6 @@ const router = async (event, context) => {
       const params = {
         FunctionName: SETTINGS_GET_OPTIONS_TIMEZONES, // the lambda function we are going to invoke
         Payload: JSON.stringify({
-          teamId: payload.team.id,
           channelId: payload.view.private_metadata,
           query: payload.value,
           user: payload.user.id,

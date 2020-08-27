@@ -4,6 +4,7 @@ const config = {
   endpoints: {
     me: '/me',
     devices: '/me/player/devices',
+    getPlaylist: (id) => `/playlists/${id}`,
     playlists: '/me/playlists',
     playlistItems: (id) => `/playlists/${id}/tracks`,
     createPlaylist: (id) => `/users/${id}/playlists`,

@@ -14,7 +14,7 @@ const mockConfig = {
     'settings_helper': {
       'no_devices': 'no_devices',
       'no_devices_label': 'None',
-      'create_new_playlist': 'create_new_playlist.',
+      'create_new_playlist': 'CNP.',
     },
   },
   'spotify_api': {

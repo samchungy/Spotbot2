@@ -64,6 +64,14 @@ const replaceTracks = async (auth, playlistId, uris) => {
   });
 };
 
+const getPlaylist = async (auth, playlistId) => {
+  return requester(auth, (client) => {
+    return client.get(config.endpoints.getPlaylist(playlistId), {params: {
+      fields: 'name,uri,id,external_urls.spotify',
+    }}).then((response) => response.data);
+  });
+};
+
 module.exports = {
   addTracksToPlaylist,
   createPlaylist,
@@ -71,6 +79,7 @@ module.exports = {
   fetchPlaylists,
   fetchPlaylistTotal,
   fetchTracks,
+  getPlaylist,
   replaceTracks,
 };
 

@@ -14,7 +14,7 @@ const mockConfig = {
     'settings_helper': {
       'no_devices': 'no_devices',
       'no_devices_label': 'None',
-      'create_new_playlist': 'create_new_playlist.',
+      'create_new_playlist': 'CNP.',
     },
   },
   'spotify_api': {
@@ -38,8 +38,6 @@ const mockSettingsInterface = {
   loadSettings: jest.fn(),
   modelDevice: jest.fn(),
   modelPlaylist: jest.fn(),
-  loadDevices: jest.fn(),
-  loadPlaylists: jest.fn(),
 };
 const mockSlackFormat = {
   ephemeralPost: jest.fn(),
@@ -52,6 +50,7 @@ const mockSlackErrorReporter = {
 };
 const mockPlaylists = {
   createPlaylist: jest.fn(),
+  getPlaylist: jest.fn(),
 };
 const mockAuthSession = {
   authSession: jest.fn(),
@@ -87,7 +86,14 @@ const submissions = {
       'URVUTD7UP',
     ],
     playlist: '2nuwjAGCHQiPabqGH6SLty',
-    default_device: '87997bb4312981a00f1d8029eb874c55a211a0cc',
+    default_device: {
+      'text': {
+        'type': 'plain_text',
+        'text': 'AU13282 - Computer',
+        'emoji': true,
+      },
+      'value': '87997bb4312981a00f1d8029eb874c55a211a0cc',
+    },
     disable_repeats_duration: '1',
     back_to_playlist: 'true',
     ghost_mode: 'true',
@@ -99,8 +105,15 @@ const submissions = {
     channel_admins: [
       'URVUTD7UP',
     ],
-    playlist: 'create_new_playlist.New Playlist',
-    default_device: '87997bb4312981a00f1d8029eb874c55a211a0cc',
+    playlist: 'CNP.New Playlist',
+    default_device: {
+      'text': {
+        'type': 'plain_text',
+        'text': 'AU13282 - Computer',
+        'emoji': true,
+      },
+      'value': '87997bb4312981a00f1d8029eb874c55a211a0cc',
+    },
     disable_repeats_duration: '1',
     back_to_playlist: 'true',
     ghost_mode: 'true',
@@ -113,7 +126,14 @@ const submissions = {
       'URVUTD7UP',
     ],
     playlist: '2nuwjAGCHQiPabqGH6SLty',
-    default_device: 'no_devices',
+    default_device: {
+      'text': {
+        'type': 'plain_text',
+        'text': 'NONE',
+        'emoji': true,
+      },
+      'value': 'NONE',
+    },
     disable_repeats_duration: '1',
     back_to_playlist: 'true',
     ghost_mode: 'true',
@@ -153,162 +173,67 @@ describe('Settings - Submit Save', () => {
       },
     });
   });
-  // describe('handler', () => {
-  //   describe('success', () => {
-  //     it('should call the main function', async () => {
-  //       expect.assertions(1);
-  //       await expect(mod.handler(event(params[0]))).resolves.toBe();
-  //     });
-  //   });
-  //   describe('error', () => {
-  //     it('should report the error to Slack', async () => {
-  //       const error = new Error();
-  //       mockSettingsInterface.loadSettings.mockRejectedValue(error);
+  describe('handler', () => {
+    describe('success', () => {
+      it('should call the main function', async () => {
+        expect.assertions(1);
+        await expect(mod.handler(event(params[0]))).resolves.toBe();
+      });
+    });
+    describe('error', () => {
+      it('should report the error to Slack', async () => {
+        const error = new Error();
+        mockSettingsInterface.loadSettings.mockRejectedValue(error);
 
-  //       expect.assertions(3);
-  //       await expect(mod.handler(event(params[0]))).resolves.toBe();
-  //       expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
-  //       expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(channelId, userId, response.failed);
-  //     });
-  //   });
-  // });
+        expect.assertions(3);
+        await expect(mod.handler(event(params[0]))).resolves.toBe();
+        expect(mockLogger.error).toHaveBeenCalledWith(error, response.failed);
+        expect(mockSlackErrorReporter.reportErrorToSlack).toHaveBeenCalledWith(channelId, userId, response.failed);
+      });
+    });
+  });
 
   describe('main', () => {
-    const playlists = {'value': [
-      {
-        'name': 'New',
-        'id': '6wJYsAv6EUHfafNvTV3Qvf',
-        'uri': 'spotify:playlist:6wJYsAv6EUHfafNvTV3Qvf',
-        'url': 'https://open.spotify.com/playlist/6wJYsAv6EUHfafNvTV3Qvf',
+    const playlist = {
+      'external_urls': {
+        'spotify': 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty',
       },
-      {
-        'name': 'Spotbot',
-        'id': '6TefVIS1ryrtEmjerqFu1N',
-        'uri': 'spotify:playlist:6TefVIS1ryrtEmjerqFu1N',
-        'url': 'https://open.spotify.com/playlist/6TefVIS1ryrtEmjerqFu1N',
-      },
-      {
-        'name': 'Test',
-        'id': '2nuwjAGCHQiPabqGH6SLty',
-        'uri': 'spotify:playlist:2nuwjAGCHQiPabqGH6SLty',
-        'url': 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty',
-      },
-      {
-        'name': 'DOperatePlaylist',
-        'id': '5DkqssdyTJyQzh3T0bLPTd',
-        'uri': 'spotify:playlist:5DkqssdyTJyQzh3T0bLPTd',
-        'url': 'https://open.spotify.com/playlist/5DkqssdyTJyQzh3T0bLPTd',
-      },
-      {
-        'name': 'Spring \'19',
-        'id': '0AajTcIoODpnHr6m7JqE2Y',
-        'uri': 'spotify:playlist:0AajTcIoODpnHr6m7JqE2Y',
-        'url': 'https://open.spotify.com/playlist/0AajTcIoODpnHr6m7JqE2Y',
-      },
-      {
-        'name': 'Fall \'19',
-        'id': '4lB2bRq79GWAd3jDyulDJ8',
-        'uri': 'spotify:playlist:4lB2bRq79GWAd3jDyulDJ8',
-        'url': 'https://open.spotify.com/playlist/4lB2bRq79GWAd3jDyulDJ8',
-      },
-      {
-        'name': 'Winter \'19',
-        'id': '2M3YrO6fGfqz4bZHDnmnH5',
-        'uri': 'spotify:playlist:2M3YrO6fGfqz4bZHDnmnH5',
-        'url': 'https://open.spotify.com/playlist/2M3YrO6fGfqz4bZHDnmnH5',
-      },
-      {
-        'name': 'Pure Happy Bliss',
-        'id': '2j5o5jpPRtw2opTpHqMkXQ',
-        'uri': 'spotify:playlist:2j5o5jpPRtw2opTpHqMkXQ',
-        'url': 'https://open.spotify.com/playlist/2j5o5jpPRtw2opTpHqMkXQ',
-      },
-      {
-        'name': 'Me',
-        'id': '1J4m05bC5BKQPTwzxuzzz3',
-        'uri': 'spotify:playlist:1J4m05bC5BKQPTwzxuzzz3',
-        'url': 'https://open.spotify.com/playlist/1J4m05bC5BKQPTwzxuzzz3',
-      },
-      {
-        'name': 'SSSmas',
-        'id': '0ykzkVbJFRPiUaacDJHCE2',
-        'uri': 'spotify:playlist:0ykzkVbJFRPiUaacDJHCE2',
-        'url': 'https://open.spotify.com/playlist/0ykzkVbJFRPiUaacDJHCE2',
-      },
-      {
-        'name': 'SSS BBQ',
-        'id': '1n3tj3twqXHQhPWUiWthMm',
-        'uri': 'spotify:playlist:1n3tj3twqXHQhPWUiWthMm',
-        'url': 'https://open.spotify.com/playlist/1n3tj3twqXHQhPWUiWthMm',
-      },
-      {
-        'name': '21',
-        'id': '7Fv1AvTcY0jAbwzOmGJgHg',
-        'uri': 'spotify:playlist:7Fv1AvTcY0jAbwzOmGJgHg',
-        'url': 'https://open.spotify.com/playlist/7Fv1AvTcY0jAbwzOmGJgHg',
-      },
-      {
-        'name': 'The Work Zone',
-        'id': '7atlhhcVVExUiKOMwXLNqU',
-        'uri': 'spotify:playlist:7atlhhcVVExUiKOMwXLNqU',
-        'url': 'https://open.spotify.com/playlist/7atlhhcVVExUiKOMwXLNqU',
-      },
-      {
-        'name': 'Drunk Songs',
-        'id': '1XueDduvvEIfEir2GJc8cG',
-        'uri': 'spotify:playlist:1XueDduvvEIfEir2GJc8cG',
-        'url': 'https://open.spotify.com/playlist/1XueDduvvEIfEir2GJc8cG',
-      },
-      {
-        'name': 'Musicals',
-        'id': '2B4H5QMz7Jz07LWNzbWtqp',
-        'uri': 'spotify:playlist:2B4H5QMz7Jz07LWNzbWtqp',
-        'url': 'https://open.spotify.com/playlist/2B4H5QMz7Jz07LWNzbWtqp',
-      },
-      {
-        'name': 'Liked from Radio',
-        'id': '6DfnDtWIfXNBPLOLrTnRHt',
-        'uri': 'spotify:playlist:6DfnDtWIfXNBPLOLrTnRHt',
-        'url': 'https://open.spotify.com/playlist/6DfnDtWIfXNBPLOLrTnRHt',
-      },
-      {
-        'name': 'My Shazam Tracks',
-        'id': '1b1WGErHarH1cd3mH50IHO',
-        'uri': 'spotify:playlist:1b1WGErHarH1cd3mH50IHO',
-        'url': 'https://open.spotify.com/playlist/1b1WGErHarH1cd3mH50IHO',
-      },
-    ],
-    'ttl': 1595937365,
+      'id': '2nuwjAGCHQiPabqGH6SLty',
+      'name': 'Test',
+      'uri': 'spotify:playlist:2nuwjAGCHQiPabqGH6SLty',
     };
-    const devices = {'value': [
-      {
-        'name': 'AU13282 - Computer',
-        'id': '87997bb4312981a00f1d8029eb874c55a211a0cc',
-      },
-      {
-        'name': 'DESKTOP-I7U2161 - Computer',
-        'id': '49433c0b9868f755ee05b5a58908f31c8d28faaf',
-      },
-    ],
-    'ttl': 1595936916};
+    const modelPlaylist = {
+      'name': 'Test',
+      'id': '2nuwjAGCHQiPabqGH6SLty',
+      'uri': 'spotify:playlist:2nuwjAGCHQiPabqGH6SLty',
+      'url': 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty',
+    };
+    const modelDevice = {
+      'name': 'AU13282 - Computer',
+      'id': '87997bb4312981a00f1d8029eb874c55a211a0cc',
+    };
     const profile = {
       'country': 'AU',
       'id': 'samchungy',
     };
+    const auth = {auth: true};
     it('should successfully save when settings are null', async () => {
       mockSettingsInterface.loadSettings.mockResolvedValue(null);
-      mockSettingsInterface.loadDevices.mockResolvedValue(devices);
-      mockSettingsInterface.loadPlaylists.mockResolvedValue(playlists);
       mockUtilObjects.isEmpty.mockReturnValue(false);
       mockSettingsInterface.changeSettings.mockResolvedValue();
       mockAuthInterface.removeState.mockResolvedValue();
+      mockAuthSession.authSession.mockResolvedValue(auth);
+      mockPlaylists.getPlaylist.mockResolvedValue(playlist);
+      mockSettingsInterface.modelPlaylist.mockReturnValue(modelPlaylist);
+      mockSettingsInterface.modelDevice.mockReturnValue(modelDevice);
 
       await expect(mod.handler(event(params[0]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.loadDevices).toHaveBeenCalledWith(teamId, channelId);
       expect(mockAuthInterface.removeState).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.changeSettings).toHaveBeenCalledWith(teamId, channelId, {'back_to_playlist': 'true', 'channel_admins': ['URVUTD7UP'], 'default_device': {'id': '87997bb4312981a00f1d8029eb874c55a211a0cc', 'name': 'AU13282 - Computer'}, 'disable_repeats_duration': '1', 'ghost_mode': 'true', 'playlist': {'id': '2nuwjAGCHQiPabqGH6SLty', 'name': 'Test', 'uri': 'spotify:playlist:2nuwjAGCHQiPabqGH6SLty', 'url': 'https://open.spotify.com/playlist/2nuwjAGCHQiPabqGH6SLty'}, 'skip_votes': '0', 'skip_votes_ah': '1', 'timezone': 'Australia/Melbourne'});
+      expect(mockPlaylists.getPlaylist).toHaveBeenCalledWith(auth, submissions[0].playlist);
+      expect(mockSettingsInterface.modelPlaylist).toHaveBeenCalledWith(playlist);
+      expect(mockSettingsInterface.modelDevice).toHaveBeenCalledWith(submissions[0].default_device.text.text, submissions[0].default_device.value);
+      expect(mockSettingsInterface.changeSettings).toHaveBeenCalledWith(teamId, channelId, {'back_to_playlist': 'true', 'channel_admins': ['URVUTD7UP'], 'default_device': modelDevice, 'disable_repeats_duration': '1', 'ghost_mode': 'true', 'playlist': modelPlaylist, 'skip_votes': '0', 'skip_votes_ah': '1', 'timezone': 'Australia/Melbourne'});
     });
 
     it('should successfully overrite when settings some settings', async () => {
@@ -333,7 +258,6 @@ describe('Settings - Submit Save', () => {
       mockSettingsInterface.loadSettings.mockResolvedValue(null);
       mockUtilObjects.isEmpty.mockReturnValue(false);
       mockAuthSession.authSession.mockResolvedValue(auth);
-      mockSettingsInterface.loadDevices.mockResolvedValue(devices);
       mockSettingsInterface.changeSettings.mockResolvedValue();
       mockAuthInterface.removeState.mockResolvedValue();
       mockPlaylists.createPlaylist.mockResolvedValue(spotifyPlaylists[0].items[0]);
@@ -346,57 +270,18 @@ describe('Settings - Submit Save', () => {
       expect(mockPlaylists.createPlaylist).toHaveBeenCalledWith(auth, profile.id, 'New Playlist', mockConfig.spotify_api.playlists.collaborative, mockConfig.spotify_api.playlists.public);
     });
 
-    it('should fail when load playlists is null', async () => {
+    it('should successfully save with none device', async () => {
+      const auth = {getProfile: () => profile};
       mockSettingsInterface.loadSettings.mockResolvedValue(null);
-      mockSettingsInterface.loadDevices.mockResolvedValue(devices);
-      mockSettingsInterface.loadPlaylists.mockResolvedValue(null);
-
-      await expect(mod.handler(event(params[0]))).resolves.toBe();
-      expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.objectContaining({'message': 'No playlist data was captured for Settings'}), response.failed);
-    });
-
-    it('should fail when load devices is null', async () => {
-      mockSettingsInterface.loadPlaylists.mockResolvedValue(playlists);
-      mockSettingsInterface.loadSettings.mockResolvedValue(null);
-      mockSettingsInterface.loadDevices.mockResolvedValue(null);
-
-      await expect(mod.handler(event(params[0]))).resolves.toBe();
-      expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.objectContaining({'message': 'No Spotify device data was captured for Settings'}), response.failed);
-    });
-
-    it('should fail when load playlists does not contain selected playlist', async () => {
-      mockSettingsInterface.loadPlaylists.mockResolvedValue({value: [{id: 'not our playlist'}]});
-      mockSettingsInterface.loadSettings.mockResolvedValue(null);
-
-      await expect(mod.handler(event(params[0]))).resolves.toBe();
-      expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.objectContaining({'message': 'Selected Spotify playlist is invalid'}), response.failed);
-    });
-
-    it('should fail when load devices does not contain selected device', async () => {
-      mockSettingsInterface.loadSettings.mockResolvedValue(null);
-      mockSettingsInterface.loadPlaylists.mockResolvedValue(playlists);
-      mockSettingsInterface.loadDevices.mockResolvedValue({value: [{id: 'not our device'}]});
-
-      await expect(mod.handler(event(params[0]))).resolves.toBe();
-      expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.objectContaining({'message': 'Selected Spotify device is invalid'}), response.failed);
-    });
-
-    it('should succeed when no device option is selected', async () => {
-      mockSettingsInterface.loadSettings.mockResolvedValue(null);
-      mockSettingsInterface.loadPlaylists.mockResolvedValue(playlists);
+      mockUtilObjects.isEmpty.mockReturnValue(false);
+      mockAuthSession.authSession.mockResolvedValue(auth);
+      mockSettingsInterface.changeSettings.mockResolvedValue();
+      mockAuthInterface.removeState.mockResolvedValue();
 
       await expect(mod.handler(event(params[2]))).resolves.toBe();
       expect(mockSettingsInterface.loadSettings).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.loadPlaylists).toHaveBeenCalledWith(teamId, channelId);
-      expect(mockSettingsInterface.modelDevice).toHaveBeenCalledWith(mockConfig.dynamodb.settings_helper.no_devices_label, mockConfig.dynamodb.settings_helper.no_devices);
+      expect(mockAuthInterface.removeState).toHaveBeenCalledWith(teamId, channelId);
+      expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
     });
 
     it('should succeed when there is nothing to update', async () => {

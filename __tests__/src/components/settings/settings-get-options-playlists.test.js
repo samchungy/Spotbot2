@@ -5,7 +5,7 @@ const mockConfig = {
     settings_helper: {
       no_devices: 'no_devices',
       no_devices_label: 'no_devices_label',
-      create_new_playlist: 'create_new_playlist.',
+      create_new_playlist: 'CNP.',
     },
     settings: {
       default_device: 'default_device',
@@ -18,17 +18,6 @@ const mockConfig = {
     },
   },
 };
-
-// Mock Modules
-const mockMoment = {
-  tz: jest.fn().mockReturnThis(),
-  format: jest.fn(),
-  add: jest.fn(),
-  unix: jest.fn(),
-  names: jest.fn(),
-};
-const mockMom = jest.fn(() => mockMoment);
-mockMom.tz = jest.fn(() => mockMoment);
 
 const mockLogger = {
   info: jest.fn(),
@@ -58,7 +47,6 @@ const mockAuthSession = {
 // Mock Declarations
 jest.mock('/opt/config/config', () => mockConfig, {virtual: true});
 jest.mock('/opt/utils/util-logger', () => mockLogger, {virtual: true});
-jest.mock('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030', () => mockMom, {virtual: true});
 jest.mock('/opt/slack/format/slack-format-modal', () => mockSlackFormat, {virtual: true});
 jest.mock('/opt/slack/slack-error-reporter', () => mockSlackErrorReporter, {virtual: true});
 jest.mock('/opt/db/settings-interface', () => mockSettings, {virtual: true});
@@ -100,9 +88,6 @@ describe('Get Playlist Options', () => {
   });
 
   describe('main', () => {
-    beforeEach(() => {
-      mockMom.mockImplementation(() => mockMoment);
-    });
     it('should return Slack options containing Spotify playlist results', async () => {
       const event = params[0];
       const opt = {option: true};
@@ -122,8 +107,6 @@ describe('Get Playlist Options', () => {
       mockSlackFormat.option.mockReturnValue(opt);
       mockPlaylists.fetchPlaylists.mockResolvedValue(playlistData[0]);
       mockAuthSession.authSession.mockResolvedValue(auth);
-      mockMoment.add.mockReturnThis();
-      mockMoment.unix.mockReturnValue(unix);
 
       await expect(mod.handler(event)).resolves.toStrictEqual({option_groups: [optGroup, optGroup]});
       expect(mockSlackFormat.option).toHaveBeenCalledWith(option.current(settings.playlist.name), settings.playlist.id);
@@ -133,9 +116,6 @@ describe('Get Playlist Options', () => {
       expect(mockPlaylists.fetchPlaylists).toHaveBeenCalledWith(auth, 0, mockConfig.spotify_api.playlists.limit);
       expect(mockSettings.modelPlaylist).toHaveBeenCalledWith(expect.objectContaining({id: validPlaylist[0]}));
       expect(mockSettings.modelPlaylist).toHaveBeenCalledWith(expect.objectContaining({id: validPlaylist[1]}));
-      expect(mockSettings.storePlaylists).toHaveBeenCalledWith(teamId, channelId, {value: [settings.playlist, matchPlaylist, modelPlaylist]}, unix);
-      expect(mockMoment.add).toHaveBeenCalledWith(1, 'hour');
-      expect(mockMoment.unix).toHaveBeenCalled();
       expect(mockSlackFormat.optionGroup).toHaveBeenCalledWith('Search Results:', [opt]);
       expect(mockSlackFormat.optionGroup).toHaveBeenCalledWith('Other:', [opt, opt]);
     });
@@ -158,8 +138,6 @@ describe('Get Playlist Options', () => {
       mockSlackFormat.option.mockReturnValue(opt);
       mockPlaylists.fetchPlaylists.mockResolvedValue(playlistData[0]);
       mockAuthSession.authSession.mockResolvedValue(auth);
-      mockMoment.add.mockReturnThis();
-      mockMoment.unix.mockReturnValue(unix);
 
       await expect(mod.handler(event)).resolves.toStrictEqual({option_groups: [optGroup]});
       expect(mockSlackFormat.option).toHaveBeenCalledWith(option.current(settings.playlist.name), settings.playlist.id);
@@ -168,9 +146,6 @@ describe('Get Playlist Options', () => {
       expect(mockPlaylists.fetchPlaylists).toHaveBeenCalledWith(auth, 0, mockConfig.spotify_api.playlists.limit);
       expect(mockSettings.modelPlaylist).toHaveBeenCalledWith(expect.objectContaining({id: validPlaylist[0]}));
       expect(mockSettings.modelPlaylist).toHaveBeenCalledWith(expect.objectContaining({id: validPlaylist[1]}));
-      expect(mockSettings.storePlaylists).toHaveBeenCalledWith(teamId, channelId, {value: [settings.playlist, modelPlaylist, modelPlaylist]}, unix);
-      expect(mockMoment.add).toHaveBeenCalledWith(1, 'hour');
-      expect(mockMoment.unix).toHaveBeenCalled();
       expect(mockSlackFormat.optionGroup).toHaveBeenCalledWith(option.none(query[0]), [opt, opt]);
     });
 
@@ -192,8 +167,6 @@ describe('Get Playlist Options', () => {
       mockSlackFormat.option.mockReturnValue(opt);
       mockPlaylists.fetchPlaylists.mockResolvedValue(playlistData[1]);
       mockAuthSession.authSession.mockResolvedValue(auth);
-      mockMoment.add.mockReturnThis();
-      mockMoment.unix.mockReturnValue(unix);
 
       await mod.handler(event);
       expect(mockSlackFormat.option).toHaveBeenCalledWith(option.current(settings.playlist.name), settings.playlist.id);
@@ -220,8 +193,6 @@ describe('Get Playlist Options', () => {
       mockSlackFormat.option.mockReturnValue(opt);
       mockPlaylists.fetchPlaylists.mockResolvedValue(playlistData[0]);
       mockAuthSession.authSession.mockResolvedValue(auth);
-      mockMoment.add.mockReturnThis();
-      mockMoment.unix.mockReturnValue(unix);
 
       await expect(mod.handler(event)).resolves.toStrictEqual({option_groups: [optGroup]});
       expect(mockSlackFormat.option).toHaveBeenCalledWith(option.createPlaylist(query[0]), option.newPlaylist(query[0]));
@@ -229,9 +200,6 @@ describe('Get Playlist Options', () => {
       expect(mockPlaylists.fetchPlaylists).toHaveBeenCalledWith(auth, 0, mockConfig.spotify_api.playlists.limit);
       expect(mockSettings.modelPlaylist).toHaveBeenCalledWith(expect.objectContaining({id: validPlaylist[0]}));
       expect(mockSettings.modelPlaylist).toHaveBeenCalledWith(expect.objectContaining({id: validPlaylist[1]}));
-      expect(mockSettings.storePlaylists).toHaveBeenCalledWith(teamId, channelId, {value: [modelPlaylist, modelPlaylist]}, unix);
-      expect(mockMoment.add).toHaveBeenCalledWith(1, 'hour');
-      expect(mockMoment.unix).toHaveBeenCalled();
       expect(mockSlackFormat.optionGroup).toHaveBeenCalledWith(option.none(query[0]), [opt]);
     });
   });

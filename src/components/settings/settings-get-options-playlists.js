@@ -1,13 +1,12 @@
 const config = require('/opt/config/config');
 const logger = require('/opt/utils/util-logger');
-const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
 
 // Spotify
 const {fetchPlaylists} = require('/opt/spotify/spotify-api-v2/spotify-api-playlists');
 const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 
 // Settings
-const {modelPlaylist, storePlaylists} = require('/opt/db/settings-interface');
+const {modelPlaylist} = require('/opt/db/settings-interface');
 
 // Slack
 const {option, optionGroup} = require('/opt/slack/format/slack-format-modal');
@@ -23,6 +22,7 @@ const OPTION = {
   createPlaylist: (query) => `Create a new playlist called "${query}"`,
   newPlaylist: (query) => NEW_PLAYLIST + query,
   none: (query) => `No query results for "${query}"`,
+  long: 'Your playlist name is too long. Please shorten it to 75 characters or less.',
 };
 
 const RESPONSE = {
@@ -64,10 +64,8 @@ const main = async (teamId, channelId, settings, query) => {
     option(OPTION.createPlaylist(query), OPTION.newPlaylist(query)),
   ];
   const playlists = await getCompatiblePlaylists(teamId, channelId, currentPlaylist);
-  await storePlaylists(teamId, channelId, {value: playlists}, moment().add(1, 'hour').unix());
-  // Converts into Slack Option if it matches the search query
   const searchPlaylists = playlists
-      .filter((playlist) => playlist.name.toLowerCase().includes(query.toLowerCase()))
+      .filter((playlist) => playlist.name.toLowerCase().includes(query.trim().toLowerCase()))
       .map((playlist) => option(playlist.name, playlist.id));
 
   if (!searchPlaylists.length) {
