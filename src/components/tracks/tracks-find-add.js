@@ -179,7 +179,8 @@ const main = async (teamId, channelId, settings, userId, trackValue, responseUrl
   const message = inChannelPost(channelId, RESPONSE.success(track.title));
   await post(message);
 
-  if (!isPlaying(status)) {
+
+  if (!(status && !status.item && status.currently_playing_type === 'unknown') && !isPlaying(status)) {
     return await sendResumeQuestion(channelId, userId, track);
   }
 

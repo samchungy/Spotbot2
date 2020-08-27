@@ -339,6 +339,39 @@ describe('Tracks Current', () => {
           expect(mockSlackFormatReply.ephemeralPost).toHaveBeenCalledWith(channelId, userId, response.resume('song title'), [textSection, actionSection]);
           expect(mockSlackApi.postEphemeral).toHaveBeenCalledWith(ephemeral);
         });
+
+        it('should successfully add a track to the playlist and not send resume question because of unknown track', async () => {
+          mockSlackFormatReply.deleteReply.mockReturnValue(deleteReply);
+          mockSettingsExtra.loadBlacklist.mockResolvedValue(blacklist);
+          mockAuthSession.authSession.mockResolvedValue(auth);
+          mockHistoryInterface.loadTrackHistory.mockResolvedValue(history);
+          mockMoment.add.mockReturnThis();
+          mockMoment.isAfter.mockReturnValue(false);
+          mockMoment.unix.mockReturnValue(unix);
+          mockSlackFormatReply.inChannelPost.mockReturnValue(post);
+          mockSpotifyStatus.fetchCurrentPlayback.mockResolvedValue(status[4]);
+          mockSpotifyHelper.isPlaying.mockReturnValue(false);
+          mockSlackFormatBlocks.buttonActionElement.mockReturnValue(buttonAction);
+          mockSlackFormatBlocks.textSection.mockReturnValue(textSection);
+          mockSlackFormatBlocks.actionSection.mockReturnValue(actionSection);
+          mockSlackFormatReply.ephemeralPost.mockReturnValue(ephemeral);
+
+          await expect(mod.handler(event(params[0]))).resolves.toBe();
+          expect(mockSlackFormatReply.deleteReply).toHaveBeenCalledWith('', null);
+          expect(mockSettingsExtra.loadBlacklist).toHaveBeenCalledWith(teamId, channelId);
+          expect(mockAuthSession.authSession).toHaveBeenCalledWith(teamId, channelId);
+          expect(mockHistoryInterface.loadTrackHistory).toHaveBeenCalledWith(teamId, channelId, 'some track id');
+          expect(mockMom.unix).toHaveBeenCalledWith(history.timeAdded);
+          expect(mockMoment.add).toHaveBeenCalledWith(settings.disable_repeats_duration, 'hours');
+          expect(mockMoment.isAfter).toHaveBeenCalledWith(mockMoment);
+          expect(mockMoment.add).toHaveBeenCalledWith('1', 'month');
+          expect(mockMoment.unix).toHaveBeenCalledWith();
+          expect(mockHistoryInterface.changeTrackHistory).toHaveBeenCalledWith(teamId, channelId, 'some track id', userId, unix, unix);
+          expect(mockSpotifyPlaylists.addTracksToPlaylist).toHaveBeenCalledWith(auth, settings.playlist.id, ['track uri']);
+          expect(mockSlackFormatReply.inChannelPost).toHaveBeenCalledWith(channelId, response.success('song title'));
+          expect(mockSlackApi.post).toHaveBeenCalledWith(post);
+          expect(mockSpotifyStatus.fetchCurrentPlayback).toHaveBeenCalledWith(auth);
+        });
       });
       describe('Off Playlist', () => {
         it('should successfully add a track to the playlist and send back to playlist question', async () => {
