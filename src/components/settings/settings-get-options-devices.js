@@ -1,6 +1,5 @@
 const config = require('/opt/config/config');
 const logger = require('/opt/utils/util-logger');
-const moment = require('/opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030');
 
 // Spotify
 const {fetchDevices} = require('/opt/spotify/spotify-api-v2/spotify-api-devices');
@@ -8,7 +7,7 @@ const {authSession} = require('/opt/spotify/spotify-auth/spotify-auth-session');
 const Device = require('/opt/spotify/spotify-objects/util-spotify-device');
 
 // Settings
-const {modelDevice, storeDevices} = require('/opt/db/settings-interface');
+const {modelDevice} = require('/opt/db/settings-interface');
 
 // Slack
 const {option} = require('/opt/slack/format/slack-format-modal');
@@ -46,7 +45,6 @@ const getAllDevices = async (teamId, channelId, settings) => {
 
 const main = async (teamId, channelId, settings) => {
   const spotifyDevices = await getAllDevices(teamId, channelId, settings);
-  await storeDevices(teamId, channelId, {value: spotifyDevices}, moment().add(1, 'hour').unix());
   const devices = [
     option(SETTINGS_HELPER.no_devices_label, SETTINGS_HELPER.no_devices), // Add a none option
     ...spotifyDevices
