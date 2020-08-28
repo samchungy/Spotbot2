@@ -51,7 +51,7 @@ const getCompatiblePlaylists = async (teamId, channelId, currentPlaylist) => {
   return [
     ...currentPlaylist ? [currentPlaylist] : [],
     ...allPlaylists // Filter out curerntPlaylist to avoid dupes, and keep only playlists user owns, or collaborative ones
-        .filter((playlist) => (!currentPlaylist || (playlist.id != currentPlaylist.id)) && (playlist.collaborative == true || playlist.owner.id == profile.id))
+        .filter((playlist) => (!currentPlaylist || (playlist.id != currentPlaylist.id)) && (playlist.owner.id == profile.id))
         .map((playlist) => modelPlaylist(playlist)),
   ];
 };
