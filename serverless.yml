@@ -5,35 +5,53 @@ package:
 plugins:
   - serverless-dotenv-plugin
   - serverless-plugin-split-stacks
+  - serverless-dynamodb-local
+  - serverless-offline
+  - serverless-offline-sns
 
 custom:
-  # dynamodb:
-  #   stages:
-  #     - ${self:provider.stage}
-  #   start:
-  #     port: 8000
-  #     dbPath: .dynamodb/db
-  #     migrate: true
-  account_id: 897201036940
   stage: ${opt:stage, self:provider.stage}
+  #Serverless Offline
+  lambda:
+    prefix: ${self:service}-${self:custom.stage}
+  dynamodb:
+    stages:
+      - local
+    start:
+      port: 8000
+      dbPath: .dynamodb/db
+      migrate: true
+  serverless-offline:
+    host: 0.0.0.0
+    printOutput: true
+    useChildProcesses: true
+  serverless-offline-sns:
+    port: 4002
   dev:
+    account_id: 897201036940
+    deletion_policy: Delete
+  local: 
+    account_id: 123456789012
     deletion_policy: Delete
   prod:
+    account_id: 897201036940
     deletion_policy: Retain
   prefix: ${self:service}-${self:custom.stage}
-  topic: arn:aws:sns:${self:provider.region}:${self:custom.account_id}:${self:custom.prefix}
-  lambda: arn:aws:lambda:${self:provider.region}:${self:custom.account_id}:function:${self:custom.prefix}
+  topic_arn: arn:aws:sns:${self:provider.region}:${self:custom.${self:custom.stage}.account_id}:${self:custom.prefix}
+  lambda_arn: arn:aws:lambda:${self:provider.region}:${self:custom.${self:custom.stage}.account_id}:function:${self:custom.prefix}
 
 provider:
+  stage: ${opt:stage, 'local'}
   name: aws
   region: ap-southeast-2
   runtime: nodejs12.x
   versionFunctions: false
+  timeout: 10
   logRetentionInDays: 14 # Set the default RetentionInDays for a CloudWatch LogGroup
   environment:
     ENV: ${self:custom.stage}
-    SNS_PREFIX: ${self:custom.topic}-
-    LAMBDA_PREFIX: ${self:custom.lambda}-
+    SNS_PREFIX: ${self:custom.topic_arn}-
+    LAMBDA_PREFIX: ${self:custom.prefix}-
     REGION: ${self:provider.region}
     #Tables
     AUTH_TABLE: ${self:custom.prefix}-auth
@@ -42,9 +60,6 @@ provider:
     HISTORY_TABLE: ${self:custom.prefix}-history
     #Core Libraries
     LOG_LEVEL: info
-    CONFIG: /opt/config/config
-    LOGGER: /opt/utils/util-logger
-    MOMENT: /opt/nodejs/moment-timezone/moment-timezone-with-data-1970-2030
     #Tokens
     SLACK_TOKEN: ${env:SLACK_TOKEN}
     SPOTIFY_CLIENT_ID: ${env:SPOTIFY_CLIENT_ID}
@@ -62,61 +77,46 @@ provider:
       - dynamodb:UpdateItem
       - dynamodb:DeleteItem
     Resource: [
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.SETTINGS_TABLE}*",
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.SEARCH_TABLE}*",
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.AUTH_TABLE}*",
-      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.account_id}:table/${self:provider.environment.HISTORY_TABLE}*"
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.${self:custom.stage}.account_id}:table/${self:provider.environment.SETTINGS_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.${self:custom.stage}.account_id}:table/${self:provider.environment.SEARCH_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.${self:custom.stage}.account_id}:table/${self:provider.environment.AUTH_TABLE}*",
+      "arn:aws:dynamodb:${opt:region, self:provider.region}:${self:custom.${self:custom.stage}.account_id}:table/${self:provider.environment.HISTORY_TABLE}*"
     ]
   - Effect: Allow
     Action:
       - sns:Publish
-    Resource: "${self:custom.topic}-*"
+    Resource: "${self:custom.topic_arn}-*"
   - Effect: Allow
     Action:
       - lambda:InvokeFunction
-    Resource: "${self:custom.lambda}-*"
+    Resource: "${self:custom.lambda_arn}-*"
 layers:
   # Router
   router:
     name: ${self:custom.prefix}-router-core
-    path: router/layers/layers-router-core
+    path: src/layers/layers-router-core
     compatibleRuntimes:
       - nodejs12.x
   # Main Layers
   core:
     name: ${self:custom.prefix}-core
-    path: layers/layers-core
+    path: src/layers/layers-core
     compatibleRuntimes:
       - nodejs12.x
   slack:
     name: ${self:custom.prefix}-slack
-    path: layers/layers-slack
+    path: src/layers/layers-slack
     compatibleRuntimes:
       - nodejs12.x
   spotify:
     name: ${self:custom.prefix}-spotify
-    path: layers/layers-spotify
+    path: src/layers/layers-spotify
     compatibleRuntimes:
       - nodejs12.x
   # Other Layers
-  settings-blocks:
-    name: ${self:custom.prefix}-settings-blocks
-    path: components/settings/layers/layers-settings
-    compatibleRuntimes:
-      - nodejs12.x
-  control-panel:
-    name: ${self:custom.prefix}-control-panel
-    path: components/control/layers/layers-control-panel
-    compatibleRuntimes:
-      - nodejs12.x
-  control-reset:
-    name: ${self:custom.prefix}-control-reset
-    path: components/control/layers/layers-control-reset
-    compatibleRuntimes:
-      - nodejs12.x
   control-skip:
     name: ${self:custom.prefix}-control-skip
-    path: components/control/layers/layers-control-skip
+    path: src/layers/layers-control-skip
     compatibleRuntimes:
       - nodejs12.x
 functions:
@@ -127,10 +127,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-control-open.js
+        - ./src/router/router-control-open.js
       exclude:
         - ./**
-    handler: router/router-control-open.handler
+    handler: src/router/router-control-open.handler
     events:
       - http:
           method: POST
@@ -144,10 +144,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-control-pause.js
+        - ./src/router/router-control-pause.js
       exclude:
         - ./**
-    handler: router/router-control-pause.handler
+    handler: src/router/router-control-pause.handler
     events:
       - http:
           method: POST
@@ -161,10 +161,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-control-play.js
+        - ./src/router/router-control-play.js
       exclude:
         - ./**
-    handler: router/router-control-play.handler
+    handler: src/router/router-control-play.handler
     events:
       - http:
           method: POST
@@ -178,10 +178,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-control-reset.js
+        - ./src/router/router-control-reset.js
       exclude:
         - ./**
-    handler: router/router-control-reset.handler
+    handler: src/router/router-control-reset.handler
     events:
       - http:
           method: POST
@@ -195,10 +195,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-control-skip.js
+        - ./src/router/router-control-skip.js
       exclude:
         - ./**
-    handler: router/router-control-skip.handler
+    handler: src/router/router-control-skip.handler
     events:
       - http:
           method: POST
@@ -212,10 +212,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-settings.js
+        - ./src/router/router-settings.js
       exclude:
         - ./**
-    handler: router/router-settings.handler
+    handler: src/router/router-settings.handler
     events:
       - http:
           method: POST
@@ -230,10 +230,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-spotify-auth-callback.js
+        - ./src/router/router-spotify-auth-callback.js
       exclude:
         - ./**
-    handler: router/router-spotify-auth-callback.handler
+    handler: src/router/router-spotify-auth-callback.handler
     events:
       - http:
           method: GET
@@ -247,10 +247,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-slack-actions.js
+        - ./src/router/router-slack-actions.js
       exclude:
         - ./**
-    handler: router/router-slack-actions.handler
+    handler: src/router/router-slack-actions.handler
     events:
       - http:
           method: POST
@@ -259,16 +259,34 @@ functions:
       - { Ref: RouterLambdaLayer }
       - { Ref: CoreLambdaLayer }
       - { Ref: SlackLambdaLayer }
+  # router-sonos-auth-callback:
+  #   environment:
+  #     SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
+  #   memorySize: 256
+  #   package:
+  #     include:
+  #       - ./src/router/router-sonos-auth-callback.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/router/router-sonos-auth-callback.handler
+  #   events:
+  #     - http:
+  #         method: GET
+  #         path: sonos-auth-callback
+  #   layers:
+  #     - { Ref: RouterLambdaLayer }
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
   router-slack-events:
     environment:
       SLACK_SIGNING_SECRET: ${env:SLACK_SIGNING_SECRET}
     memorySize: 256
     package:
       include:
-        - ./router/router-slack-events.js
+        - ./src/router/router-slack-events.js
       exclude:
         - ./**
-    handler: router/router-slack-events.handler
+    handler: src/router/router-slack-events.handler
     events:
       - http:
           method: POST
@@ -282,10 +300,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-slack-options.js
+        - ./src/router/router-slack-options.js
       exclude:
         - ./**
-    handler: router/router-slack-options.handler
+    handler: src/router/router-slack-options.handler
     events:
       - http:
           method: POST
@@ -299,10 +317,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-tracks-find-artists.js
+        - ./src/router/router-tracks-find-artists.js
       exclude:
         - ./**
-    handler: router/router-tracks-find-artists.handler
+    handler: src/router/router-tracks-find-artists.handler
     events:
       - http:
           method: POST
@@ -316,10 +334,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-tracks-remove.js
+        - ./src/router/router-tracks-remove.js
       exclude:
         - ./**
-    handler: router/router-tracks-remove.handler
+    handler: src/router/router-tracks-remove.handler
     events:
       - http:
           method: POST
@@ -334,10 +352,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-tracks-current.js
+        - ./src/router/router-tracks-current.js
       exclude:
         - ./**
-    handler: router/router-tracks-current.handler
+    handler: src/router/router-tracks-current.handler
     events:
       - http:
           method: POST
@@ -351,10 +369,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-tracks-find.js
+        - ./src/router/router-tracks-find.js
       exclude:
         - ./**
-    handler: router/router-tracks-find.handler
+    handler: src/router/router-tracks-find.handler
     events:
       - http:
           method: POST
@@ -368,10 +386,10 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./router/router-tracks-whom.js
+        - ./src/router/router-tracks-whom.js
       exclude:
         - ./**
-    handler: router/router-tracks-whom.handler
+    handler: src/router/router-tracks-whom.handler
     events:
       - http:
           method: POST
@@ -386,51 +404,52 @@ functions:
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-auth-change.js
+        - ./src/components/settings/settings-auth-change.js
       exclude:
         - ./**
-    handler: components/settings/settings-auth-change.handler
+    handler: src/components/settings/settings-auth-change.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: SettingsDashblocksLambdaLayer }
   settings-auth-update-view:
     events:
       - sns: ${self:custom.prefix}-settings-auth-update-view
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-auth-update-view.js
+        - ./src/components/settings/settings-auth-update-view.js
+        - ./src/components/settings/layers/settings-blocks.js
+        - ./src/components/settings/layers/settings-auth-blocks.js
       exclude:
         - ./**
-    handler: components/settings/settings-auth-update-view.handler
+    handler: src/components/settings/settings-auth-update-view.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: SettingsDashblocksLambdaLayer }
   settings-auth-validate:
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-auth-validate.js
+        - ./src/components/settings/settings-auth-validate.js
       exclude:
         - ./**
-    handler: components/settings/settings-auth-validate.handler
+    handler: src/components/settings/settings-auth-validate.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
+      - { Ref: SlackLambdaLayer }
   settings-blacklist-open:
     events:
       - sns: ${self:custom.prefix}-settings-blacklist-open
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-blacklist-open.js
+        - ./src/components/settings/settings-blacklist-open.js
       exclude:
         - ./**
-    handler: components/settings/settings-blacklist-open.handler
+    handler: src/components/settings/settings-blacklist-open.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -441,10 +460,10 @@ functions:
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-blacklist-submit-save.js
+        - ./src/components/settings/settings-blacklist-submit-save.js
       exclude:
         - ./**
-    handler: components/settings/settings-blacklist-submit-save.handler
+    handler: src/components/settings/settings-blacklist-submit-save.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -453,10 +472,10 @@ functions:
     memorySize: 192
     package:
       include:
-        - ./components/settings/settings-blacklist-submit-verify.js
+        - ./src/components/settings/settings-blacklist-submit-verify.js
       exclude:
         - ./**
-    handler: components/settings/settings-blacklist-submit-verify.handler
+    handler: src/components/settings/settings-blacklist-submit-verify.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -467,10 +486,10 @@ functions:
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-device-select.js
+        - ./src/components/settings/settings-device-select.js
       exclude:
         - ./**
-    handler: components/settings/settings-device-select.handler
+    handler: src/components/settings/settings-device-select.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -481,10 +500,10 @@ functions:
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-device-switch.js
+        - ./src/components/settings/settings-device-switch.js
       exclude:
         - ./**
-    handler: components/settings/settings-device-switch.handler
+    handler: src/components/settings/settings-device-switch.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -493,10 +512,10 @@ functions:
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-get-options-devices.js
+        - ./src/components/settings/settings-get-options-devices.js
       exclude:
         - ./**
-    handler: components/settings/settings-get-options-devices.handler
+    handler: src/components/settings/settings-get-options-devices.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -505,10 +524,10 @@ functions:
     memorySize: 192
     package:
       include:
-        - ./components/settings/settings-get-options-playlists.js
+        - ./src/components/settings/settings-get-options-playlists.js
       exclude:
         - ./**
-    handler: components/settings/settings-get-options-playlists.handler
+    handler: src/components/settings/settings-get-options-playlists.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -517,10 +536,10 @@ functions:
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-get-options-timezones.js
+        - ./src/components/settings/settings-get-options-timezones.js
       exclude:
         - ./**
-    handler: components/settings/settings-get-options-timezones.handler
+    handler: src/components/settings/settings-get-options-timezones.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SlackLambdaLayer }
@@ -530,25 +549,108 @@ functions:
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-open.js
+        - ./src/components/settings/settings-open.js
+        - ./src/components/settings/layers/settings-blocks.js
+        - ./src/components/settings/layers/settings-auth-blocks.js
       exclude:
         - ./**
-    handler: components/settings/settings-open.handler
+    handler: src/components/settings/settings-open.handler
     layers:
       - { Ref: CoreLambdaLayer }
-      - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: SettingsDashblocksLambdaLayer }
+      - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  # settings-sonos-open:
+  #   events:
+  #     - sns: ${self:custom.prefix}-settings-sonos-open
+  #   memorySize: 128
+  #   package:
+  #     include:
+  #       - ./src/components/settings/settings-sonos-open.js
+  #       - ./src/components/settings/layers/settings-sonos-blocks.js
+  #       - ./src/components/settings/layers/settings-sonos-auth-blocks.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/components/settings/settings-sonos-open.handler
+  #   layers:
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  #     - { Ref: SonosLambdaLayer }
+  # settings-sonos-auth-update-view:
+  #   events:
+  #     - sns: ${self:custom.prefix}-settings-sonos-auth-update-view
+  #   memorySize: 128
+  #   package:
+  #     include:
+  #       - ./src/components/settings/settings-sonos-auth-update-view.js
+  #       - ./src/components/settings/layers/settings-sonos-blocks.js
+  #       - ./src/components/settings/layers/settings-sonos-auth-blocks.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/components/settings/settings-sonos-auth-update-view.handler
+  #   layers:
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  #     - { Ref: SonosLambdaLayer }
+  # settings-sonos-auth-validate:
+  #   events:
+  #     - sns: ${self:custom.prefix}-settings-sonos-auth-validate
+  #   memorySize: 128
+  #   package:
+  #     include:
+  #       - ./src/components/settings/settings-sonos-auth-validate.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/components/settings/settings-sonos-auth-validate.handler
+  #   layers:
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  #     - { Ref: SonosLambdaLayer }
+  # settings-sonos-auth-delete:
+  #   events:
+  #     - sns: ${self:custom.prefix}-settings-sonos-auth-delete
+  #   memorySize: 128
+  #   package:
+  #     include:
+  #       - ./src/components/settings/settings-sonos-auth-delete.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/components/settings/settings-sonos-auth-delete.handler
+  #   layers:
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  #     - { Ref: SonosLambdaLayer }
+  # settings-sonos-groups-open:
+  #   events:
+  #     - sns: ${self:custom.prefix}-settings-sonos-groups-open
+  #   memorySize: 128
+  #   package:
+  #     include:
+  #       - ./src/components/settings/settings-sonos-groups-open.js
+  #       - ./src/components/settings/layers/settings-sonos-blocks.js
+  #       - ./src/components/settings/layers/settings-sonos-auth-blocks.js
+  #     exclude:
+  #       - ./**
+  #   handler: src/components/settings/settings-sonos-groups-open.handler
+  #   layers:
+  #     - { Ref: CoreLambdaLayer }
+  #     - { Ref: SpotifyLambdaLayer }
+  #     - { Ref: SlackLambdaLayer }
+  #     - { Ref: SonosLambdaLayer }
   settings-submit-save:
     events:
       - sns: ${self:custom.prefix}-settings-submit-save
     memorySize: 128
     package:
       include:
-        - ./components/settings/settings-submit-save.js
+        - ./src/components/settings/settings-submit-save.js
       exclude:
         - ./**
-    handler: components/settings/settings-submit-save.handler
+    handler: src/components/settings/settings-submit-save.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -557,10 +659,10 @@ functions:
     memorySize: 192
     package:
       include:
-        - ./components/settings/settings-submit-verify.js
+        - ./src/components/settings/settings-submit-verify.js
       exclude:
         - ./**
-    handler: components/settings/settings-submit-verify.handler
+    handler: src/components/settings/settings-submit-verify.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -572,199 +674,190 @@ functions:
     memorySize: 192
     package:
       include:
-        - ./components/control/control-clear-one.js
+        - ./src/components/control/control-clear-one.js
       exclude:
         - ./**
-    handler: components/control/control-clear-one.handler
+    handler: src/components/control/control-clear-one.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-jump:
     events:
       - sns: ${self:custom.prefix}-control-jump
     memorySize: 192
     package:
       include:
-        - ./components/control/control-jump.js
+        - ./src/components/control/control-jump.js
       exclude:
         - ./**
-    handler: components/control/control-jump.handler
+    handler: src/components/control/control-jump.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-pause:
     events:
       - sns: ${self:custom.prefix}-control-pause
     memorySize: 192
     package:
       include:
-        - ./components/control/control-pause.js
+        - ./src/components/control/control-pause.js
       exclude:
         - ./**
-    handler: components/control/control-pause.handler
+    handler: src/components/control/control-pause.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-play:
     events:
       - sns: ${self:custom.prefix}-control-play
     memorySize: 192
     package:
       include:
-        - ./components/control/control-play.js
+        - ./src/components/control/control-play.js
+        - ./src/components/tracks/layers/find-index.js
+        - ./src/components/tracks/layers/remove-unplayable.js
       exclude:
         - ./**
-    handler: components/control/control-play.handler
+    handler: src/components/control/control-play.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-open:
     events:
       - sns: ${self:custom.prefix}-control-open
     memorySize: 192
     package:
       include:
-        - ./components/control/control-open.js
+        - ./src/components/control/control-open.js
       exclude:
         - ./**
-    handler: components/control/control-open.handler
+    handler: src/components/control/control-open.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-repeat:
     events:
       - sns: ${self:custom.prefix}-control-repeat
     memorySize: 192
     package:
       include:
-        - ./components/control/control-repeat.js
+        - ./src/components/control/control-repeat.js
       exclude:
         - ./**
-    handler: components/control/control-repeat.handler
+    handler: src/components/control/control-repeat.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-reset-start:
     events:
       - sns: ${self:custom.prefix}-control-reset-start
     memorySize: 192
     package:
       include:
-        - ./components/control/control-reset-start.js
+        - ./src/components/control/control-reset-start.js
+        - ./src/components/control/layers/control-reset.js
       exclude:
         - ./**
-    handler: components/control/control-reset-start.handler
+    handler: src/components/control/control-reset-start.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
-      - { Ref: ControlDashresetLambdaLayer}
   control-reset-set:
     events:
       - sns: ${self:custom.prefix}-control-reset-set
     memorySize: 192
     package:
       include:
-        - ./components/control/control-reset-set.js
+        - ./src/components/control/control-reset-set.js
       exclude:
         - ./**
-    handler: components/control/control-reset-set.handler
+    handler: src/components/control/control-reset-set.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-reset-review-open:
     events:
       - sns: ${self:custom.prefix}-control-reset-review-open
     memorySize: 192
     package:
       include:
-        - ./components/control/control-reset-review-open.js
+        - ./src/components/control/control-reset-review-open.js
+        - ./src/components/control/layers/control-reset.js
       exclude:
         - ./**
-    handler: components/control/control-reset-review-open.handler
+    handler: src/components/control/control-reset-review-open.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
-      - { Ref: ControlDashresetLambdaLayer}
   control-reset-review-submit:
     events:
       - sns: ${self:custom.prefix}-control-reset-review-submit
     memorySize: 192
     package:
       include:
-        - ./components/control/control-reset-review-submit.js
+        - ./src/components/control/control-reset-review-submit.js
       exclude:
         - ./**
-    handler: components/control/control-reset-review-submit.handler
+    handler: src/components/control/control-reset-review-submit.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-shuffle:
     events:
       - sns: ${self:custom.prefix}-control-shuffle
     memorySize: 192
     package:
       include:
-        - ./components/control/control-shuffle.js
+        - ./src/components/control/control-shuffle.js
       exclude:
         - ./**
-    handler: components/control/control-shuffle.handler
+    handler: src/components/control/control-shuffle.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
   control-skip-add-vote:
     events:
       - sns: ${self:custom.prefix}-control-skip-add-vote
     memorySize: 192
     package:
       include:
-        - ./components/control/control-skip-add-vote.js
+        - ./src/components/control/control-skip-add-vote.js
+        - ./src/components/control/layers/control-skip.js
       exclude:
         - ./**
-    handler: components/control/control-skip-add-vote.handler
+    handler: src/components/control/control-skip-add-vote.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
-      - { Ref: ControlDashskipLambdaLayer }
+      - { Ref: ControlDashskipLambdaLayer}
   control-skip-start:
     events:
       - sns: ${self:custom.prefix}-control-skip-start
     memorySize: 192
     package:
       include:
-        - ./components/control/control-skip-start.js
+        - ./src/components/control/control-skip-start.js
+        - ./src/components/control/layers/control-skip.js
       exclude:
         - ./**
-    handler: components/control/control-skip-start.handler
+    handler: src/components/control/control-skip-start.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
-      - { Ref: ControlDashpanelLambdaLayer }
-      - { Ref: ControlDashskipLambdaLayer }
+      - { Ref: ControlDashskipLambdaLayer}
 #Tracks
   tracks-current:
     events:
@@ -772,24 +865,27 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./components/tracks/tracks-current.js
+        - ./src/components/tracks/tracks-current.js
       exclude:
         - ./**
-    handler: components/tracks/tracks-current.handler
+    handler: src/components/tracks/tracks-current.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashskipLambdaLayer}
   tracks-find-add:
     events:
       - sns: ${self:custom.prefix}-tracks-find-add
     memorySize: 192
     package:
       include:
-        - ./components/tracks/tracks-find-add.js
+        - ./src/components/tracks/tracks-find-add.js
+        - ./src/components/tracks/layers/find-index.js
+        - ./src/components/tracks/layers/remove-unplayable.js
       exclude:
         - ./**
-    handler: components/tracks/tracks-find-add.handler
+    handler: src/components/tracks/tracks-find-add.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -800,10 +896,11 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./components/tracks/tracks-find-artists-search.js
+        - ./src/components/tracks/tracks-find-artists-search.js
+        - ./src/components/tracks/layers/get-artists.js
       exclude:
         - ./**
-    handler: components/tracks/tracks-find-artists-search.handler
+    handler: src/components/tracks/tracks-find-artists-search.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -814,10 +911,11 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./components/tracks/tracks-find-artists-get-artists.js
+        - ./src/components/tracks/tracks-find-artists-get-artists.js
+        - ./src/components/tracks/layers/get-artists.js
       exclude:
         - ./**
-    handler: components/tracks/tracks-find-artists-get-artists.handler
+    handler: src/components/tracks/tracks-find-artists-get-artists.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -828,10 +926,11 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./components/tracks/tracks-find-artists-get-tracks.js
+        - ./src/components/tracks/tracks-find-artists-get-tracks.js
+        - ./src/components/tracks/layers/get-tracks.js
       exclude:
         - ./**
-    handler: components/tracks/tracks-find-artists-get-tracks.handler
+    handler: src/components/tracks/tracks-find-artists-get-tracks.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -842,10 +941,11 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./components/tracks/tracks-find-search.js
+        - ./src/components/tracks/tracks-find-search.js
+        - ./src/components/tracks/layers/get-tracks.js
       exclude:
         - ./**
-    handler: components/tracks/tracks-find-search.handler
+    handler: src/components/tracks/tracks-find-search.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -856,10 +956,11 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./components/tracks/tracks-find-get-tracks.js
+        - ./src/components/tracks/tracks-find-get-tracks.js
+        - ./src/components/tracks/layers/get-tracks.js
       exclude:
         - ./**
-    handler: components/tracks/tracks-find-get-tracks.handler
+    handler: src/components/tracks/tracks-find-get-tracks.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -870,10 +971,10 @@ functions:
     memorySize: 192
     package:
       include:
-        - ./components/tracks/tracks-remove-open.js
+        - ./src/components/tracks/tracks-remove-open.js
       exclude:
         - ./**
-    handler: components/tracks/tracks-remove-open.handler
+    handler: src/components/tracks/tracks-remove-open.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -884,10 +985,10 @@ functions:
     memorySize: 192
     package:
       include:
-        - ./components/tracks/tracks-remove-submit.js
+        - ./src/components/tracks/tracks-remove-submit.js
       exclude:
         - ./**
-    handler: components/tracks/tracks-remove-submit.handler
+    handler: src/components/tracks/tracks-remove-submit.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
@@ -898,14 +999,15 @@ functions:
     memorySize: 256
     package:
       include:
-        - ./components/tracks/tracks-whom.js
+        - ./src/components/tracks/tracks-whom.js
       exclude:
         - ./**
-    handler: components/tracks/tracks-whom.handler
+    handler: src/components/tracks/tracks-whom.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SpotifyLambdaLayer }
       - { Ref: SlackLambdaLayer }
+      - { Ref: ControlDashskipLambdaLayer}
 #Delete
   delete-channel:
     events:
@@ -913,10 +1015,10 @@ functions:
     memorySize: 128
     package:
       include:
-        - ./components/delete/delete-channel.js
+        - ./src/components/delete/delete-channel.js
       exclude:
         - ./**
-    handler: components/delete/delete-channel.handler
+    handler: src/components/delete/delete-channel.handler
     layers:
       - { Ref: CoreLambdaLayer }
       - { Ref: SlackLambdaLayer }

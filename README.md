@@ -1,9 +1,9 @@
 # Spotbot2
 
 # Naming Conventions
-- DAL will use the terms load and store.
+- DAL interfaces will use the terms change, load, store, remove.
 - APIs will use the terms create, fetch and send
-- Controllers will use the term get and set
+- Controllers will use the term get, set, update and delete.
 - Files shall use kebap-case convention.
 
 # Changelog
@@ -51,3 +51,4 @@ Spotbot 2.0
   - Manage blacklisted songs in /spotbot blacklist. You can add songs which were skipped, recently played or currently playing.
 
 
+ConditionalCheckFailedException
